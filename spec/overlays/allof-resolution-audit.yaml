@@ -1,0 +1,120 @@
+overlay: 1.1.0
+info:
+  title: OpenRouter audited allOf-resolution overrides
+  version: 1.0.0
+# Audited overrides select the refined protocol-specific allOf branch for object-merge conflicts.
+actions:
+  - target: "$['components']['schemas']['MessagesResult']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          usage:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "ce4e9e6f3dda1d79e53ade51fc515df615f7010b5f656ae357917238e222b46d"
+              propertySchemaSha256: "c34bfcd303d0e0b3826993a1f0dbe684ca0d61bc7047df22354da99b298d0962"
+  - target: "$['components']['schemas']['OpenResponsesResult']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          output:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "e266cf55e9e09e72dbb039216f71cc079cbeb9ada80d8ecaacec5efce7494e0c"
+              propertySchemaSha256: "bc16870f8e154736513c293a7d61a2fb90e029bf851443a68d606d9ebfb46b51"
+          service_tier:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "e266cf55e9e09e72dbb039216f71cc079cbeb9ada80d8ecaacec5efce7494e0c"
+              propertySchemaSha256: "e16b0c0d0cdce6a489ad1ac5bbb7534eb3cca67b3ad23818a640e2bce397a142"
+          text:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "e266cf55e9e09e72dbb039216f71cc079cbeb9ada80d8ecaacec5efce7494e0c"
+              propertySchemaSha256: "0a106d7c2bcc1f128e3ea8f49a6bb2eea28955a95f3428ea18bc9747a5408c6e"
+          usage:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "e266cf55e9e09e72dbb039216f71cc079cbeb9ada80d8ecaacec5efce7494e0c"
+              propertySchemaSha256: "b6887598cb4e52e497de137547d0f56e5947599fabc52b589626d72212c8c2de"
+  - target: "$['components']['schemas']['StreamEventsResponseOutputItemAdded']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          item:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "f422703915f45f2152581c7eb04bce6d2b61357bac122aaea7b48c7794eac5ee"
+              propertySchemaSha256: "942684e239f078e2f47fa039087bb4968d501b1fdcadbeeb59dff1e5161b7681"
+  - target: "$['components']['schemas']['StreamEventsResponseOutputItemDone']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          item:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "f422703915f45f2152581c7eb04bce6d2b61357bac122aaea7b48c7794eac5ee"
+              propertySchemaSha256: "942684e239f078e2f47fa039087bb4968d501b1fdcadbeeb59dff1e5161b7681"
+  - target: "$['components']['schemas']['TextDeltaEvent']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          logprobs:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "119f0284baf5510782900cfdbf60d6ef1d324b2c7e6877b40862ac6885dc669c"
+              propertySchemaSha256: "184d5803f81bbb08190a843fdec1b7e65369ca126b0fa4a6393df3c2a6c96a92"
+  - target: "$['components']['schemas']['TextDoneEvent']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          logprobs:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "119f0284baf5510782900cfdbf60d6ef1d324b2c7e6877b40862ac6885dc669c"
+              propertySchemaSha256: "184d5803f81bbb08190a843fdec1b7e65369ca126b0fa4a6393df3c2a6c96a92"
+  - target: "$['components']['schemas']['OpenResponsesCreatedEvent']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          response:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "4a298c53e2a9d55c32d018b369e40632b5feca33c48ceaa3c692e68ab7d2750b"
+              propertySchemaSha256: "d1d4c4ffc0bd1051567b64c9bb22cdec0c352852bba51ec36d0e326634f57b60"
+  - target: "$['components']['schemas']['OpenResponsesInProgressEvent']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          response:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "4a298c53e2a9d55c32d018b369e40632b5feca33c48ceaa3c692e68ab7d2750b"
+              propertySchemaSha256: "d1d4c4ffc0bd1051567b64c9bb22cdec0c352852bba51ec36d0e326634f57b60"
+  - target: "$['components']['schemas']['StreamEventsResponseCompleted']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          response:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "4a298c53e2a9d55c32d018b369e40632b5feca33c48ceaa3c692e68ab7d2750b"
+              propertySchemaSha256: "d1d4c4ffc0bd1051567b64c9bb22cdec0c352852bba51ec36d0e326634f57b60"
+  - target: "$['components']['schemas']['StreamEventsResponseFailed']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          response:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "4a298c53e2a9d55c32d018b369e40632b5feca33c48ceaa3c692e68ab7d2750b"
+              propertySchemaSha256: "d1d4c4ffc0bd1051567b64c9bb22cdec0c352852bba51ec36d0e326634f57b60"
+  - target: "$['components']['schemas']['StreamEventsResponseIncomplete']"
+    update:
+      x-sdkgen-allof-resolution:
+        properties:
+          response:
+            strategy: unionSupersede
+            source:
+              inlineSchemaSha256: "4a298c53e2a9d55c32d018b369e40632b5feca33c48ceaa3c692e68ab7d2750b"
+              propertySchemaSha256: "d1d4c4ffc0bd1051567b64c9bb22cdec0c352852bba51ec36d0e326634f57b60"

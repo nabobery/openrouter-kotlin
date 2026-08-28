@@ -1,0 +1,249 @@
+overlay: 1.1.0
+info:
+  title: OpenRouter full-spec StandardProjection compatibility overlay
+  version: 2.0.0
+actions:
+- target: $['paths']['/embeddings']['post']['responses']['200']['content']['text/event-stream']
+  remove: true
+- target: $['paths']['/rerank']['post']['responses']['200']['content']['text/event-stream']
+  remove: true
+- target: "$['paths']['/chat/completions']['post']"
+  update:
+    x-sdkgen-streaming:
+      mode: sse
+      requestFlag: stream
+      responseContentType: text/event-stream
+      sentinel: "[DONE]"
+- target: "$['paths']['/chat/completions']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
+  remove: true
+- target: "$['paths']['/images']['post']"
+  update:
+    x-sdkgen-streaming:
+      mode: sse
+      requestFlag: stream
+      responseContentType: text/event-stream
+      sentinel: "[DONE]"
+- target: "$['paths']['/images']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
+  remove: true
+- target: "$['paths']['/byok']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/byok']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/datasets/app-rankings']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/datasets/app-rankings']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/embeddings/models']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/embeddings/models']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/files']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: cursor
+      requestCursor: cursor
+      requestLimit: limit
+      responseItems: /data
+      responseNextCursor: /cursor
+- target: "$['paths']['/files']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/guardrails']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/guardrails']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/guardrails/{id}/assignments/keys']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/guardrails/{id}/assignments/keys']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/guardrails/{id}/assignments/members']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/guardrails/{id}/assignments/members']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/guardrails/assignments/keys']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/guardrails/assignments/keys']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/guardrails/assignments/members']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/guardrails/assignments/members']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/models']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/models']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/models/user']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/models/user']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/observability/destinations']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/observability/destinations']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/organization/members']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/organization/members']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/presets']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/presets']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/presets/{slug}/versions']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/presets/{slug}/versions']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/workspaces']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/workspaces']['get']['x-speakeasy-pagination']"
+  remove: true
+- target: "$['paths']['/workspaces/{id}/members']['get']"
+  update:
+    x-sdkgen-pagination:
+      style: offsetLimit
+      requestOffset: offset
+      requestLimit: limit
+      responseItems: /data
+- target: "$['paths']['/workspaces/{id}/members']['get']['x-speakeasy-pagination']"
+  remove: true
+# The full-surface restoration (ADR 0021) keeps /messages, /responses, and /audio/transcriptions. The audited allof-resolution
+# overlay resolves the object-merge conflicts on the schemas reachable from these operations
+# (MessagesResult/OpenResponsesResult/StreamEvents* families), so the whole reachable closure now
+# projects under StandardProjection and no schema removal survives here. Streaming operations receive
+# canonical x-sdkgen-streaming metadata and shed their legacy Speakeasy SSE sentinels, exactly like the
+# already-restored /chat/completions and /images operations above.
+- target: "$['paths']['/messages']['post']"
+  update:
+    x-sdkgen-streaming:
+      mode: sse
+      requestFlag: stream
+      responseContentType: text/event-stream
+      sentinel: "[DONE]"
+- target: "$['paths']['/messages']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
+  remove: true
+- target: "$['paths']['/responses']['post']"
+  update:
+    x-sdkgen-streaming:
+      mode: sse
+      requestFlag: stream
+      responseContentType: text/event-stream
+      sentinel: "[DONE]"
+- target: "$['paths']['/responses']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
+  remove: true
+# StandardProjection rejects an allOf property when its type or nullability differs across branches. OverlayApplicator
+# applies actions in declaration order (OverlayApplicator.kt:26), while its object-node update path field-merges via
+# applyUpdate/mergeObject (OverlayApplicator.kt:152-166,193-223), recursively merging objects and appending arrays;
+# thus an update cannot atomically replace a node or discard existing allOf elements. The local architecture branch
+# shadows ModelArchitecture, so remove the redundant composition before the ordered update inserts its wire-equivalent
+# local shape with tokenizer's required-and-nullable ModelGroup contract.
+- target: $['components']['schemas']['ListEndpointsResponse']['properties']['architecture']['allOf']
+  remove: true
+- target: $['components']['schemas']['ListEndpointsResponse']['properties']['architecture']
+  update:
+    type: object
+    description: Model architecture information
+    example:
+      instruct_type: chatml
+      modality: text
+      tokenizer: GPT
+    properties:
+      input_modalities:
+        description: Supported input modalities
+        items:
+          $ref: '#/components/schemas/InputModality'
+        type: array
+      instruct_type:
+        $ref: '#/components/schemas/InstructType'
+      modality:
+        description: Primary modality of the model
+        example: text
+        nullable: true
+        type: string
+      output_modalities:
+        description: Supported output modalities
+        items:
+          $ref: '#/components/schemas/OutputModality'
+        type: array
+      tokenizer:
+        allOf:
+          - $ref: '#/components/schemas/ModelGroup'
+          - nullable: true
+    required:
+      - tokenizer
+      - instruct_type
+      - modality
+      - input_modalities
+      - output_modalities

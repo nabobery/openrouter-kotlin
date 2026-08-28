@@ -1,0 +1,52 @@
+version: v1alpha1
+source:
+  uri: openapi.yaml
+  sha256: b901d462e355e54b90ee2320bf7f18d0cb8edea857d5cdd8623d704f77a9eb47
+  acquisition:
+    mode: local
+    offline: true
+    allowedHosts: []
+    followRedirects: false
+    maxRedirects: 0
+    maxBytes: 16777216
+    timeoutSeconds: 30
+    cacheDirectory: .sdkgen/cache
+    allowedLocalRoots:
+      - .
+overlays:
+  - id: openrouter-allof-resolution-audit
+    uri: overlays/allof-resolution-audit.yaml
+    sha256: f8bc7a924cf9bc0af7ac54abc8a933037d0c30631b7bf690884ba3dfcd5cb6d0
+    zeroMatchPolicy: fail
+    conflictPolicy: fail
+  - id: openrouter-full-spec-compat
+    uri: overlays/full-spec-compat.yaml
+    sha256: 0ced3f18aa83e29f6aadc41d82d302e0312f3736c5c4914e27250dab964fb5c5
+    zeroMatchPolicy: fail
+    conflictPolicy: fail
+kotlin:
+  packageName: com.nabobery.openrouter          # CHANGED (was com.nabobery.sdkgen.generated)
+  coordinates:
+    groupId: io.github.nabobery                 # CHANGED (was com.nabobery.sdkgen)
+    artifactId: openrouter-kotlin               # CHANGED (was openrouter-conformance)
+  naming:
+    clientName: OpenRouter                      # CHANGED (was OpenRouterClient; ADR 0001 names the root client OpenRouter)
+  targets:
+    - jvm
+    - js
+    - macos
+output:
+  sources: generated
+  resources: generated-resources
+  manifest: manifest.json
+  lock: sdkgen.lock
+  checkedInSources: true
+diagnostics:
+  warningsAsErrors: false
+  warningAllowlist: []
+  format: json
+verification:
+  gates:
+    - schema
+    - determinism
+    - api

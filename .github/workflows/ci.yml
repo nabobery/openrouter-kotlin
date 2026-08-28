@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: CI only needs to read the repository. Grant more per-job only if a
+# job genuinely needs it (none do today).
+permissions:
+  contents: read
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      # Actions are pinned to full commit SHAs (version tags are mutable). The trailing
+      # comment records the human-readable release each SHA corresponds to.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      # Regenerate from the pinned spec and assert the produced surface reproduces the
+      # committed baseline (spec/generated.lock.json) byte-for-byte. Generated sources are
+      # not checked in (plugin-native model); this is the drift gate that replaces a
+      # `git diff` over a checked-in tree.
+      - name: Generation drift gate
+        run: ./scripts/check-drift.sh
+
+      # Linux-runnable subset of the exit gate: JVM test lane (the fake-transport smoke
+      # test), JS cross-compile, and the JVM binary-compatibility check (apiCheck; klib /
+      # native ABI validation is not run here). The macOS/iOS lanes run in build-apple.
+      - name: Test (JVM), compile JS, API check
+        run: ./gradlew :sdk:jvmTest :sdk:compileKotlinJs :sdk:apiCheck --console=plain
+
+  build-apple:
+    # The full, host-safe verification gate. verificationCheck compiles every declared target
+    # (JVM, JS, iosArm64, iosSimulatorArm64, iosX64, macosArm64, macosX64), runs the
+    # runnable test lanes (JVM + macosArm64), and checks the public API baseline. iOS and
+    # non-host macOS targets are compile-only (no device/simulator execution).
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: SDK verification (compile all targets, run JVM + macOS tests, API check)
+        run: ./gradlew :sdk:verificationCheck --console=plain

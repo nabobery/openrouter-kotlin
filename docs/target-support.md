@@ -13,7 +13,7 @@ Support is tiered by evidence, not marketing language.
 | 2 | Linux (`linuxX64`, `linuxArm64`), Windows (`mingwX64`), JS browser and Node.js | Compile, API/serialization tests, selected transport tests, smoke consumer |
 | 3 | Wasm JS and other actively maintained Kotlin targets with viable Ktor support | Compile and focused compatibility tests; experimental label |
 
-The exact Gradle target list is validated against the Kotlin and Ktor versions chosen during Phase 0. A target is not
+The exact Gradle target list is validated against the selected Kotlin and Ktor versions. A target is not
 published merely because Kotlin can declare it; HTTP engine availability and consumer value must exist.
 
 Generator dependency note (2026-08-17): `kotlin-sdkgen` 0.1.0 publishes its runtime for arm64 Apple targets only;
@@ -97,4 +97,3 @@ Do not use “supports all KMP targets” without linking to this matrix.
 - [KMP target hierarchy](https://kotlinlang.org/docs/multiplatform-hierarchy.html)
 - [KMP library publication](https://kotlinlang.org/docs/multiplatform-publish-lib.html)
 - [Ktor client engines](https://ktor.io/docs/client-engines.html)
-
