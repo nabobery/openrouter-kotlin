@@ -21,46 +21,44 @@ import kotlin.test.assertTrue
  */
 class SmokeTest {
     @Test
-    fun ordinaryGeneratedCallUsesFakeTransportAndClosesBody() =
-        runTest {
-            val body =
-                FakeByteStream(
-                    listOf(
-                        (
-                            "{\"choices\":[],\"created\":1,\"id\":\"chat-fixture\",\"model\":\"test\"," +
-                                "\"object\":\"chat.completion\",\"system_fingerprint\":null}"
-                        ).encodeToByteArray(),
-                    ),
-                )
-            val transport =
-                FakeTransport().enqueueResponse(
-                    200,
-                    listOf(SdkHeader("Content-Type", "application/json")),
-                    body,
-                )
-
-            val result =
-                OpenRouter(
-                    transport,
-                    "https://openrouter.test",
-                    authentication = SdkAuthentication { it },
-                ).chat.sendChatCompletionRequest(chatRequest())
-
-            assertEquals("chat-fixture", result.id)
-            assertEquals("sendChatCompletionRequest", transport.capturedRequests.single().operationId)
-            assertTrue(body.closed)
-        }
-
-    private fun chatRequest(): ChatRequest =
-        chatRequest {
-            messages =
+    fun ordinaryGeneratedCallUsesFakeTransportAndClosesBody() = runTest {
+        val body =
+            FakeByteStream(
                 listOf(
-                    SdkJson.decodeFromJsonElement(
-                        buildJsonObject {
-                            put("role", "user")
-                            put("content", "hello")
-                        },
-                    ),
-                )
-        }
+                    (
+                        "{\"choices\":[],\"created\":1,\"id\":\"chat-fixture\",\"model\":\"test\"," +
+                            "\"object\":\"chat.completion\",\"system_fingerprint\":null}"
+                        ).encodeToByteArray(),
+                ),
+            )
+        val transport =
+            FakeTransport().enqueueResponse(
+                200,
+                listOf(SdkHeader("Content-Type", "application/json")),
+                body,
+            )
+
+        val result =
+            OpenRouterClient(
+                transport,
+                "https://openrouter.test",
+                authentication = SdkAuthentication { it },
+            ).chat.sendChatCompletionRequest(chatRequest())
+
+        assertEquals("chat-fixture", result.id)
+        assertEquals("sendChatCompletionRequest", transport.capturedRequests.single().operationId)
+        assertTrue(body.closed)
+    }
+
+    private fun chatRequest(): ChatRequest = chatRequest {
+        messages =
+            listOf(
+                SdkJson.decodeFromJsonElement(
+                    buildJsonObject {
+                        put("role", "user")
+                        put("content", "hello")
+                    },
+                ),
+            )
+    }
 }

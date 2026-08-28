@@ -33,8 +33,8 @@ jobs:
       # Linux-runnable subset of the exit gate: JVM test lane (the fake-transport smoke
       # test), JS cross-compile, and the JVM binary-compatibility check (apiCheck; klib /
       # native ABI validation is not run here). The macOS/iOS lanes run in build-apple.
-      - name: Test (JVM), compile JS, API check
-        run: ./gradlew :sdk:jvmTest :sdk:compileKotlinJs :sdk:apiCheck --console=plain
+      - name: Test (JVM), compile JS, API check, ktlint
+        run: ./gradlew :sdk:jvmTest :sdk:compileKotlinJs :sdk:apiCheck :sdk:ktlintCheck --console=plain
 
   build-apple:
     # The full, host-safe verification gate. verificationCheck compiles every declared target

@@ -126,7 +126,9 @@ RequestOptions {
 ```
 
 Authorization, host, content length/type, and SDK-controlled protocol headers are reserved. Attempts to override them
-through generic header APIs fail locally with a typed configuration error.
+through generic header APIs fail locally with a typed configuration error. This holds on **both** header paths — the
+builder's `header(...)` default and the per-call `client.options { header(...) }` override — so the guarantee cannot be
+bypassed by moving a reserved header from build time to call time.
 
 ## Resource organization
 
@@ -388,3 +390,37 @@ numbers make retries clear.
 - Does Java exposure remain reasonable?
 - Does the signature compile for every published target?
 
+
+## Implementation notes
+
+The sketches above hold "until compile-validated." Validation against the published kotlin-sdkgen 0.3.0 runtime
+produced these deliberate deviations:
+
+1. **Per-call options materialize the runtime's `CallOptions` through a *curated* override receiver.**
+   `client.options { ... }` still produces the runtime's `CallOptions` (built via `callOptions {}`), but the override
+   block's receiver is the curated `OpenRouterCallOptions`, not the raw runtime `CallOptionsBuilder`. This was a
+   safety correction: exposing the raw builder would let a caller set a reserved header (`Authorization`,
+   `Content-Type`, …) per call, silently bypassing the reserved-header guarantee that the builder's
+   `header(...)` enforces. `OpenRouterCallOptions` exposes only the safe subset — validated `header`, `deadlines`,
+   `retry`, `observer` — keeping the guarantee intact on the primary per-call path. Advanced runtime hooks
+   (middleware, request hooks, pagination bounds) are intentionally not surfaced by the curated facade.
+2. **Credential factories are `OpenRouterCredentials.static` / `.dynamic`.** Kotlin cannot add companion members to
+   the runtime's `CredentialProvider` fun-interface, so the curated factories live on a dedicated `object`. Both
+   return `CredentialProvider`; `dynamic` resolves before every physical attempt (rotating keys).
+3. **`AutoCloseable` on the root is deferred.** The SDK owns no closeable resource today (the consumer owns and closes
+   the Ktor `HttpClient`, per ADR 0003). Adding an interface later is binary-compatible; shipping a no-op `close()`
+   now would invite misuse against the ownership rules, so it is omitted.
+4. **`RetryPolicy.replayMode` is deferred.** The runtime's idempotency gating already implements Safe-only semantics:
+   an ambiguous mid-flight connection failure (the request may have reached the server) is never replayed for a
+   non-idempotent POST without an idempotency key, and a stream is never restarted after emitting an event (ADR 0004).
+   The curated default status allowlist contains only `429`. Service/provider failures such as `503` and `529` are
+   explicit caller opt-ins because OpenRouter may already have attempted a provider and BYOK billing can occur outside
+   OpenRouter's zero-completion insurance. A separate replay-mode knob remains unnecessary because the
+   runtime already protects ambiguous transport failures and partially emitted streams; lifecycle-contract tests pin
+   those guarantees (see the outcome record).
+
+**Hybrid client-defaults caveat.** Generated operations invoked directly take the *generated* defaults — which include
+**no retries** (`maxAttempts = 1`). Client-level retry/deadlines/observers apply only when a call passes
+`options = client.options()`; attribution and custom default headers apply to every call via the header-defaulting
+transport regardless. This gap is intentional and pinned by the `withoutOptionsThereIsNoRetry` lifecycle-contract
+test. If kotlin-sdkgen gains client-default injection, the wrapper can thin out around that capability.

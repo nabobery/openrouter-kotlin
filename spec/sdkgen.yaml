@@ -30,7 +30,7 @@ kotlin:
     groupId: io.github.nabobery                 # CHANGED (was com.nabobery.sdkgen)
     artifactId: openrouter-kotlin               # CHANGED (was openrouter-conformance)
   naming:
-    clientName: OpenRouter                      # CHANGED (was OpenRouterClient; ADR 0001 names the root client OpenRouter)
+    clientName: OpenRouterClient                # Generated root renamed to free `OpenRouter` for the curated facade; ADR 0001's root name is carried by the handwritten wrapper.
   targets:
     - jvm
     - js

@@ -16,9 +16,9 @@ Support is tiered by evidence, not marketing language.
 The exact Gradle target list is validated against the selected Kotlin and Ktor versions. A target is not
 published merely because Kotlin can declare it; HTTP engine availability and consumer value must exist.
 
-Generator dependency note (2026-08-17): `kotlin-sdkgen` 0.1.0 publishes its runtime for arm64 Apple targets only;
-`iosX64` and `macosX64` are being added to the generator runtime for its 0.2.0 release, which this matrix's Tier 1
-depends on. Wasm JS is not yet a generator runtime target and stays Tier 3/experimental.
+Generator dependency note: `kotlin-sdkgen` 0.1.0 published its runtime for arm64 Apple targets only. Version 0.2.0
+added `iosX64` and `macosX64`, and this matrix's Tier 1 builds against them. Wasm JS is not yet a generator runtime
+target and stays Tier 3/experimental.
 
 ## Engine policy
 

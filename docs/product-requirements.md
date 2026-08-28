@@ -392,8 +392,9 @@ See [security and privacy](./security-and-privacy.md).
 
 - OpenRouter continues publishing an OpenAPI document.
 - Official SDKs remain useful behavioral comparators.
-- `kotlin-sdkgen` 0.1.0 is published (Maven Central `io.github.nabobery`, Gradle Plugin Portal); streaming and
-  pagination activation for OpenRouter land in its 0.2.0 before this SDK's inference alpha and coverage beta.
+- `kotlin-sdkgen` is published (Maven Central `io.github.nabobery`, Gradle Plugin Portal); streaming and
+  pagination activation for OpenRouter shipped in 0.2.0 and full 89/89 operation coverage in 0.3.0,
+  ahead of this SDK's inference alpha and coverage beta.
 - Consumers accept adding a Ktor engine appropriate for each target.
 - All-KMP support uses tiers; it does not imply identical runtime testing on every target.
 
@@ -434,4 +435,3 @@ These questions do not block initial implementation:
 - [Ktor client SSE](https://ktor.io/docs/client-server-sent-events.html)
 - [Kotlin Flow API](https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-flow/)
 - [KMP library publication](https://kotlinlang.org/docs/multiplatform-publish-lib.html)
-

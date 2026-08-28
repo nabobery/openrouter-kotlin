@@ -36,11 +36,15 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.sdkgen.runtime)
             implementation(libs.kotlinx.serialization.json)
+            // The curated factory signature exposes Ktor's HttpClient, so it must be `api`.
+            api(libs.ktor.client.core)
+            implementation(libs.sdkgen.transport.ktor)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.sdkgen.testing)
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.ktor.client.mock)
         }
     }
 }
@@ -57,6 +61,30 @@ compileOnlyAppleTargets.forEach { target ->
 // The documented, host-safe verification gate used by CI. It compiles every declared target,
 // runs the runnable test lanes (JVM + macosArm64), and checks the public API baseline.
 // The generateOpenrouterSdk task is pulled in transitively as a compile dependency.
+// ktlint via CLI: the ktlint-gradle plugin cannot be applied (sdkgen 0.3.0's auto-integration
+// crashes on application against ktlint-gradle 14.2.0), so lint handwritten sources directly.
+// Generated sources live under build/ and are naturally out of scope.
+val ktlintCli: Configuration = configurations.create("ktlintCli")
+dependencies { ktlintCli(libs.ktlint.cli) }
+
+tasks.register<JavaExec>("ktlintCheck") {
+    group = "verification"
+    description = "ktlint over handwritten sources (sdk/src) via the ktlint CLI."
+    classpath = ktlintCli
+    mainClass.set("com.pinterest.ktlint.Main")
+    args("src/**/*.kt")
+    workingDir = projectDir
+}
+
+tasks.register<JavaExec>("ktlintFormat") {
+    group = "formatting"
+    description = "ktlint --format over handwritten sources."
+    classpath = ktlintCli
+    mainClass.set("com.pinterest.ktlint.Main")
+    args("--format", "src/**/*.kt")
+    workingDir = projectDir
+}
+
 tasks.register("verificationCheck") {
     group = "verification"
     description = "Host-safe verification: compile all targets, run JVM + macOS tests, check API."
@@ -71,6 +99,7 @@ tasks.register("verificationCheck") {
         "jvmTest",
         "macosArm64Test",
         "apiCheck",
+        "ktlintCheck",
     )
 }
 

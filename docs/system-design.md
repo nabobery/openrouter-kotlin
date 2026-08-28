@@ -324,12 +324,11 @@ flowchart LR
     Manifest --> Diff["Layered compatibility report"]
 ```
 
-`kotlin-sdkgen` 0.1.0 already provides resource partitioning, typed errors, open enums, field-state handling,
-replay-aware runtime primitives, and multiple transport adapters. Two capabilities need qualification (verified
-2026-08-17): dual JSON/SSE response generation is built and fixture-proven but must be activated for the OpenRouter
-spec via an overlay-injected `x-sdkgen-streaming` extension, and pagination generation exists only for `cursor` and
-`headerNextUrl` styles — the `offsetLimit` style that most OpenRouter list operations use is new generator work. Both
-are targeted at `kotlin-sdkgen` 0.2.0. OpenRouter Kotlin owns only OpenRouter-specific overlays and the curated facade.
+`kotlin-sdkgen` provides resource partitioning, typed errors, open enums, field-state handling, replay-aware runtime
+primitives, and multiple transport adapters. Version 0.2.0 added dual JSON/SSE response generation (activated for the
+OpenRouter spec via the overlay-injected `x-sdkgen-streaming` extension) and the `offsetLimit` pagination style used
+by most OpenRouter list operations. Version 0.3.0 reaches 89/89 operation coverage. OpenRouter Kotlin owns only
+OpenRouter-specific overlays and the curated facade.
 
 ## 14. Target architecture
 

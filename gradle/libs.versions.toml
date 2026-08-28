@@ -4,10 +4,16 @@ sdkgen = "0.3.0"
 kotlinx-serialization = "1.11.0"
 kotlinx-coroutines = "1.11.0"
 binary-compatibility-validator = "0.18.1"
+ktor = "3.5.2"
+ktlint-cli = "1.8.0"
 
 [libraries]
 sdkgen-runtime = { module = "io.github.nabobery:kotlin-sdkgen-runtime", version.ref = "sdkgen" }
 sdkgen-testing = { module = "io.github.nabobery:kotlin-sdkgen-testing", version.ref = "sdkgen" }
+sdkgen-transport-ktor = { module = "io.github.nabobery:kotlin-sdkgen-transport-ktor", version.ref = "sdkgen" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint-cli" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
