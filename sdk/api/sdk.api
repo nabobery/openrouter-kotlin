@@ -5158,6 +5158,15 @@ public final class com/nabobery/openrouter/ApplyPatchUpdateFileOperationKt {
 	public static final fun applyPatchUpdateFileOperation (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/ApplyPatchUpdateFileOperation;
 }
 
+public final class com/nabobery/openrouter/Attribution {
+	public fun <init> ()V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getCategories ()Ljava/util/List;
+	public final fun getReferer ()Ljava/lang/String;
+	public final fun getTitle ()Ljava/lang/String;
+}
+
 public final class com/nabobery/openrouter/AutoRouterPlugin {
 	public static final field Companion Lcom/nabobery/openrouter/AutoRouterPlugin$Companion;
 	public fun <init> (Lcom/nabobery/openrouter/InlineAutoRouterPluginIdX2adccf1f;Ljava/util/List;Ljava/lang/Integer;Ljava/lang/Boolean;)V
@@ -62416,6 +62425,73 @@ public final class com/nabobery/openrouter/OpenResponsesTopLogprobsKt {
 }
 
 public final class com/nabobery/openrouter/OpenRouter {
+	public static final field Companion Lcom/nabobery/openrouter/OpenRouter$Companion;
+	public static final field DEFAULT_BASE_URL Ljava/lang/String;
+	public final fun getAnalytics ()Lcom/nabobery/openrouter/analytics/AnalyticsClient;
+	public final fun getAnthropicMessages ()Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;
+	public final fun getApiKeys ()Lcom/nabobery/openrouter/apikeys/ApiKeysClient;
+	public final fun getBenchmarks ()Lcom/nabobery/openrouter/benchmarks/BenchmarksClient;
+	public final fun getBetaAnalytics ()Lcom/nabobery/openrouter/betaanalytics/BetaAnalyticsClient;
+	public final fun getBetaResponses ()Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;
+	public final fun getByok ()Lcom/nabobery/openrouter/byok/ByokClient;
+	public final fun getChat ()Lcom/nabobery/openrouter/chat/ChatClient;
+	public final fun getClassifications ()Lcom/nabobery/openrouter/classifications/ClassificationsClient;
+	public final fun getCredits ()Lcom/nabobery/openrouter/credits/CreditsClient;
+	public final fun getDatasets ()Lcom/nabobery/openrouter/datasets/DatasetsClient;
+	public final fun getEmbeddings ()Lcom/nabobery/openrouter/embeddings/EmbeddingsClient;
+	public final fun getEndpoints ()Lcom/nabobery/openrouter/endpoints/EndpointsClient;
+	public final fun getFiles ()Lcom/nabobery/openrouter/files/FilesClient;
+	public final fun getGenerations ()Lcom/nabobery/openrouter/generations/GenerationsClient;
+	public final fun getGuardrails ()Lcom/nabobery/openrouter/guardrails/GuardrailsClient;
+	public final fun getImages ()Lcom/nabobery/openrouter/images/ImagesClient;
+	public final fun getModels ()Lcom/nabobery/openrouter/models/ModelsClient;
+	public final fun getOAuth ()Lcom/nabobery/openrouter/oauth/OAuthClient;
+	public final fun getObservability ()Lcom/nabobery/openrouter/observability/ObservabilityClient;
+	public final fun getOrganization ()Lcom/nabobery/openrouter/organization/OrganizationClient;
+	public final fun getPresets ()Lcom/nabobery/openrouter/presets/PresetsClient;
+	public final fun getProviders ()Lcom/nabobery/openrouter/providers/ProvidersClient;
+	public final fun getRerank ()Lcom/nabobery/openrouter/rerank/RerankClient;
+	public final fun getStt ()Lcom/nabobery/openrouter/stt/SttClient;
+	public final fun getTts ()Lcom/nabobery/openrouter/tts/TtsClient;
+	public final fun getVideoGeneration ()Lcom/nabobery/openrouter/videogeneration/VideoGenerationClient;
+	public final fun getWorkspaces ()Lcom/nabobery/openrouter/workspaces/WorkspacesClient;
+	public final fun options (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/sdkgen/runtime/CallOptions;
+	public static synthetic fun options$default (Lcom/nabobery/openrouter/OpenRouter;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/nabobery/sdkgen/runtime/CallOptions;
+}
+
+public final class com/nabobery/openrouter/OpenRouter$Companion {
+}
+
+public final class com/nabobery/openrouter/OpenRouterBuilder {
+	public final fun attribution (Ljava/lang/String;Ljava/lang/String;Ljava/util/List;)V
+	public static synthetic fun attribution$default (Lcom/nabobery/openrouter/OpenRouterBuilder;Ljava/lang/String;Ljava/lang/String;Ljava/util/List;ILjava/lang/Object;)V
+	public final fun getAttribution ()Lcom/nabobery/openrouter/Attribution;
+	public final fun getBaseUrl ()Ljava/lang/String;
+	public final fun getCredential ()Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;
+	public final fun getDeadlines ()Lcom/nabobery/openrouter/RequestDeadlines;
+	public final fun getHttpClient ()Lio/ktor/client/HttpClient;
+	public final fun getRetryPolicy ()Lcom/nabobery/openrouter/RetryPolicy;
+	public final fun getTransport ()Lcom/nabobery/sdkgen/runtime/SdkTransport;
+	public final fun header (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun observer (Lcom/nabobery/sdkgen/runtime/observation/SdkLifecycleObserver;)V
+	public final fun setAttribution (Lcom/nabobery/openrouter/Attribution;)V
+	public final fun setBaseUrl (Ljava/lang/String;)V
+	public final fun setCredential (Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;)V
+	public final fun setDeadlines (Lcom/nabobery/openrouter/RequestDeadlines;)V
+	public final fun setHttpClient (Lio/ktor/client/HttpClient;)V
+	public final fun setRetryPolicy (Lcom/nabobery/openrouter/RetryPolicy;)V
+	public final fun setTransport (Lcom/nabobery/sdkgen/runtime/SdkTransport;)V
+	public final fun trustOrigin (Ljava/lang/String;)V
+}
+
+public final class com/nabobery/openrouter/OpenRouterCallOptions {
+	public final fun deadlines (Lcom/nabobery/openrouter/RequestDeadlines;)V
+	public final fun header (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun observer (Lcom/nabobery/sdkgen/runtime/observation/SdkLifecycleObserver;)V
+	public final fun retry (Lcom/nabobery/openrouter/RetryPolicy;)V
+}
+
+public final class com/nabobery/openrouter/OpenRouterClient {
 	public fun <init> (Lcom/nabobery/sdkgen/runtime/SdkTransport;Ljava/lang/String;Ljava/util/Map;Lcom/nabobery/sdkgen/runtime/auth/TrustedHosts;Lcom/nabobery/sdkgen/runtime/SdkAuthentication;)V
 	public synthetic fun <init> (Lcom/nabobery/sdkgen/runtime/SdkTransport;Ljava/lang/String;Ljava/util/Map;Lcom/nabobery/sdkgen/runtime/auth/TrustedHosts;Lcom/nabobery/sdkgen/runtime/SdkAuthentication;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun getAnalytics ()Lcom/nabobery/openrouter/analytics/AnalyticsClient;
@@ -62446,6 +62522,20 @@ public final class com/nabobery/openrouter/OpenRouter {
 	public final fun getTts ()Lcom/nabobery/openrouter/tts/TtsClient;
 	public final fun getVideoGeneration ()Lcom/nabobery/openrouter/videogeneration/VideoGenerationClient;
 	public final fun getWorkspaces ()Lcom/nabobery/openrouter/workspaces/WorkspacesClient;
+}
+
+public final class com/nabobery/openrouter/OpenRouterCredentials {
+	public static final field INSTANCE Lcom/nabobery/openrouter/OpenRouterCredentials;
+	public final fun dynamic (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;
+	public final fun static (Ljava/lang/String;)Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;
+}
+
+public abstract interface annotation class com/nabobery/openrouter/OpenRouterDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/nabobery/openrouter/OpenRouterEnvironmentKt {
+	public static final fun fromEnvironment (Lcom/nabobery/openrouter/OpenRouter$Companion;Lio/ktor/client/HttpClient;Lcom/nabobery/openrouter/Attribution;Lcom/nabobery/openrouter/RetryPolicy;Lcom/nabobery/openrouter/RequestDeadlines;)Lcom/nabobery/openrouter/OpenRouter;
+	public static synthetic fun fromEnvironment$default (Lcom/nabobery/openrouter/OpenRouter$Companion;Lio/ktor/client/HttpClient;Lcom/nabobery/openrouter/Attribution;Lcom/nabobery/openrouter/RetryPolicy;Lcom/nabobery/openrouter/RequestDeadlines;ILjava/lang/Object;)Lcom/nabobery/openrouter/OpenRouter;
 }
 
 public final class com/nabobery/openrouter/OpenRouterMetadata {
@@ -62501,6 +62591,14 @@ public final class com/nabobery/openrouter/OpenRouterMetadata$Companion {
 
 public final class com/nabobery/openrouter/OpenRouterMetadataKt {
 	public static final fun openRouterMetadata (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/OpenRouterMetadata;
+}
+
+public final class com/nabobery/openrouter/OpenRouterRootKt {
+	public static final fun OpenRouter (Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;Lcom/nabobery/sdkgen/runtime/SdkTransport;Ljava/lang/String;Lcom/nabobery/openrouter/Attribution;Lcom/nabobery/openrouter/RetryPolicy;Lcom/nabobery/openrouter/RequestDeadlines;Ljava/util/List;)Lcom/nabobery/openrouter/OpenRouter;
+	public static final fun OpenRouter (Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;Lio/ktor/client/HttpClient;Ljava/lang/String;Lcom/nabobery/openrouter/Attribution;Lcom/nabobery/openrouter/RetryPolicy;Lcom/nabobery/openrouter/RequestDeadlines;Ljava/util/List;)Lcom/nabobery/openrouter/OpenRouter;
+	public static final fun OpenRouter (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/OpenRouter;
+	public static synthetic fun OpenRouter$default (Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;Lcom/nabobery/sdkgen/runtime/SdkTransport;Ljava/lang/String;Lcom/nabobery/openrouter/Attribution;Lcom/nabobery/openrouter/RetryPolicy;Lcom/nabobery/openrouter/RequestDeadlines;Ljava/util/List;ILjava/lang/Object;)Lcom/nabobery/openrouter/OpenRouter;
+	public static synthetic fun OpenRouter$default (Lcom/nabobery/sdkgen/runtime/auth/CredentialProvider;Lio/ktor/client/HttpClient;Ljava/lang/String;Lcom/nabobery/openrouter/Attribution;Lcom/nabobery/openrouter/RetryPolicy;Lcom/nabobery/openrouter/RequestDeadlines;Ljava/util/List;ILjava/lang/Object;)Lcom/nabobery/openrouter/OpenRouter;
 }
 
 public final class com/nabobery/openrouter/OpenRouterWebSearchServerTool {
@@ -70074,6 +70172,14 @@ public final class com/nabobery/openrouter/RefusalDoneEventKt {
 	public static final fun refusalDoneEvent (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/RefusalDoneEvent;
 }
 
+public final class com/nabobery/openrouter/RequestDeadlines {
+	public synthetic fun <init> (Lkotlin/time/Duration;Lkotlin/time/Duration;Lkotlin/time/Duration;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Lkotlin/time/Duration;Lkotlin/time/Duration;Lkotlin/time/Duration;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getAttempt-FghU774 ()Lkotlin/time/Duration;
+	public final fun getStreamIdle-FghU774 ()Lkotlin/time/Duration;
+	public final fun getTotal-FghU774 ()Lkotlin/time/Duration;
+}
+
 public final class com/nabobery/openrouter/RequestTimeoutResponse {
 	public static final field Companion Lcom/nabobery/openrouter/RequestTimeoutResponse$Companion;
 	public fun <init> (Lcom/nabobery/openrouter/RequestTimeoutResponseErrorData;Ljava/util/Map;Ljava/lang/String;)V
@@ -70467,6 +70573,24 @@ public final class com/nabobery/openrouter/ResponsesStreamingResponse$Companion 
 
 public final class com/nabobery/openrouter/ResponsesStreamingResponseKt {
 	public static final fun responsesStreamingResponse (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/ResponsesStreamingResponse;
+}
+
+public final class com/nabobery/openrouter/RetryPolicy {
+	public static final field Companion Lcom/nabobery/openrouter/RetryPolicy$Companion;
+	public synthetic fun <init> (IJJDZLjava/util/Set;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (IJJDZLjava/util/Set;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getInitialDelay-UwyO8pc ()J
+	public final fun getMaxAttempts ()I
+	public final fun getMaxDelay-UwyO8pc ()J
+	public final fun getMultiplier ()D
+	public final fun getRetryConnectionFailures ()Z
+	public final fun getRetryableStatusCodes ()Ljava/util/Set;
+}
+
+public final class com/nabobery/openrouter/RetryPolicy$Companion {
+	public final fun getDEFAULT_RETRYABLE_STATUS_CODES ()Ljava/util/Set;
+	public final fun getDefault ()Lcom/nabobery/openrouter/RetryPolicy;
+	public final fun getNone ()Lcom/nabobery/openrouter/RetryPolicy;
 }
 
 public final class com/nabobery/openrouter/RouterAttempt {
