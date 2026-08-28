@@ -1,0 +1,12 @@
+{
+  "source": "https://openrouter.ai/openapi.yaml",
+  "sha256": "b901d462e355e54b90ee2320bf7f18d0cb8edea857d5cdd8623d704f77a9eb47",
+  "sizeBytes": 1203455,
+  "retrievedAt": "2026-08-17T00:00:00Z",
+  "provenance": "Ported from kotlin-sdkgen conformance corpus conformance/openrouter at v0.3.0 (tag commit 827d47985); originally retrieved 2026-08-17.",
+  "generator": "io.github.nabobery.kotlin-sdkgen:0.3.0",
+  "overlays": [
+    { "id": "openrouter-allof-resolution-audit", "file": "overlays/allof-resolution-audit.yaml", "sha256": "f8bc7a924cf9bc0af7ac54abc8a933037d0c30631b7bf690884ba3dfcd5cb6d0" },
+    { "id": "openrouter-full-spec-compat", "file": "overlays/full-spec-compat.yaml", "sha256": "0ced3f18aa83e29f6aadc41d82d302e0312f3736c5c4914e27250dab964fb5c5" }
+  ]
+}
