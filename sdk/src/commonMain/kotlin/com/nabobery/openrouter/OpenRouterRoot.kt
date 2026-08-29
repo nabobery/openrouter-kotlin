@@ -1,14 +1,15 @@
+@file:OptIn(OpenRouterExperimentalApi::class)
+
 package com.nabobery.openrouter
 
 import com.nabobery.openrouter.analytics.AnalyticsClient
 import com.nabobery.openrouter.anthropicmessages.AnthropicMessagesClient
 import com.nabobery.openrouter.apikeys.ApiKeysClient
 import com.nabobery.openrouter.benchmarks.BenchmarksClient
-import com.nabobery.openrouter.betaanalytics.BetaAnalyticsClient
-import com.nabobery.openrouter.betaresponses.BetaResponsesClient
 import com.nabobery.openrouter.byok.ByokClient
 import com.nabobery.openrouter.chat.ChatClient
 import com.nabobery.openrouter.classifications.ClassificationsClient
+import com.nabobery.openrouter.containers.ContainersClient
 import com.nabobery.openrouter.credits.CreditsClient
 import com.nabobery.openrouter.datasets.DatasetsClient
 import com.nabobery.openrouter.embeddings.EmbeddingsClient
@@ -25,6 +26,8 @@ import com.nabobery.openrouter.organization.OrganizationClient
 import com.nabobery.openrouter.presets.PresetsClient
 import com.nabobery.openrouter.providers.ProvidersClient
 import com.nabobery.openrouter.rerank.RerankClient
+import com.nabobery.openrouter.responses.ResponsesClient
+import com.nabobery.openrouter.scim.ScimClient
 import com.nabobery.openrouter.stt.SttClient
 import com.nabobery.openrouter.tts.TtsClient
 import com.nabobery.openrouter.videogeneration.VideoGenerationClient
@@ -37,6 +40,7 @@ import com.nabobery.sdkgen.runtime.SdkTransport
 import com.nabobery.sdkgen.runtime.TransportCapabilities
 import com.nabobery.sdkgen.runtime.auth.CredentialProvider
 import com.nabobery.sdkgen.runtime.auth.TrustedHosts
+import com.nabobery.sdkgen.runtime.bodies.TransferObserver
 import com.nabobery.sdkgen.runtime.callOptions
 import com.nabobery.sdkgen.runtime.observation.SdkLifecycleObserver
 import com.nabobery.sdkgen.transport.ktor.KtorSdkTransport
@@ -60,16 +64,16 @@ public class OpenRouter internal constructor(
     private val retryPolicy: RetryPolicy,
     private val deadlines: RequestDeadlines?,
     private val observers: List<SdkLifecycleObserver>,
+    private val paginationLimits: PaginationLimits? = null,
 ) {
     public val analytics: AnalyticsClient get() = generated.analytics
     public val anthropicMessages: AnthropicMessagesClient get() = generated.anthropicMessages
     public val apiKeys: ApiKeysClient get() = generated.apiKeys
     public val benchmarks: BenchmarksClient get() = generated.benchmarks
-    public val betaAnalytics: BetaAnalyticsClient get() = generated.betaAnalytics
-    public val betaResponses: BetaResponsesClient get() = generated.betaResponses
     public val byok: ByokClient get() = generated.byok
     public val chat: ChatClient get() = generated.chat
     public val classifications: ClassificationsClient get() = generated.classifications
+    public val containers: ContainersClient get() = generated.containers
     public val credits: CreditsClient get() = generated.credits
     public val datasets: DatasetsClient get() = generated.datasets
     public val embeddings: EmbeddingsClient get() = generated.embeddings
@@ -85,6 +89,8 @@ public class OpenRouter internal constructor(
     public val presets: PresetsClient get() = generated.presets
     public val providers: ProvidersClient get() = generated.providers
     public val rerank: RerankClient get() = generated.rerank
+    public val responses: ResponsesClient get() = generated.responses
+    public val scim: ScimClient get() = generated.scim
     public val stt: SttClient get() = generated.stt
     public val tts: TtsClient get() = generated.tts
     public val videoGeneration: VideoGenerationClient get() = generated.videoGeneration
@@ -100,6 +106,7 @@ public class OpenRouter internal constructor(
     public fun options(overrides: (OpenRouterCallOptions.() -> Unit)? = null): CallOptions = callOptions {
         retry(retryPolicy.toOverride())
         deadlines?.let { deadlines(it.toSdkDeadlines()) }
+        paginationLimits?.let { pagination(it.toBounds()) }
         observers.forEach { observer(it) }
         overrides?.let { OpenRouterCallOptions(this).apply(it) }
     }
@@ -113,9 +120,9 @@ public class OpenRouter internal constructor(
  * Curated per-call overrides layered on top of the client defaults by [OpenRouter.options].
  *
  * Only the safe subset is exposed — generic [header]s (reserved protocol names rejected), per-call [deadlines],
- * a per-call [retry] policy, and lifecycle [observer]s. Reserved protocol headers are refused here exactly as at
- * build time, keeping the reserved-header guarantee intact on the primary per-call path. Advanced runtime hooks
- * (middleware, request hooks, pagination bounds) are intentionally not surfaced by the curated facade.
+ * a per-call [retry] policy, per-call [pagination] bounds, and lifecycle [observer]s. Reserved protocol headers are
+ * refused here exactly as at build time, keeping the reserved-header guarantee intact on the primary per-call path.
+ * Advanced runtime hooks (middleware, request hooks) are intentionally not surfaced by the curated facade.
  */
 @OpenRouterDsl
 public class OpenRouterCallOptions internal constructor(private val builder: CallOptionsBuilder) {
@@ -128,6 +135,24 @@ public class OpenRouterCallOptions internal constructor(private val builder: Cal
     /** Overrides the client's deadlines for this one call. */
     public fun deadlines(deadlines: RequestDeadlines) {
         builder.deadlines(deadlines.toSdkDeadlines())
+    }
+
+    /**
+     * Sets automatic-pagination bounds for this one call, replacing any client-level [PaginationLimits] default.
+     * Applies to the generated `xxxPages()` / `xxxItems()` flows walked with `options = client.options { ... }`.
+     */
+    @OpenRouterExperimentalApi
+    public fun pagination(limits: PaginationLimits) {
+        builder.pagination(limits.toBounds())
+    }
+
+    /**
+     * Observes byte-transfer progress for this one call — upload and download start/progress/completion/failure
+     * events carrying byte counts (never the bytes themselves). Used for the multipart and binary media operations.
+     */
+    @OpenRouterExperimentalApi
+    public fun transferObserver(observer: TransferObserver) {
+        builder.transferObserver(observer)
     }
 
     /** Overrides the client's retry policy for this one call. */
@@ -165,6 +190,9 @@ public class OpenRouterBuilder internal constructor() {
 
     /** Client-level layered deadlines reached per call via [OpenRouter.options]. */
     public var deadlines: RequestDeadlines? = null
+
+    /** Client-level automatic-pagination bounds reached per call via [OpenRouter.options]; unbounded when null. */
+    public var paginationLimits: PaginationLimits? = null
 
     /** Attribution headers (HTTP-Referer / X-OpenRouter-Title / categories) applied to every call. */
     public var attribution: Attribution? = null
@@ -241,7 +269,7 @@ public class OpenRouterBuilder internal constructor() {
                 credentialProviders = mapOf("apiKey" to credential, "bearer" to credential),
                 trustedHosts = TrustedHosts.of(baseUrl, extraTrustedOrigins),
             )
-        return OpenRouter(generated, retryPolicy, deadlines, observers.toList())
+        return OpenRouter(generated, retryPolicy, deadlines, observers.toList(), paginationLimits)
     }
 
     private fun validateBaseUrl(url: String) {
@@ -254,7 +282,15 @@ public class OpenRouterBuilder internal constructor() {
 /** Builder-DSL construction. */
 public fun OpenRouter(block: OpenRouterBuilder.() -> Unit): OpenRouter = OpenRouterBuilder().apply(block).build()
 
-/** Routine construction over a consumer-owned Ktor [HttpClient] (never mutated or closed by the SDK). */
+/**
+ * Routine construction over a consumer-owned Ktor [HttpClient] (never mutated or closed by the SDK).
+ *
+ * Automatic-pagination bounds are intentionally *not* a parameter here: [PaginationLimits] is an experimental
+ * (`@OpenRouterExperimentalApi`) type, and putting it in this stable constructor's signature would force every
+ * ordinary caller to opt in. Set a client-level default through the builder DSL instead
+ * (`OpenRouter { paginationLimits = PaginationLimits(...) }`), or bound a single walk per call with
+ * `client.options { pagination(...) }`.
+ */
 public fun OpenRouter(
     credential: CredentialProvider,
     httpClient: HttpClient,
@@ -273,7 +309,12 @@ public fun OpenRouter(
     observers.forEach(::observer)
 }
 
-/** Advanced construction over a neutral [SdkTransport] (specialized runtimes and tests). */
+/**
+ * Advanced construction over a neutral [SdkTransport] (specialized runtimes and tests).
+ *
+ * As with the [HttpClient] overload, automatic-pagination bounds are not a parameter (they would drag the
+ * experimental [PaginationLimits] into this stable signature); use the builder DSL or `client.options { pagination(...) }`.
+ */
 public fun OpenRouter(
     credential: CredentialProvider,
     transport: SdkTransport,

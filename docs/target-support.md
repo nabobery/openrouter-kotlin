@@ -25,6 +25,12 @@ Streaming evidence (2026-08-28): on **JVM** and **macOS** (`macosArm64`), stream
 [`docs/testing-strategy.md`](testing-strategy.md). iOS and JS remain **compile-only**: their streaming code compiles for
 the declared targets but no runtime streaming suite runs on them, so their claims are unchanged.
 
+Tier 2 evidence (2026-08-29): `linuxX64`, `linuxArm64`, and `mingwX64` are declared `:sdk` targets and
+**compile** (CI-verified in `build-linux`). **Linux** additionally runs the common + `engineTest` suites on
+`linuxX64` natively on ubuntu (CI-verified). **Windows** (`mingwX64`) and `linuxArm64` compile only — they
+cross-compile from every host but have no CI runner, so no runtime lane executes. Android (`:sdk` target) stays
+**deferred** pending the plugin/AGP compatibility fix (the Android *sample* still consumes the JVM variant).
+
 ## Engine policy
 
 The SDK depends on Ktor client core but does not impose a target engine. Consumers select one, for example:

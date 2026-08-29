@@ -2,12 +2,15 @@
 
 A Kotlin Multiplatform SDK for the [OpenRouter](https://openrouter.ai) API.
 
-The client surface (89 operations) is **generated** by the
-[`kotlin-sdkgen`](https://github.com/nabobery/kotlin-sdkgen) `0.3.0` Gradle plugin from the
-OpenAPI spec pinned in [`spec/`](spec/) — it is not hand-written. Generation is deterministic
-and reproducible from a clean clone.
+The client surface (100 of 101 operations of the 2026-08-29 contract; one accepted waiver) is
+**generated** by the [`kotlin-sdkgen`](https://github.com/nabobery/kotlin-sdkgen) `0.3.0` Gradle
+plugin from the OpenAPI spec pinned in [`spec/`](spec/) — it is not hand-written. Generation is
+deterministic and reproducible from a clean clone. Responses are GA (`client.responses`); the
+new `containers`, `scim`, `datasets.getSessionCost`, and `workspaces.getWorkspaceBudget`
+operations are covered. See [`docs/coverage/`](docs/coverage/) for the coverage dashboard and
+exception register.
 
-> **Status: inference alpha.** On top of the generated surface, a curated inference facade
+> **Status: coverage beta.** On top of the generated surface, a curated inference facade
 > (chat / responses / messages) plus incremental SSE streaming is now callable end-to-end. It
 > is exercised through a fake transport and the real Ktor `MockEngine` SSE lane on JVM and
 > macOS (`engineTest` source set); JS and iOS remain **compile-only** (no runtime streaming
@@ -127,6 +130,12 @@ Without both variables the live test is skipped; ordinary CI never needs network
 
 # Verify regeneration reproduces the committed baseline (drift gate)
 ./scripts/check-drift.sh
+
+# Refresh the operation coverage dashboard (CI gates its freshness)
+python3 scripts/coverage-dashboard.py
+
+# Refresh the pinned spec from live upstream (future drift automation can reuse this)
+bash scripts/fetch-upstream-spec.sh
 
 # Complete verification gate (host-safe): compile every declared target, run the JVM + macOS
 # test lanes, and check the public API baseline. This is what CI enforces; run it on

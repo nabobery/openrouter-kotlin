@@ -1,4 +1,4 @@
-package com.nabobery.openrouter.betaresponses
+package com.nabobery.openrouter.responses
 
 import com.nabobery.openrouter.Inputs
 import com.nabobery.openrouter.OpenResponsesResult
@@ -12,12 +12,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.transform
 import kotlinx.serialization.json.JsonPrimitive
 
-// Curated overloads on the generated `BetaResponsesClient`. The Responses stream already exposes a typed event
+// Curated overloads on the generated `ResponsesClient`. The Responses stream already exposes a typed event
 // hierarchy (`StreamEvents`) with typed error events, so the curated stream returns it directly — a wrapper would
 // fork the model. Curated additions are limited to ergonomic overloads and one text-delta helper.
 
 /** Routine Responses call from a model and a text input, with optional extra request fields via [configure]. */
-public suspend fun BetaResponsesClient.create(
+public suspend fun ResponsesClient.create(
     model: String,
     input: String,
     options: CallOptions = CallOptions(),
@@ -25,13 +25,13 @@ public suspend fun BetaResponsesClient.create(
 ): OpenResponsesResult = createResponses(buildRequest(model, input, configure).requireNotStreaming(), options = options)
 
 /** Cold Responses stream; each collection sends one request with `"stream": true` forced on. */
-public fun BetaResponsesClient.stream(
+public fun ResponsesClient.stream(
     request: ResponsesRequest,
     options: CallOptions = CallOptions(),
 ): Flow<StreamEvents> = createResponsesStream(request.withStreamFlag(), options = options)
 
 /** Cold Responses stream from a model and a text input, with optional extra request fields via [configure]. */
-public fun BetaResponsesClient.stream(
+public fun ResponsesClient.stream(
     model: String,
     input: String,
     options: CallOptions = CallOptions(),

@@ -52,16 +52,12 @@ actions:
       responseItems: /data
 - target: "$['paths']['/embeddings/models']['get']['x-speakeasy-pagination']"
   remove: true
-- target: "$['paths']['/files']['get']"
-  update:
-    x-sdkgen-pagination:
-      style: cursor
-      requestCursor: cursor
-      requestLimit: limit
-      responseItems: /data
-      responseNextCursor: /cursor
-- target: "$['paths']['/files']['get']['x-speakeasy-pagination']"
-  remove: true
+# /files is intentionally NOT paginated by the generator: as of the 2026-08-29 re-pin FileListResponse is a
+# `_shape`-discriminated oneOf (OpenRouterFileList | OpenAIFileList | AnthropicFileList), and kotlin-sdkgen
+# 0.3.0 cannot address the `/data` items path on a union envelope (SDKGEN-PROJECTION-UNREPRESENTABLE-OPERATION
+# listFiles). listFiles stays callable and returns the union; the curated FilesClient.listAllFiles() threads
+# the cursor manually for the OpenRouter shape. See docs/coverage/exception-register.md. Removal condition:
+# upstream generator support for pagination over discriminated response envelopes.
 - target: "$['paths']['/guardrails']['get']"
   update:
     x-sdkgen-pagination:
