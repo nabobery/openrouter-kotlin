@@ -37,5 +37,5 @@ jobs:
             exit 1
           fi
 
-      - name: Live chat smoke test (2 requests, budgeted)
-        run: ./gradlew :sdk:jvmTest --tests "com.nabobery.openrouter.live.LiveChatSmokeTest" --console=plain
+      - name: Live smoke tests (chat + management, budgeted)
+        run: ./gradlew :sdk:jvmTest --tests "com.nabobery.openrouter.live.LiveChatSmokeTest" --tests "com.nabobery.openrouter.live.LiveManagementSmokeTest" --console=plain

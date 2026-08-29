@@ -38,7 +38,10 @@ kotlin {
     iosX64()
     macosArm64()
     macosX64()
-    // Tier 2 (linuxX64, linuxArm64, mingwX64) deferred until CI covers them.
+    // Tier 2 native targets: compile everywhere; linuxX64 additionally runs its test lane in CI (build-linux).
+    linuxX64()
+    linuxArm64()
+    mingwX64()
 
     sourceSets {
         commonMain.dependencies {
@@ -70,6 +73,8 @@ kotlin {
         }
         jvmTest.get().dependsOn(engineTest)
         macosArm64Test.get().dependsOn(engineTest)
+        // linuxX64 runs natively on ubuntu CI, so it shares the real-engine lane too.
+        linuxX64Test.get().dependsOn(engineTest)
         // The opt-in live smoke test drives a real CIO engine against the OpenRouter API (JVM only).
         jvmTest.dependencies {
             implementation(libs.ktor.client.cio)
@@ -83,6 +88,13 @@ kotlin {
 // These tasks only exist on a macOS host, so `matching` is a no-op elsewhere.
 val compileOnlyAppleTargets = listOf("iosArm64", "iosSimulatorArm64", "iosX64", "macosX64")
 compileOnlyAppleTargets.forEach { target ->
+    tasks.matching { it.name == "${target}Test" }.configureEach { enabled = false }
+}
+
+// Tier 2 native: linuxX64 runs natively on ubuntu CI; linuxArm64 and mingwX64 have no runner (they
+// cross-compile only), so disable their test tasks like the compile-only Apple targets.
+val compileOnlyNativeTargets = listOf("linuxArm64", "mingwX64")
+compileOnlyNativeTargets.forEach { target ->
     tasks.matching { it.name == "${target}Test" }.configureEach { enabled = false }
 }
 
@@ -124,6 +136,9 @@ tasks.register("verificationCheck") {
         "compileKotlinIosX64",
         "compileKotlinMacosArm64",
         "compileKotlinMacosX64",
+        "compileKotlinLinuxX64",
+        "compileKotlinLinuxArm64",
+        "compileKotlinMingwX64",
         "jvmTest",
         "macosArm64Test",
         "apiCheck",

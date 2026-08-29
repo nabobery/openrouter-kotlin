@@ -23,8 +23,8 @@ import kotlin.test.assertIs
  * payload with no Speakeasy `{ "data": … }` envelope), the four generated `*Stream` operations
  * decode the payload directly into its typed model.
  *
- * Before the sse-payload overlay (Task 1, RED) every operation threw `SdkSerializationException`
- * because the generated decoder expected the envelope. This is the GREEN half (Task 2): the overlay
+ * Before the sse-payload overlay every operation threw `SdkSerializationException` because the generated decoder
+ * expected the envelope. The overlay
  * re-points each `text/event-stream` schema at its payload type, so `chat` yields `ChatStreamChunk`,
  * `responses` yields `StreamEvents`, `messages` yields `MessagesStreamEvents`, and `images` yields
  * `ImageStreamEvent`.
@@ -67,7 +67,7 @@ class StreamingWireTruthTest {
                 ),
                 SseWireFixtures.DONE,
             )
-        val events = client.betaResponses.createResponsesStream(responsesRequest { stream = true }).toList()
+        val events = client.responses.createResponsesStream(responsesRequest { stream = true }).toList()
         val delta = assertIs<StreamEvents.TextDeltaEvent>(events.single())
         assertEquals("Hel", delta.delta)
         body.assertClosedNormally()

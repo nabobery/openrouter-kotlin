@@ -30,11 +30,24 @@ jobs:
       - name: Generation drift gate
         run: ./scripts/check-drift.sh
 
+      # The coverage dashboard is generated from the generated clients; regenerate it and fail if it
+      # drifts from the committed copy (run `python3 scripts/coverage-dashboard.py` locally to refresh).
+      - name: Operation coverage dashboard freshness
+        run: |
+          python3 scripts/coverage_dashboard_test.py
+          python3 scripts/coverage-dashboard.py
+          git diff --exit-code -- docs/coverage/operation-coverage.md
+
       # Linux-runnable subset of the exit gate: JVM test lane (the fake-transport smoke
       # test), JS cross-compile, and the JVM binary-compatibility check (apiCheck; klib /
       # native ABI validation is not run here). The macOS/iOS lanes run in build-apple.
       - name: Test (JVM), compile JS, API check, ktlint
         run: ./gradlew :sdk:jvmTest :sdk:compileKotlinJs :sdk:apiCheck :sdk:ktlintCheck --console=plain
+
+      # Tier 2 native: compile all three targets (linuxX64/linuxArm64/mingwX64) and run the linuxX64 test
+      # lane natively on ubuntu (common + engineTest). linuxArm64/mingwX64 have no runner, so compile-only.
+      - name: Tier 2 native compile + linuxX64 test lane
+        run: ./gradlew :sdk:compileKotlinLinuxX64 :sdk:compileKotlinLinuxArm64 :sdk:compileKotlinMingwX64 :sdk:linuxX64Test --console=plain
 
       # Compile the JVM and JS sample consumers (no network). The macOS-native sample compiles in build-apple
       # (via samplesCheck); the Android sample compiles only when the runner's Android SDK made it part of the

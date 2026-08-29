@@ -1,7 +1,7 @@
 version: v1alpha1
 source:
   uri: openapi.yaml
-  sha256: b901d462e355e54b90ee2320bf7f18d0cb8edea857d5cdd8623d704f77a9eb47
+  sha256: b2a4948af336b2e1cbd372eda898cec603cf463f7a64196f1ea12bb0a70a6007
   acquisition:
     mode: local
     offline: true
@@ -16,12 +16,12 @@ source:
 overlays:
   - id: openrouter-allof-resolution-audit
     uri: overlays/allof-resolution-audit.yaml
-    sha256: f8bc7a924cf9bc0af7ac54abc8a933037d0c30631b7bf690884ba3dfcd5cb6d0
+    sha256: ac788905398ee8bed890d2404cc6d3e0459041a28722e7e930b27d2d3c14cd07
     zeroMatchPolicy: fail
     conflictPolicy: fail
   - id: openrouter-full-spec-compat
     uri: overlays/full-spec-compat.yaml
-    sha256: 0ced3f18aa83e29f6aadc41d82d302e0312f3736c5c4914e27250dab964fb5c5
+    sha256: d77a52a6bceda1d5696451f8c86040a17ebba389e674d8b1fca9e110ca23b5ee
     zeroMatchPolicy: fail
     conflictPolicy: fail
   - id: openrouter-sse-payload
@@ -29,6 +29,22 @@ overlays:
     sha256: 7575ac299572baa4e2d75848716160baf12326810322861180951985463f9da5
     zeroMatchPolicy: fail
     conflictPolicy: fail
+acceptedWaivers:
+  # The project's first accepted waiver (2026-08-29 re-pin). kotlin-sdkgen 0.3.0 cannot represent
+  # deleteScimGroupMapping's `keep_members` query parameter (schema is an anyOf of a string enum and a boolean,
+  # i.e. a non-scalar). 100 of 101 operations generate; this one is omitted. See docs/coverage/exception-register.md.
+  - id: openrouter-scim-group-mappings-delete-keep-members
+    category: form-parameter-nonscalar
+    match:
+      kind: operation
+      symbolId: "operation:deleteScimGroupMapping"
+      diagnosticCode: "SDKGEN-PROJECTION-UNREPRESENTABLE-OPERATION"
+      documentUri: "sdkgen://source/openapi.yaml"
+      jsonPointer: "/paths/~1scim~1group-mappings~1{id}/delete/parameters/1/schema"
+      reasonSha256: "a0e964aea6ccfd3e262de3bb1ebc8b42242ceb9441b7e472f8d50824dbb2f342"
+    rationale: "kotlin-sdkgen 0.3.0 cannot represent the non-scalar query parameter `keep_members` (anyOf string-enum|boolean). Omit only this operation; consumers delete SCIM group mappings via a documented raw call (docs/coverage/exception-register.md). Expires with the next kotlin-sdkgen release; 1.0 disposition: upstream support for object/union-typed parameters or an upstream spec correction."
+    owner: openrouter-kotlin-maintainers
+    disposition: omit
 kotlin:
   packageName: com.nabobery.openrouter          # CHANGED (was com.nabobery.sdkgen.generated)
   coordinates:

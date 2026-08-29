@@ -10,10 +10,10 @@ import com.nabobery.openrouter.anthropicmessages.create
 import com.nabobery.openrouter.anthropicmessages.stream
 import com.nabobery.openrouter.anthropicmessages.textDeltas
 import com.nabobery.openrouter.anthropicmessages.userMessageParam
-import com.nabobery.openrouter.betaresponses.create
-import com.nabobery.openrouter.betaresponses.outputTextDeltas
-import com.nabobery.openrouter.betaresponses.stream
 import com.nabobery.openrouter.messagesRequest
+import com.nabobery.openrouter.responses.create
+import com.nabobery.openrouter.responses.outputTextDeltas
+import com.nabobery.openrouter.responses.stream
 import com.nabobery.openrouter.responsesRequest
 import com.nabobery.sdkgen.runtime.SdkByteStream
 import com.nabobery.sdkgen.runtime.SdkRequest
@@ -88,9 +88,9 @@ class InferenceStreamingContractTest {
         ).enqueueResponse(200, json, emptyBody())
         val client = openRouter(transport)
 
-        runCatching { client.betaResponses.create(model = "test/model", input = "hi") }
+        runCatching { client.responses.create(model = "test/model", input = "hi") }
         runCatching {
-            client.betaResponses.createResponses(
+            client.responses.createResponses(
                 responsesRequest {
                     model = "test/model"
                     input = Inputs.fromRaw(JsonPrimitive("hi"))
@@ -107,14 +107,14 @@ class InferenceStreamingContractTest {
         server.sse(responsesTextDelta("Hel"), responsesTextDelta("lo"), SseWireFixtures.DONE)
         val client = openRouterOver(server)
 
-        val events = client.betaResponses.stream(model = "test/model", input = "hi").toList()
+        val events = client.responses.stream(model = "test/model", input = "hi").toList()
         events.forEach { assertIs<StreamEvents.TextDeltaEvent>(it) }
 
         val server2 = SseFakeServer()
         server2.sse(responsesTextDelta("Hel"), responsesTextDelta("lo"), SseWireFixtures.DONE)
         val deltas = openRouterOver(
             server2,
-        ).betaResponses.stream(model = "test/model", input = "hi").outputTextDeltas().toList()
+        ).responses.stream(model = "test/model", input = "hi").outputTextDeltas().toList()
         assertEquals(listOf("Hel", "lo"), deltas)
     }
 
@@ -127,7 +127,7 @@ class InferenceStreamingContractTest {
         val stream = server.sse(responsesTextDelta("Hel"), responsesTextDelta("lo")) // EOF, no DONE
         val client = openRouterOver(server)
 
-        val events = client.betaResponses.stream(model = "test/model", input = "hi").toList()
+        val events = client.responses.stream(model = "test/model", input = "hi").toList()
         assertEquals(2, events.size)
         events.forEach { assertIs<StreamEvents.TextDeltaEvent>(it) }
         assertTrue(stream.closed)
@@ -148,7 +148,7 @@ class InferenceStreamingContractTest {
         val stream = server.sse(responsesTextDelta("Hel"), errorEvent) // EOF after the error event
         val client = openRouterOver(server)
 
-        val events = client.betaResponses.stream(model = "test/model", input = "hi").toList()
+        val events = client.responses.stream(model = "test/model", input = "hi").toList()
         assertEquals(2, events.size)
         assertIs<StreamEvents.TextDeltaEvent>(events[0])
         val error = assertIs<StreamEvents.ErrorEvent>(events[1])
@@ -163,7 +163,7 @@ class InferenceStreamingContractTest {
         val client = openRouter(transport)
 
         assertFailsWith<IllegalArgumentException> {
-            client.betaResponses.create(model = "test/model", input = "hi") { stream = true }
+            client.responses.create(model = "test/model", input = "hi") { stream = true }
         }
         assertEquals(0, transport.capturedRequests.size)
     }
@@ -182,7 +182,7 @@ class InferenceStreamingContractTest {
 
         val ex =
             assertFailsWith<SdkTimeoutException> {
-                client.betaResponses.stream(
+                client.responses.stream(
                     request = responsesRequest {
                         model = "test/model"
                     },

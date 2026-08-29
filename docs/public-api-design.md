@@ -402,8 +402,9 @@ produced these deliberate deviations:
    safety correction: exposing the raw builder would let a caller set a reserved header (`Authorization`,
    `Content-Type`, …) per call, silently bypassing the reserved-header guarantee that the builder's
    `header(...)` enforces. `OpenRouterCallOptions` exposes only the safe subset — validated `header`, `deadlines`,
-   `retry`, `observer` — keeping the guarantee intact on the primary per-call path. Advanced runtime hooks
-   (middleware, request hooks, pagination bounds) are intentionally not surfaced by the curated facade.
+   `retry`, `observer`, and (experimental) `pagination`/`transferObserver` — keeping the guarantee intact on the
+   primary per-call path. Advanced runtime hooks (middleware, request hooks) are intentionally not surfaced by the
+   curated facade.
 2. **Credential factories are `OpenRouterCredentials.static` / `.dynamic`.** Kotlin cannot add companion members to
    the runtime's `CredentialProvider` fun-interface, so the curated factories live on a dedicated `object`. Both
    return `CredentialProvider`; `dynamic` resolves before every physical attempt (rotating keys).
@@ -434,7 +435,8 @@ numbered list above:
 
 5. **Curated inference overloads are extension functions on the generated clients.** `client.chat` stays the generated
    `ChatClient`; the curated `send`/`stream`/message-helpers/`messages { }` DSL are `com.nabobery.openrouter.chat`
-   extensions on it (responses under `...betaresponses`, messages under `...anthropicmessages`). Exact and curated
+   extensions on it (responses under `...responses` — GA'd and renamed from `...betaresponses` at the 2026-08-29
+   re-pin; reached via `client.responses` — messages under `...anthropicmessages`). Exact and curated
    entry points live on one object and the addition is binary-additive. No `*Resource` wrapper is introduced.
 6. **`ChatStreamEvent` is a sealed interface with two variants — `Chunk` and `Error`, no `Done`.** (This supersedes the
    three-variant sketch under **Streaming** above.) Flow completion is the terminal signal; the `[DONE]` sentinel is
@@ -460,6 +462,30 @@ numbered list above:
     `implementation`). The generated + curated *public* API references their types (`CredentialProvider`, `CallOptions`,
     `SdkTransport`, typed exceptions, `JsonElement` on model `raw`), so external consumers need them transitively.
     Discovered via the sample consumers.
+
+### Current implementation deltas
+
+12. **Pagination is bounds + idioms, not a parallel paginator.** `PaginationLimits(maxPages, maxItems, maxElapsed)`
+    is surfaced as a client default (`OpenRouterBuilder.paginationLimits`, in the `OpenRouter { … }` DSL) and per-call
+    (`options { pagination(...) }`); the idiomatic walk is the generated `xxxPages()`/`xxxItems()` flows with
+    `take(n)`. Because `PaginationLimits` is `@OpenRouterExperimentalApi`, it is deliberately **not** a parameter on
+    the routine `OpenRouter(credential, httpClient, …)` constructors — that would drag the experimental opt-in onto
+    every ordinary caller (see delta 16); the builder DSL and per-call DSL are the opt-in-scoped entry points. There
+    is **no** `Page.next()` (the generated per-page fetch is private; duplicating it per operation is the
+    per-operation duplication the system design forbids). No default truncation bound is imposed.
+13. **Byte-stream helpers** live in `com.nabobery.openrouter.io`: `byteStreamOf(bytes)`, `readAllBytes(maxBytes)`,
+    `asFlow(chunkSize)` (cold; closes on completion/failure/cancellation with the corresponding cause).
+14. **Files:** `listFiles` returns the `_shape`-discriminated union and loses generated pagination flows. Curated
+    helpers are `FilesClient.upload` and `downloadBytes` only. There is deliberately **no** `listAllFiles` walk: the
+    generated union rejects an explicit `cursor: null`, which OpenRouter sends on the terminal page, so any automatic
+    walk would throw while decoding a normal last page (exception register + upstream proposal). `uploadFile` returns
+    `FileResponse`, and the multipart codec fixes part name/content-type (no curated `filename` param).
+15. **STT:** curated `SttClient.transcribe(audio, model) { … }` over the multipart op.
+16. **`client.beta` is not present** — the 2026-08-29 contract GA'd Responses and Analytics, so no beta resources are
+    generated. `@OpenRouterExperimentalApi` (WARNING-level opt-in) guards the pre-1.0 byte-stream/pagination/media
+    helpers instead. `client.betaResponses` → `client.responses`; `betaAnalytics` removed.
+17. **Exception register** (`docs/coverage/exception-register.md`) records every omission/degradation; the coverage
+    dashboard (`docs/coverage/operation-coverage.md`) is generated and CI-gated.
 
 ### Streaming retry
 

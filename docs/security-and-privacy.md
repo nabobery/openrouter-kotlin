@@ -62,6 +62,16 @@ There is no logging or telemetry by default. Opt-in observations:
 - Bound string, header, and body previews.
 - Distinguish logical calls from physical attempts.
 - Do not let observer failure change request results.
+- The curated `TransferObserver` (per-call `options { transferObserver(...) }`) reports **byte counts only**
+  (`direction`, `bytesTransferred`, `totalBytes`) — never the transferred bytes themselves — for upload/download
+  progress on the multipart and binary media operations.
+
+## Binary bodies
+
+- `readAllBytes(maxBytes)` and the curated `downloadBytes(...)` are **bounded** — a payload exceeding `maxBytes`
+  throws `SdkBufferLimitExceededException` and the stream is closed, so a hostile or mis-sized response cannot
+  exhaust memory. The default bound is 64 MiB (`DEFAULT_MAX_DOWNLOAD_BYTES`); use `downloadFileContent(...).asFlow()`
+  to stream large files without buffering. Byte streams are one-shot and always closed with their close-cause.
 
 Debug facilities must carry explicit warnings and remain safe enough that enabling them does not reveal API keys.
 

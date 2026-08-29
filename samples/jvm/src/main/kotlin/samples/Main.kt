@@ -1,8 +1,12 @@
+@file:OptIn(OpenRouterExperimentalApi::class)
+
 package samples
 
 import com.nabobery.openrouter.Attribution
 import com.nabobery.openrouter.OpenRouter
 import com.nabobery.openrouter.OpenRouterCredentials
+import com.nabobery.openrouter.OpenRouterExperimentalApi
+import com.nabobery.openrouter.PaginationLimits
 import com.nabobery.openrouter.RequestDeadlines
 import com.nabobery.openrouter.chat.ChatStreamEvent
 import com.nabobery.openrouter.chat.contentDeltas
@@ -12,6 +16,7 @@ import com.nabobery.openrouter.chat.userMessage
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration.Companion.seconds
@@ -35,6 +40,15 @@ fun main(args: Array<String>) =
                             title = "openrouter-kotlin sample",
                         ),
                 )
+
+            // Bounded pagination: walk at most 2 pages of 5 models each (PaginationLimits caps the walk).
+            val modelPages =
+                client.models
+                    .getModelsPages(
+                        limit = 5,
+                        options = client.options { pagination(PaginationLimits(maxPages = 2)) },
+                    ).toList()
+            println("Fetched ${modelPages.sumOf { it.items.size }} models across ${modelPages.size} page(s).")
 
             // Non-streaming completion.
             val result =
