@@ -6,6 +6,9 @@ kotlinx-coroutines = "1.11.0"
 binary-compatibility-validator = "0.18.1"
 ktor = "3.5.2"
 ktlint-cli = "1.8.0"
+agp = "9.2.1"
+androidx-activity = "1.9.3"
+androidx-lifecycle = "2.8.7"
 
 [libraries]
 sdkgen-runtime = { module = "io.github.nabobery:kotlin-sdkgen-runtime", version.ref = "sdkgen" }
@@ -13,12 +16,21 @@ sdkgen-testing = { module = "io.github.nabobery:kotlin-sdkgen-testing", version.
 sdkgen-transport-ktor = { module = "io.github.nabobery:kotlin-sdkgen-transport-ktor", version.ref = "sdkgen" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "ktor" }
+ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
+ktor-client-js = { module = "io.ktor:ktor-client-js", version.ref = "ktor" }
 ktlint-cli = { module = "com.pinterest.ktlint:ktlint-cli", version.ref = "ktlint-cli" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+androidx-activity-ktx = { module = "androidx.activity:activity-ktx", version.ref = "androidx-activity" }
+androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidx-lifecycle" }
 
 [plugins]
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sdkgen = { id = "io.github.nabobery.kotlin-sdkgen", version.ref = "sdkgen" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compatibility-validator" }
+android-application = { id = "com.android.application", version.ref = "agp" }

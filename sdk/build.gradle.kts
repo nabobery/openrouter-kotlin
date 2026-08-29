@@ -10,8 +10,16 @@ plugins {
     // follow-up (pin a compatible ktlint-gradle, or lint handwritten sources via CLI).
 }
 
+// Coordinates for local consumption by the sample subprojects and future publication.
+group = "io.github.nabobery"
+version = "0.1.0-SNAPSHOT"
+
 kotlin {
     explicitApi()
+    // Add a custom intermediate test source set (engineTest) below via an explicit dependsOn edge. Doing so
+    // suppresses the default source-set hierarchy unless it is reapplied, so call it explicitly to keep the
+    // standard commonMain/appleMain/nativeMain (and matching test) hierarchy that the Apple/native targets rely on.
+    applyDefaultHierarchyTemplate()
     // Build with the latest JDK (25) but emit JVM 17 bytecode: keeps the SDK consumable
     // by JVM 17+ hosts and lets binary-compatibility-validator's ABI reader parse the
     // classes (its ASM cannot read class-file major 69 / JVM 25).
@@ -34,10 +42,14 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            implementation(libs.sdkgen.runtime)
-            implementation(libs.kotlinx.serialization.json)
+            // The generated and curated public API expose sdkgen-runtime types (CredentialProvider, CallOptions,
+            // SdkTransport, typed exceptions, …) and kotlinx-serialization types (JsonElement on model `raw`), so
+            // both must be `api` for external consumers to compile against the surface.
+            api(libs.sdkgen.runtime)
+            api(libs.kotlinx.serialization.json)
             // The curated factory signature exposes Ktor's HttpClient, so it must be `api`.
             api(libs.ktor.client.core)
+            // Transport wiring is internal to the OpenRouter factory (no public signature exposes KtorSdkTransport).
             implementation(libs.sdkgen.transport.ktor)
         }
         commonTest.dependencies {
@@ -45,6 +57,22 @@ kotlin {
             implementation(libs.sdkgen.testing)
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
+        }
+        // Real-engine test lanes (Ktor MockEngine under `runBlocking`, real time) shared by every host
+        // that can run them. A real Ktor engine hops dispatchers, so these must NOT use `runTest`'s
+        // virtual clock. `runBlocking` resolves on both the JVM and macosArm64 lanes; JS has no
+        // `runBlocking`, so the JS test task does not depend on this source set.
+        val engineTest = create("engineTest") {
+            dependsOn(commonTest.get())
+            dependencies {
+                implementation(libs.ktor.client.mock)
+            }
+        }
+        jvmTest.get().dependsOn(engineTest)
+        macosArm64Test.get().dependsOn(engineTest)
+        // The opt-in live smoke test drives a real CIO engine against the OpenRouter API (JVM only).
+        jvmTest.dependencies {
+            implementation(libs.ktor.client.cio)
         }
     }
 }

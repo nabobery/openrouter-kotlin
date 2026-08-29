@@ -26,7 +26,10 @@ import kotlin.test.assertTrue
  * These run under [runBlocking] (real time) rather than `runTest`: a real Ktor engine hops dispatchers,
  * so under virtual time the operation's baked-in metadata deadline races the MockEngine response. This
  * mirrors the upstream adapter conformance suite, which drives every real-engine test with runBlocking.
- * This JVM MockEngine lane proves the curated wiring without claiming cross-platform real-engine coverage.
+ *
+ * This test lives in the shared `engineTest` source set, so the same MockEngine lane runs on both the
+ * JVM and macosArm64 test tasks (`runBlocking` resolves on both). JS has no `runBlocking` and does not
+ * depend on `engineTest`.
  */
 class KtorTransportLifecycleTest {
     private val apiKey = "sk-or-ktor-secret"

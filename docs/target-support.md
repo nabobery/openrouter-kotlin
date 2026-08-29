@@ -20,6 +20,11 @@ Generator dependency note: `kotlin-sdkgen` 0.1.0 published its runtime for arm64
 added `iosX64` and `macosX64`, and this matrix's Tier 1 builds against them. Wasm JS is not yet a generator runtime
 target and stays Tier 3/experimental.
 
+Streaming evidence (2026-08-28): on **JVM** and **macOS** (`macosArm64`), streaming is tested with the Ktor
+`MockEngine` SSE lane (`engineTest` source set) in addition to the fake-transport common suites — see
+[`docs/testing-strategy.md`](testing-strategy.md). iOS and JS remain **compile-only**: their streaming code compiles for
+the declared targets but no runtime streaming suite runs on them, so their claims are unchanged.
+
 ## Engine policy
 
 The SDK depends on Ktor client core but does not impose a target engine. Consumers select one, for example:

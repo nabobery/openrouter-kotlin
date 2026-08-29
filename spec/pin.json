@@ -7,6 +7,7 @@
   "generator": "io.github.nabobery.kotlin-sdkgen:0.3.0",
   "overlays": [
     { "id": "openrouter-allof-resolution-audit", "file": "overlays/allof-resolution-audit.yaml", "sha256": "f8bc7a924cf9bc0af7ac54abc8a933037d0c30631b7bf690884ba3dfcd5cb6d0" },
-    { "id": "openrouter-full-spec-compat", "file": "overlays/full-spec-compat.yaml", "sha256": "0ced3f18aa83e29f6aadc41d82d302e0312f3736c5c4914e27250dab964fb5c5" }
+    { "id": "openrouter-full-spec-compat", "file": "overlays/full-spec-compat.yaml", "sha256": "0ced3f18aa83e29f6aadc41d82d302e0312f3736c5c4914e27250dab964fb5c5" },
+    { "id": "openrouter-sse-payload", "file": "overlays/sse-payload.yaml", "sha256": "7575ac299572baa4e2d75848716160baf12326810322861180951985463f9da5" }
   ]
 }

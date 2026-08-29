@@ -24,6 +24,11 @@ overlays:
     sha256: 0ced3f18aa83e29f6aadc41d82d302e0312f3736c5c4914e27250dab964fb5c5
     zeroMatchPolicy: fail
     conflictPolicy: fail
+  - id: openrouter-sse-payload
+    uri: overlays/sse-payload.yaml
+    sha256: 7575ac299572baa4e2d75848716160baf12326810322861180951985463f9da5
+    zeroMatchPolicy: fail
+    conflictPolicy: fail
 kotlin:
   packageName: com.nabobery.openrouter          # CHANGED (was com.nabobery.sdkgen.generated)
   coordinates:

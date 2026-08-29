@@ -1,0 +1,57 @@
+overlay: 1.1.0
+info:
+  title: OpenRouter SSE payload overlay (unwrap the Speakeasy event envelope)
+  version: 1.0.0
+  # Upstream: https://openrouter.ai/openapi.yaml @ sha256 b901d462e355e54b90ee2320bf7f18d0cb8edea857d5cdd8623d704f77a9eb47 (spec/pin.json).
+  # Reason: the spec models each text/event-stream response as a Speakeasy event envelope
+  #   ({ data: <payload>[, event] }). kotlin-sdkgen 0.3.0 decodes each SSE `data:` string as that
+  #   envelope type, but OpenRouter sends the payload itself (docs: api-reference/streaming), so every
+  #   generated *Stream operation fails on its first real event. Evidence: StreamingWireTruthTest (RED
+  #   before this overlay — every op throws SdkSerializationException; GREEN after).
+  # Effect: the four streaming operations decode Flow<ChatStreamChunk>, Flow<ImageStreamEvent>,
+  #   Flow<MessagesStreamEvents>, and Flow<StreamEvents>. The `event:` name of /messages events is dropped
+  #   (the payload's `type` discriminator carries the same information).
+  # Method: OverlayApplicator applies actions in declaration order and its object update field-merges
+  #   (cannot atomically replace a `$ref`), so each schema is `remove`d, then re-added by an `update` on
+  #   its parent `text/event-stream` node. Applies third, after full-spec-compat has removed the
+  #   /embeddings and /rerank event-stream nodes — only the four real streaming paths are targeted.
+  # Owner: openrouter-kotlin maintainers. Removal condition: kotlin-sdkgen unwraps SSE envelopes
+  #   natively; then delete this overlay, regenerate, and re-baseline.
+actions:
+# /chat/completions -> ChatStreamChunk
+- target: "$['paths']['/chat/completions']['post']['responses']['200']['content']['text/event-stream']['schema']"
+  remove: true
+- target: "$['paths']['/chat/completions']['post']['responses']['200']['content']['text/event-stream']"
+  update:
+    schema:
+      $ref: '#/components/schemas/ChatStreamChunk'
+# /responses -> StreamEvents
+- target: "$['paths']['/responses']['post']['responses']['200']['content']['text/event-stream']['schema']"
+  remove: true
+- target: "$['paths']['/responses']['post']['responses']['200']['content']['text/event-stream']"
+  update:
+    schema:
+      $ref: '#/components/schemas/StreamEvents'
+# /messages -> MessagesStreamEvents
+- target: "$['paths']['/messages']['post']['responses']['200']['content']['text/event-stream']['schema']"
+  remove: true
+- target: "$['paths']['/messages']['post']['responses']['200']['content']['text/event-stream']"
+  update:
+    schema:
+      $ref: '#/components/schemas/MessagesStreamEvents'
+# /images -> named union of the four image stream events (a named component keeps a readable Kotlin name)
+- target: "$['components']['schemas']"
+  update:
+    ImageStreamEvent:
+      description: One image-generation stream event (unwrapped SSE payload).
+      anyOf:
+        - $ref: '#/components/schemas/ImageGenPartialImageEvent'
+        - $ref: '#/components/schemas/ImageGenTextChunkEvent'
+        - $ref: '#/components/schemas/ImageGenCompletedEvent'
+        - $ref: '#/components/schemas/ImageGenStreamErrorEvent'
+- target: "$['paths']['/images']['post']['responses']['200']['content']['text/event-stream']['schema']"
+  remove: true
+- target: "$['paths']['/images']['post']['responses']['200']['content']['text/event-stream']"
+  update:
+    schema:
+      $ref: '#/components/schemas/ImageStreamEvent'
