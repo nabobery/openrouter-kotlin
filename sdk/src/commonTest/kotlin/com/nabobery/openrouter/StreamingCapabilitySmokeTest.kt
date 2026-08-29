@@ -36,9 +36,11 @@ class StreamingCapabilitySmokeTest {
         stream = true
     }
 
+    // Documented OpenRouter wire format: the chat chunk is the top-level `data:` payload (no
+    // Speakeasy `{ "data": … }` envelope). See the sse-payload overlay and StreamingWireTruthTest.
     private fun chatStreamEvent(content: String): String =
-        "data: {\"data\":{\"choices\":[{\"delta\":{\"content\":\"$content\"},\"finish_reason\":null,\"index\":0}]," +
-            "\"created\":1,\"id\":\"chat-1\",\"model\":\"test\",\"object\":\"chat.completion.chunk\"}}\n\n"
+        "data: {\"choices\":[{\"delta\":{\"content\":\"$content\"},\"finish_reason\":null,\"index\":0}]," +
+            "\"created\":1,\"id\":\"chat-1\",\"model\":\"test\",\"object\":\"chat.completion.chunk\"}\n\n"
 
     @Test
     fun streamingTransportDeliversOneEvent() = runTest {
@@ -52,7 +54,7 @@ class StreamingCapabilitySmokeTest {
         val events = client.chat.sendChatCompletionRequestStream(streamingRequest()).toList()
 
         assertEquals(1, events.size)
-        assertEquals("hi", events.single().data.choices.single().delta.content)
+        assertEquals("hi", events.single().choices.single().delta.content)
         assertTrue(body.closed)
     }
 

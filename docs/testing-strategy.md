@@ -53,6 +53,32 @@ Test:
 The first-event test uses a server/fake that does not complete until the assertion observes the first emission, proving
 the implementation is incremental.
 
+### Inference and streaming suites
+
+The inference and streaming alpha realizes the matrix above as these suites. All common suites run on JVM + macOS;
+`engineTest` is a shared source set that runs the real-Ktor lane across both. Counts: JVM 126 tests and macosArm64
+120 tests — all passing.
+
+| Suite | Lane | Contracts covered |
+| --- | --- | --- |
+| `StreamingWireTruthTest` | commonTest (JVM + macOS) | 4 wire-truth decode tests — chat / responses / messages / images payloads decode (RED before the SSE payload overlay, GREEN after) |
+| `ChatStreamingFramingTest` | commonTest (JVM + macOS) | 14 framing rows — one-event-per-chunk & many-in-one, delimiter split across chunks, UTF-8 codepoint split, CRLF, comments/retry/id/blank ignored, multiline `data` joined, metadata-only skipped, `[DONE]` ends without emission, EOF completes, usage-only final chunk, non-success → typed `ApiException`, malformed → bounded `SdkSerializationException`, event over byte budget → `SdkStreamingException`, unknown finish reason preserved |
+| `ChatStreamingLifecycleTest` | commonTest (JVM + macOS) | 13 lifecycle rows — first event before response completes, cancellation before headers, cancellation after first event closes body with `CancellationException`, `take(1)` closes upstream, downstream failure closes upstream with same cause, backpressure, stream-idle deadline (STREAM_IDLE phase), no idle deadline without `options()`, **streaming never retried even pre-first-byte**, no retry after emission, two collections start two requests, attribution + options headers reach stream requests, secret never leaks in failures |
+| `KtorStreamingEngineTest` | engineTest (JVM + macOS, real Ktor MockEngine) | 5 rows — multiple events + `[DONE]` decode, cancellation closes the engine response, mid-stream error as value, comments + `[DONE]`, stream-idle deadline fires |
+| `InferenceStreamingContractTest` | commonTest (JVM + macOS) | Responses & Messages golden payload identity, typed events + text deltas, messages typed error-as-value with `errorType`, idle deadline, cancellation |
+| `LiveChatSmokeTest` | jvmTest (opt-in) | Gated by `OPENROUTER_LIVE_TESTS=1` + `OPENROUTER_API_KEY`; 2 requests; nightly `.github/workflows/live.yml` |
+
+> **MockEngine caveat:** Ktor's `MockEngine` buffers a streaming body until the producer closes, so "first event before
+> body completes" and mid-stream cancellation observation are proven on the fake transport (and the upstream
+> transport-ktor conformance suite), not in `KtorStreamingEngineTest`.
+
+> **Streaming is never retried.** kotlin-sdkgen 0.3.0 disables retry **entirely** for the streaming response mode
+> (`SdkExecutor.kt`: `retry ... .takeUnless { responseMode == STREAMING }`). No streaming op is retried — not even a
+> pre-first-byte 429, which surfaces immediately as the typed `ApiException`. This is stricter and safer than the
+> buffered path (which retries an allowlisted 429), because an opened stream cannot be transparently restarted; it
+> supersedes any earlier plan assumption that pre-first-byte stream retry is allowed. Pinned by the "streaming never
+> retried" rows of `ChatStreamingLifecycleTest`. See also the "no retry after emission" bullet under **Retry matrix**.
+
 ## Retry matrix
 
 ```mermaid
@@ -142,4 +168,3 @@ A release candidate stores:
 - Generated code is excluded from percentage targets but covered through contract/conformance evidence.
 - Handwritten critical behavior has branch-focused tests.
 - All public examples compile.
-

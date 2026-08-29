@@ -417,10 +417,54 @@ produced these deliberate deviations:
    explicit caller opt-ins because OpenRouter may already have attempted a provider and BYOK billing can occur outside
    OpenRouter's zero-completion insurance. A separate replay-mode knob remains unnecessary because the
    runtime already protects ambiguous transport failures and partially emitted streams; lifecycle-contract tests pin
-   those guarantees (see the outcome record).
+   those guarantees.
 
 **Hybrid client-defaults caveat.** Generated operations invoked directly take the *generated* defaults — which include
 **no retries** (`maxAttempts = 1`). Client-level retry/deadlines/observers apply only when a call passes
 `options = client.options()`; attribution and custom default headers apply to every call via the header-defaulting
 transport regardless. This gap is intentional and pinned by the `withoutOptionsThereIsNoRetry` lifecycle-contract
 test. If kotlin-sdkgen gains client-default injection, the wrapper can thin out around that capability.
+
+## Inference and streaming implementation
+
+The inference and streaming alpha validates the curated inference surface against kotlin-sdkgen 0.3.0. All curated
+inference ops carry `options: CallOptions = CallOptions()`, mirroring the generated ops exactly, so the established
+hybrid-defaults rule ("pass `options = client.options()` to get client defaults") applies uniformly. Continuing the
+numbered list above:
+
+5. **Curated inference overloads are extension functions on the generated clients.** `client.chat` stays the generated
+   `ChatClient`; the curated `send`/`stream`/message-helpers/`messages { }` DSL are `com.nabobery.openrouter.chat`
+   extensions on it (responses under `...betaresponses`, messages under `...anthropicmessages`). Exact and curated
+   entry points live on one object and the addition is binary-additive. No `*Resource` wrapper is introduced.
+6. **`ChatStreamEvent` is a sealed interface with two variants — `Chunk` and `Error`, no `Done`.** (This supersedes the
+   three-variant sketch under **Streaming** above.) Flow completion is the terminal signal; the `[DONE]` sentinel is
+   consumed by the runtime and never emitted. `Error` carries an in-band error chunk (`chunk.error != null`) as a value,
+   after which the flow completes normally. A `finish_reason: "error"` without an `error` object stays a `Chunk`.
+   `Flow<ChatStreamEvent>.contentDeltas(): Flow<String>` projects assistant text deltas.
+7. **Responses and Messages streams expose the generated unions directly** — `stream(...): Flow<StreamEvents>` and
+   `Flow<MessagesStreamEvents>` — rather than curated wrappers, which would fork the model. Curated additions are
+   limited to ergonomic overloads plus the text-delta helpers `outputTextDeltas()` (responses) and `textDeltas()`
+   (messages).
+8. **Message helpers build union branches by decoding canonical JSON through the union serializer.** This survives
+   inline-type renames and always carries a validated `raw` JSON payload on each branch.
+9. **Curated `stream()` forces `"stream": true` by JSON round-trip** (encode the request → add the key → decode through
+   the generated serializer). Exact-vs-curated payload byte-identity for equivalent requests is pinned by golden tests.
+10. **The SSE payload overlay is the third spec overlay.** kotlin-sdkgen 0.3.0 decoded each SSE `data:` string as a
+    Speakeasy event envelope (`{ "data": <payload> }`), but OpenRouter sends the payload directly, so every generated
+    `*Stream` op threw `SdkSerializationException` on its first real event. `spec/overlays/sse-payload.yaml` re-points
+    each `text/event-stream` schema at its payload type: chat → `Flow<ChatStreamChunk>`, responses → `Flow<StreamEvents>`,
+    messages → `Flow<MessagesStreamEvents>`, images → `Flow<ImageStreamEvent>` (a new named union component the overlay
+    adds). Proven by `StreamingWireTruthTest` (RED before the overlay, GREEN after). **Removal condition:** kotlin-sdkgen
+    unwraps SSE envelopes natively.
+11. **`:sdk` exposes `sdkgen-runtime` and `kotlinx-serialization-json` as `api` dependencies** (previously
+    `implementation`). The generated + curated *public* API references their types (`CredentialProvider`, `CallOptions`,
+    `SdkTransport`, typed exceptions, `JsonElement` on model `raw`), so external consumers need them transitively.
+    Discovered via the sample consumers.
+
+### Streaming retry
+
+kotlin-sdkgen 0.3.0 disables retry **entirely** for the streaming response mode (`SdkExecutor.kt`:
+`retry ... .takeUnless { responseMode == STREAMING }`). Streaming ops are therefore never retried — not even a
+pre-first-byte 429, which surfaces immediately as the typed `ApiException`. This is stricter and safer than the buffered
+path (which retries an allowlisted 429), because an opened stream cannot be transparently restarted. It supersedes any
+earlier assumption that pre-first-byte stream retry is allowed.

@@ -36,6 +36,16 @@ jobs:
       - name: Test (JVM), compile JS, API check, ktlint
         run: ./gradlew :sdk:jvmTest :sdk:compileKotlinJs :sdk:apiCheck :sdk:ktlintCheck --console=plain
 
+      # Compile the JVM and JS sample consumers (no network). The macOS-native sample compiles in build-apple
+      # (via samplesCheck); the Android sample compiles only when the runner's Android SDK made it part of the
+      # build (ubuntu runners ship one, so this includes it opportunistically).
+      - name: Compile sample consumers (JVM, JS)
+        run: ./gradlew :samples:jvm:compileKotlin :samples:js:compileKotlinJs --console=plain
+
+      - name: Assemble Android sample (when an Android SDK is present)
+        if: env.ANDROID_HOME != ''
+        run: ./gradlew :samples:android:assembleDebug --console=plain
+
   build-apple:
     # The full, host-safe verification gate. verificationCheck compiles every declared target
     # (JVM, JS, iosArm64, iosSimulatorArm64, iosX64, macosArm64, macosX64), runs the
@@ -50,5 +60,5 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
-      - name: SDK verification (compile all targets, run JVM + macOS tests, API check)
-        run: ./gradlew :sdk:verificationCheck --console=plain
+      - name: SDK verification + sample compile (all targets, JVM + macOS tests, API check, samples)
+        run: ./gradlew :sdk:verificationCheck samplesCheck --console=plain

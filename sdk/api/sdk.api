@@ -14629,6 +14629,40 @@ public final class com/nabobery/openrouter/ImagePricingEntryKt {
 	public static final fun imagePricingEntry (Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/ImagePricingEntry;
 }
 
+public final class com/nabobery/openrouter/ImageStreamEvent {
+	public static final field Companion Lcom/nabobery/openrouter/ImageStreamEvent$Companion;
+	public final fun getImageGenCompletedEvent ()Lcom/nabobery/openrouter/ImageGenCompletedEventView;
+	public final fun getImageGenPartialImageEvent ()Lcom/nabobery/openrouter/ImageGenPartialImageEventView;
+	public final fun getImageGenStreamErrorEvent ()Lcom/nabobery/openrouter/ImageGenStreamErrorEventView;
+	public final fun getImageGenTextChunkEvent ()Lcom/nabobery/openrouter/ImageGenTextChunkEventView;
+	public final fun getMatchedBranches ()Ljava/util/Set;
+	public final fun getRaw ()Lkotlinx/serialization/json/JsonElement;
+}
+
+public final class com/nabobery/openrouter/ImageStreamEvent$Companion {
+	public final fun fromRaw (Lkotlinx/serialization/json/JsonElement;Lkotlinx/serialization/json/Json;)Lcom/nabobery/openrouter/ImageStreamEvent;
+	public static synthetic fun fromRaw$default (Lcom/nabobery/openrouter/ImageStreamEvent$Companion;Lkotlinx/serialization/json/JsonElement;Lkotlinx/serialization/json/Json;ILjava/lang/Object;)Lcom/nabobery/openrouter/ImageStreamEvent;
+	public final fun serializer ()Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/nabobery/openrouter/ImageStreamEventBranch : java/lang/Enum {
+	public static final field ImageGenCompletedEvent Lcom/nabobery/openrouter/ImageStreamEventBranch;
+	public static final field ImageGenPartialImageEvent Lcom/nabobery/openrouter/ImageStreamEventBranch;
+	public static final field ImageGenStreamErrorEvent Lcom/nabobery/openrouter/ImageStreamEventBranch;
+	public static final field ImageGenTextChunkEvent Lcom/nabobery/openrouter/ImageStreamEventBranch;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/nabobery/openrouter/ImageStreamEventBranch;
+	public static fun values ()[Lcom/nabobery/openrouter/ImageStreamEventBranch;
+}
+
+public abstract class com/nabobery/openrouter/ImageStreamEventDecodingException : kotlinx/serialization/SerializationException {
+	public synthetic fun <init> (Ljava/lang/String;Lkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/nabobery/openrouter/ImageStreamEventNoMatchException : com/nabobery/openrouter/ImageStreamEventDecodingException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
 public final class com/nabobery/openrouter/ImageStreamingResponse {
 	public static final field Companion Lcom/nabobery/openrouter/ImageStreamingResponse$Companion;
 	public fun <init> (Lcom/nabobery/openrouter/InlineImageStreamingResponseDataX83955361;)V
@@ -75846,6 +75880,18 @@ public final class com/nabobery/openrouter/anthropicmessages/AnthropicMessagesCl
 	public final fun getStatusCode ()I
 }
 
+public final class com/nabobery/openrouter/anthropicmessages/MessagesExtensionsKt {
+	public static final fun assistantMessageParam (Ljava/lang/String;)Lcom/nabobery/openrouter/MessagesMessageParam;
+	public static final fun create (Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;Ljava/lang/String;ILjava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun create$default (Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;Ljava/lang/String;ILjava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun stream (Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;Lcom/nabobery/openrouter/MessagesRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun stream (Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;Ljava/lang/String;ILjava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun stream$default (Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;Lcom/nabobery/openrouter/MessagesRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun stream$default (Lcom/nabobery/openrouter/anthropicmessages/AnthropicMessagesClient;Ljava/lang/String;ILjava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun textDeltas (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun userMessageParam (Ljava/lang/String;)Lcom/nabobery/openrouter/MessagesMessageParam;
+}
+
 public final class com/nabobery/openrouter/apikeys/ApiKeysClient {
 	public static final field Companion Lcom/nabobery/openrouter/apikeys/ApiKeysClient$Companion;
 	public fun <init> (Lcom/nabobery/sdkgen/runtime/SdkTransport;Ljava/lang/String;Ljava/util/Map;Lcom/nabobery/sdkgen/runtime/auth/TrustedHosts;Lcom/nabobery/sdkgen/runtime/SdkAuthentication;)V
@@ -76507,6 +76553,16 @@ public final class com/nabobery/openrouter/betaresponses/BetaResponsesClient$Cre
 	public final fun getStatusCode ()I
 }
 
+public final class com/nabobery/openrouter/betaresponses/ResponsesExtensionsKt {
+	public static final fun create (Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;Ljava/lang/String;Ljava/lang/String;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun create$default (Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;Ljava/lang/String;Ljava/lang/String;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun outputTextDeltas (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun stream (Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;Lcom/nabobery/openrouter/ResponsesRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun stream (Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;Ljava/lang/String;Ljava/lang/String;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun stream$default (Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;Lcom/nabobery/openrouter/ResponsesRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun stream$default (Lcom/nabobery/openrouter/betaresponses/BetaResponsesClient;Ljava/lang/String;Ljava/lang/String;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+}
+
 public final class com/nabobery/openrouter/byok/ByokClient {
 	public static final field Companion Lcom/nabobery/openrouter/byok/ByokClient$Companion;
 	public fun <init> (Lcom/nabobery/sdkgen/runtime/SdkTransport;Ljava/lang/String;Ljava/util/Map;Lcom/nabobery/sdkgen/runtime/auth/TrustedHosts;Lcom/nabobery/sdkgen/runtime/SdkAuthentication;)V
@@ -76907,6 +76963,61 @@ public final class com/nabobery/openrouter/chat/ChatClient$SendChatCompletionReq
 	public fun <init> (ILjava/util/List;)V
 	public final fun getHeaders ()Ljava/util/List;
 	public final fun getStatusCode ()I
+}
+
+public final class com/nabobery/openrouter/chat/ChatExtensionsKt {
+	public static final fun send (Lcom/nabobery/openrouter/chat/ChatClient;Lcom/nabobery/openrouter/ChatRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static final fun send (Lcom/nabobery/openrouter/chat/ChatClient;Ljava/lang/String;Ljava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun send$default (Lcom/nabobery/openrouter/chat/ChatClient;Lcom/nabobery/openrouter/ChatRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static synthetic fun send$default (Lcom/nabobery/openrouter/chat/ChatClient;Ljava/lang/String;Ljava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun sendWithResponse (Lcom/nabobery/openrouter/chat/ChatClient;Lcom/nabobery/openrouter/ChatRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public static synthetic fun sendWithResponse$default (Lcom/nabobery/openrouter/chat/ChatClient;Lcom/nabobery/openrouter/ChatRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun stream (Lcom/nabobery/openrouter/chat/ChatClient;Lcom/nabobery/openrouter/ChatRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;)Lkotlinx/coroutines/flow/Flow;
+	public static final fun stream (Lcom/nabobery/openrouter/chat/ChatClient;Ljava/lang/String;Ljava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun stream$default (Lcom/nabobery/openrouter/chat/ChatClient;Lcom/nabobery/openrouter/ChatRequest;Lcom/nabobery/sdkgen/runtime/CallOptions;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+	public static synthetic fun stream$default (Lcom/nabobery/openrouter/chat/ChatClient;Ljava/lang/String;Ljava/util/List;Lcom/nabobery/sdkgen/runtime/CallOptions;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlinx/coroutines/flow/Flow;
+}
+
+public final class com/nabobery/openrouter/chat/ChatMessagesBuilder {
+	public final fun add (Lcom/nabobery/openrouter/ChatMessages;)V
+	public final fun assistant (Ljava/lang/String;)V
+	public final fun developer (Ljava/lang/String;)V
+	public final fun system (Ljava/lang/String;)V
+	public final fun tool (Ljava/lang/String;Ljava/lang/String;)V
+	public final fun user (Ljava/lang/String;)V
+	public final fun user (Ljava/util/List;)V
+}
+
+public final class com/nabobery/openrouter/chat/ChatMessagesDslKt {
+	public static final fun assistantMessage (Ljava/lang/String;)Lcom/nabobery/openrouter/ChatMessages;
+	public static final fun developerMessage (Ljava/lang/String;)Lcom/nabobery/openrouter/ChatMessages;
+	public static final fun imagePart (Ljava/lang/String;Ljava/lang/String;)Lcom/nabobery/openrouter/ChatContentItems;
+	public static synthetic fun imagePart$default (Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/nabobery/openrouter/ChatContentItems;
+	public static final fun messages (Lcom/nabobery/openrouter/ChatRequest$Builder;Lkotlin/jvm/functions/Function1;)V
+	public static final fun systemMessage (Ljava/lang/String;)Lcom/nabobery/openrouter/ChatMessages;
+	public static final fun textPart (Ljava/lang/String;)Lcom/nabobery/openrouter/ChatContentItems;
+	public static final fun toolMessage (Ljava/lang/String;Ljava/lang/String;)Lcom/nabobery/openrouter/ChatMessages;
+	public static final fun userMessage (Ljava/lang/String;)Lcom/nabobery/openrouter/ChatMessages;
+	public static final fun userMessage (Ljava/util/List;)Lcom/nabobery/openrouter/ChatMessages;
+}
+
+public abstract interface class com/nabobery/openrouter/chat/ChatStreamEvent {
+	public abstract fun getChunk ()Lcom/nabobery/openrouter/ChatStreamChunk;
+}
+
+public final class com/nabobery/openrouter/chat/ChatStreamEvent$Chunk : com/nabobery/openrouter/chat/ChatStreamEvent {
+	public fun <init> (Lcom/nabobery/openrouter/ChatStreamChunk;)V
+	public fun getChunk ()Lcom/nabobery/openrouter/ChatStreamChunk;
+}
+
+public final class com/nabobery/openrouter/chat/ChatStreamEvent$Error : com/nabobery/openrouter/chat/ChatStreamEvent {
+	public fun <init> (Lcom/nabobery/openrouter/ChatStreamChunk;Lcom/nabobery/openrouter/InlineChatStreamChunkErrorXd280afd4;)V
+	public fun getChunk ()Lcom/nabobery/openrouter/ChatStreamChunk;
+	public final fun getError ()Lcom/nabobery/openrouter/InlineChatStreamChunkErrorXd280afd4;
+}
+
+public final class com/nabobery/openrouter/chat/ChatStreamEventKt {
+	public static final fun contentDeltas (Lkotlinx/coroutines/flow/Flow;)Lkotlinx/coroutines/flow/Flow;
 }
 
 public final class com/nabobery/openrouter/classifications/ClassificationsClient {
