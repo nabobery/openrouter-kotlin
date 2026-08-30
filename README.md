@@ -3,7 +3,7 @@
 A Kotlin Multiplatform SDK for the [OpenRouter](https://openrouter.ai) API.
 
 The client surface (100 of 101 operations of the 2026-08-29 contract; one accepted waiver) is
-**generated** by the [`kotlin-sdkgen`](https://github.com/nabobery/kotlin-sdkgen) `0.3.0` Gradle
+**generated** by the [`kotlin-sdkgen`](https://github.com/nabobery/kotlin-sdkgen) `0.4.0` Gradle
 plugin from the OpenAPI spec pinned in [`spec/`](spec/) — it is not hand-written. Generation is
 deterministic and reproducible from a clean clone. Responses are GA (`client.responses`); the
 new `containers`, `scim`, `datasets.getSessionCost`, and `workspaces.getWorkspaceBudget`
@@ -12,13 +12,14 @@ exception register.
 
 > **Status: coverage beta.** On top of the generated surface, a curated inference facade
 > (chat / responses / messages) plus incremental SSE streaming is now callable end-to-end. It
-> is exercised through a fake transport and the real Ktor `MockEngine` SSE lane on JVM and
-> macOS (`engineTest` source set); JS and iOS remain **compile-only** (no runtime streaming
-> suite runs there). Android — a Tier 1 target per
-> [`docs/target-support.md`](docs/target-support.md) — is **deferred** because of a plugin/AGP
-> incompatibility (its sample builds only when an Android SDK is present). The full generated
+> is exercised through a fake transport and the real Ktor `MockEngine` SSE lane on **every host test lane**
+> (`engineTest` via the `runRealTime` harness): JVM, JS (Node + headless Chrome), macOS arm64, and the iOS
+> simulator (`iosSimulatorArm64`) all run the common **and** real-engine suites in CI. Android — a Tier 1 target per
+> [`docs/target-support.md`](docs/target-support.md) — is now a live `:sdk` target
+> (`com.android.kotlin.multiplatform.library`) whose common suites run on the JVM-hosted
+> `testAndroidHostTest` lane (its sample builds only when an Android SDK is present). The full generated
 > surface — including the exact `/messages` and `/responses` operations — is present and callable
-> (kotlin-sdkgen 0.3.0). The project is **not yet published**: no Maven coordinates exist, and
+> (kotlin-sdkgen 0.4.0). The project is **not yet published**: no Maven coordinates exist, and
 > publication remains future work.
 
 ## How it works
@@ -30,12 +31,13 @@ the generation config is committed ([`spec/sdkgen.yaml`](spec/sdkgen.yaml)), and
 output is pinned by content-address ([`spec/generated.lock.json`](spec/generated.lock.json)).
 Reproducibility is enforced by the drift gate below.
 
-Three spec overlays repair generation metadata (see
-[`docs/spec-sync-and-release.md`](docs/spec-sync-and-release.md)). The third,
-[`spec/overlays/sse-payload.yaml`](spec/overlays/sse-payload.yaml), unwraps the Speakeasy SSE
-event envelope: without it every generated `*Stream` operation would throw on its first real
-event, because OpenRouter sends each `data:` payload directly rather than wrapped in
-`{ "data": … }`. It is removed once `kotlin-sdkgen` unwraps SSE envelopes natively.
+Two spec overlays repair generation metadata (see
+[`docs/spec-sync-and-release.md`](docs/spec-sync-and-release.md)). Each `text/event-stream`
+response declares `x-sdkgen-streaming.payloadProperty: data` in
+[`spec/overlays/full-spec-compat.yaml`](spec/overlays/full-spec-compat.yaml), so kotlin-sdkgen
+0.4.0 projects each `data:` field to the envelope's payload type natively — OpenRouter sends the
+payload directly rather than wrapped in `{ "data": … }`. This retired the earlier
+`sse-payload.yaml` schema-rewrite overlay.
 
 ## Requirements
 
@@ -67,11 +69,11 @@ fun main() = runBlocking {
             httpClient = http,
         )
 
-        // Non-streaming completion.
+        // Non-streaming completion. Client defaults (retry, deadlines, attribution) apply automatically;
+        // `options { ... }` is only needed for per-call overrides or pagination bounds.
         val result = client.chat.send(
             model = "openrouter/free",
             messages = listOf(userMessage("Say hello in one sentence.")),
-            options = client.options(),
         )
         println(result.choices.firstOrNull()?.message?.content?.raw)
 
@@ -80,7 +82,6 @@ fun main() = runBlocking {
             .stream(
                 model = "openrouter/free",
                 messages = listOf(userMessage("Explain structured concurrency in three sentences.")),
-                options = client.options(),
             )
             .contentDeltas()
             .collect { delta -> print(delta) }
@@ -106,7 +107,7 @@ the Android sample focuses on lifecycle-aware streaming into a `TextView`. See
 | `samples/jvm` | CIO | `./gradlew :samples:jvm:run` |
 | `samples/js` | Node.js/Js | `./gradlew :samples:js:jsNodeDevelopmentRun` |
 | `samples/apple` | Darwin (macOS-native) | `./gradlew :samples:apple:runDebugExecutableMacosArm64` |
-| `samples/android` | OkHttp (streams into a `TextView`) | `./gradlew :samples:android:assembleDebug` |
+| `samples/android` | OkHttp (streams into a `TextView`; consumes the android variant) | `./gradlew :samples:android:compileAndroidMain` |
 
 JVM, JS, and Apple are always built and compile in CI; `samples/android` is included only when
 an Android SDK is present. `./gradlew samplesCheck` compiles them (macOS host).
@@ -148,28 +149,28 @@ bash scripts/fetch-upstream-spec.sh
 ./gradlew :sdk:apiCheck         # binary-compatibility (public API) check — JVM ABI
 ```
 
-> `./gradlew build` is **not** the portable verification gate: it additionally enrolls host-dependent
-> lanes (the iOS simulator test, the JS browser test) that need a simulator/browser the
-> build host may not have. The iOS and non-host macOS targets are configured compile-only,
-> so `verificationCheck` is the portable completion command.
+> `verificationCheck` is the portable completion command: it is **host-aware**, running only the runtime lanes the
+> current host can execute (e.g. `macosArm64Test` + `iosSimulatorArm64Test` on an arm Mac, `mingwX64Test` on Windows)
+> while compiling every host-buildable target. The JS browser lane needs a browser and the iOS simulator lane needs
+> an installed simulator runtime, so those are enrolled in CI on runners that have them.
 
 ## Target support
 
 Full policy in [`docs/target-support.md`](docs/target-support.md). The scaffold currently
 exercises:
 
-| Target family | Current status |
-| --- | --- |
-| JVM | Compiles; fake-transport + Ktor `MockEngine` SSE streaming suites run and pass (CI-verified) |
-| macOS (`macosArm64`) | Compiles; fake-transport + Ktor `MockEngine` SSE streaming suites run and pass (CI-verified) |
-| iOS (`iosArm64`, `iosSimulatorArm64`, `iosX64`) | Compiles, compile-only (CI-verified via `verificationCheck`) |
-| macOS (`macosX64`) | Compiles, compile-only (CI-verified via `verificationCheck`); deprecated in Kotlin 2.3.20 (not yet removed), tracked as a follow-up |
-| JS (Node.js + browser) | Compiles (CI-verified) |
-| Android | Deferred — blocked by a plugin/AGP incompatibility |
-| Tier 2 (`linuxX64`, `linuxArm64`, `mingwX64`) | Deferred until CI covers them |
+Final 1.0 tiers are decided in [ADR 0007](docs/adr/0007-final-target-tiers-for-1-0.md); the evidence matrix (with a
+per-target column) is [`docs/target-support.md`](docs/target-support.md).
 
-Only lanes CI runs are called "verified" — the Apple compiles are enforced by the
-`verificationCheck` gate on the macOS CI job.
+| Tier | Targets | Runtime evidence |
+| --- | --- | --- |
+| 1 | `jvm`, `android`, `macosArm64`, `iosSimulatorArm64`, `iosArm64` | Common + real-engine suites on JVM / android host / macOS / iOS simulator (PR CI); `iosArm64` device and Android device tests not executed (disclosed) |
+| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | Common + real-engine suites on Linux x64/arm64, Windows, Node.js, and headless Chrome (PR CI) |
+| 2 (deprecated) | `macosX64`, `iosX64` | Compile + klib ABI on PRs; runtime lanes nightly on `macos-15-intel` (deprecated upstream since Kotlin 2.3.20) |
+| 3 | `wasmJs` | Declared, not published — blocked until the kotlin-sdkgen runtime ships a wasmJs variant (`scripts/wasm-probe.sh`) |
+
+Every runtime lane runs the common **and** real-Ktor `engineTest` suites via the `runRealTime` harness. Only lanes CI
+runs are called "verified"; every non-executed lane is disclosed in the target-support matrix.
 
 ## Layout
 

@@ -398,24 +398,7 @@ See [security and privacy](./security-and-privacy.md).
 - Consumers accept adding a Ktor engine appropriate for each target.
 - All-KMP support uses tiers; it does not imply identical runtime testing on every target.
 
-## 15. Milestones
-
-Phase numbers match the implementation plan's Phases 0–7.
-
-| Phase | Outcome |
-| --- | --- |
-| 0 — Repository and contract baseline | Scaffold, pin spec, generate inventory, freeze decisions, compatibility baseline |
-| 1 — Generated SDK and runtime foundation | Client root, configuration, credentials, headers, failures, transport wiring |
-| 2 — Inference and streaming alpha | Chat/Responses/Messages, streaming, cancellation, retries, first samples |
-| 3 — Complete resource coverage beta | Every retained resource, pagination, binary/multipart, presence-state fixtures |
-| 4 — Target-family hardening | Final tier assignments, per-target samples and runtime tests, budgets |
-| 5 — Drift, compatibility, security, docs | Drift PRs, compatibility reports, threat model, reference docs |
-| 6 — Publication release candidate | Full publication set, isolated consumer matrix, Central rehearsal |
-| 7 — 1.0 | Complete parity, stable curated API, declared target matrix, Maven Central release |
-
-Detailed tasks and dependencies are in the [implementation plan](./plans/2026-07-23-openrouter-kotlin-implementation-plan.md).
-
-## 16. Open questions
+## 15. Open questions
 
 These questions do not block initial implementation:
 

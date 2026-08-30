@@ -1,9 +1,25 @@
+import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
+
+// Host detection from the public `os.name` / `os.arch` system properties (Gradle's `org.gradle.internal.os`
+// package is an unstable internal API and may change across Gradle upgrades). Evaluated once at configuration time.
+val osName: String = System.getProperty("os.name").lowercase()
+val hostIsMac: Boolean = osName.contains("mac") || osName.contains("darwin")
+val hostIsWindows: Boolean = osName.contains("windows")
+val hostIsLinux: Boolean = osName.contains("linux")
+val hostIsArm: Boolean = System.getProperty("os.arch").let { it == "aarch64" || it == "arm64" }
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.sdkgen)
+    // maven-publish creates the per-target publications the artifact-size budget measures. The KMP plugin populates
+    // them from the declared targets; no publication is configured by hand here.
+    `maven-publish`
+    // The Android KMP-library plugin is applied below only when the Android target is enabled, so a contributor
+    // on a bare box without an Android SDK can still build every other target.
+    alias(libs.plugins.android.kotlin.multiplatform.library) apply false
     // ktlint deferred: kotlin-sdkgen 0.3.0's ktlint auto-integration
     // (SdkGenPlugin.excludeGeneratedOutputFromKtlint) throws "argument type mismatch"
     // against ktlint-gradle 14.2.0 the moment the plugin is applied. Tracked as a
@@ -13,6 +29,20 @@ plugins {
 // Coordinates for local consumption by the sample subprojects and future publication.
 group = "io.github.nabobery"
 version = "0.1.0-SNAPSHOT"
+
+// The Android Tier 1 target needs an Android SDK. It is enabled automatically when one is present (mirroring the
+// settings.gradle.kts sample detection) and can be forced on/off with `-Popenrouter.androidTarget=true|false` — a
+// contributor on a bare Linux box (or the ubuntu-24.04-arm runner, which may lack aapt2 for arm64) opts out with
+// `-Popenrouter.androidTarget=false`, while CI on ubuntu-latest keeps it on via its bundled Android SDK.
+val androidSdkPresent =
+    System.getenv("ANDROID_HOME") != null ||
+        System.getenv("ANDROID_SDK_ROOT") != null ||
+        rootProject.file("local.properties").let { it.exists() && it.readText().contains("sdk.dir") }
+val androidTargetEnabled: Boolean =
+    providers.gradleProperty("openrouter.androidTarget").map { it.toBoolean() }.getOrElse(androidSdkPresent)
+if (androidTargetEnabled) {
+    apply(plugin = libs.plugins.android.kotlin.multiplatform.library.get().pluginId)
+}
 
 kotlin {
     explicitApi()
@@ -31,7 +61,13 @@ kotlin {
     }
     js {
         nodejs()
-        browser()
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
     }
     iosArm64()
     iosSimulatorArm64()
@@ -42,6 +78,23 @@ kotlin {
     linuxX64()
     linuxArm64()
     mingwX64()
+
+    // Android Tier 1 target (unblocked by kotlin-sdkgen 0.4.0's generated-source wiring, ADR 0022 D5). The plugin is
+    // applied imperatively (conditionally), so the type-safe `androidLibrary { }` accessor is not generated; the
+    // target is configured through its extension type instead. `withHostTestBuilder {}` creates the JVM-hosted
+    // `androidHostTest` lane that runs the common **and** real-engine (`engineTest`) suites — the engineTest edge is
+    // wired in the sourceSets block below; device tests need an emulator and are deferred. (AGP
+    // 9.2.1's KMP-library extension no longer exposes `compilerOptions`; the android compilation uses its default
+    // JVM target, which the AAR/klib consumers do not constrain the way the published `jvm` target does.)
+    if (androidTargetEnabled) {
+        extensions.configure(KotlinMultiplatformAndroidLibraryExtension::class.java) {
+            namespace = "com.nabobery.openrouter"
+            compileSdk = 36
+            minSdk = 26
+            @Suppress("UnstableApiUsage")
+            withHostTestBuilder {}
+        }
+    }
 
     sourceSets {
         commonMain.dependencies {
@@ -61,10 +114,11 @@ kotlin {
             implementation(libs.kotlinx.coroutines.test)
             implementation(libs.ktor.client.mock)
         }
-        // Real-engine test lanes (Ktor MockEngine under `runBlocking`, real time) shared by every host
-        // that can run them. A real Ktor engine hops dispatchers, so these must NOT use `runTest`'s
-        // virtual clock. `runBlocking` resolves on both the JVM and macosArm64 lanes; JS has no
-        // `runBlocking`, so the JS test task does not depend on this source set.
+        // Real-engine test lanes (Ktor MockEngine, real time via the `runRealTime` harness) shared by EVERY host
+        // test lane. A real Ktor engine hops dispatchers, so these must NOT use `runTest`'s virtual clock;
+        // `runRealTime` (runTest + Dispatchers.Default) is the cross-platform driver — it works on JS, which has no
+        // `runBlocking`. Attached to every runtime lane below; KGP disables a native test task on a host that cannot
+        // execute its target, so a lane only actually runs where its host can boot it.
         val engineTest = create("engineTest") {
             dependsOn(commonTest.get())
             dependencies {
@@ -72,9 +126,21 @@ kotlin {
             }
         }
         jvmTest.get().dependsOn(engineTest)
+        jsTest.get().dependsOn(engineTest) // Node + browser test tasks both derive from jsTest.
         macosArm64Test.get().dependsOn(engineTest)
-        // linuxX64 runs natively on ubuntu CI, so it shares the real-engine lane too.
+        macosX64Test.get().dependsOn(engineTest)
+        iosSimulatorArm64Test.get().dependsOn(engineTest)
+        iosX64Test.get().dependsOn(engineTest)
         linuxX64Test.get().dependsOn(engineTest)
+        linuxArm64Test.get().dependsOn(engineTest)
+        mingwX64Test.get().dependsOn(engineTest)
+        // The Android host lane runs the real-engine suite too, matching every other host lane. AGP's KMP-library
+        // plugin creates the `androidHostTest` source set (a normal test tree that already includes commonTest), so
+        // adding the engineTest edge is the missing link. Wired via `matching`/`configureEach` because AGP registers
+        // the source set lazily; ktor-client-mock's JVM artifact drives the real engine on the JVM-hosted lane.
+        if (androidTargetEnabled) {
+            sourceSets.matching { it.name == "androidHostTest" }.configureEach { dependsOn(engineTest) }
+        }
         // The opt-in live smoke test drives a real CIO engine against the OpenRouter API (JVM only).
         jvmTest.dependencies {
             implementation(libs.ktor.client.cio)
@@ -82,26 +148,33 @@ kotlin {
     }
 }
 
-// Every Apple target except the build host (macosArm64) is compile-only.
-// Removing their runtime test tasks from the lifecycle keeps `./gradlew build` from
-// executing simulator/device tests the host's Xcode cannot run (e.g. iosSimulatorArm64Test).
-// These tasks only exist on a macOS host, so `matching` is a no-op elsewhere.
-val compileOnlyAppleTargets = listOf("iosArm64", "iosSimulatorArm64", "iosX64", "macosX64")
-compileOnlyAppleTargets.forEach { target ->
-    tasks.matching { it.name == "${target}Test" }.configureEach { enabled = false }
+// Every native test task stays ENABLED. Kotlin/Native disables a test task on a host that cannot execute its target
+// (e.g. `macosX64Test`/`mingwX64Test`/`linuxArm64Test` on an arm macOS host print "disabled — cannot run on the
+// current host" and are skipped), so a lane runs only where its host can boot it. The host-aware `verificationCheck`
+// below asks only for the lanes the current host can actually run; CI schedules the rest on matching runners. This
+// replaces the earlier blanket `enabled = false` that hid these lanes even on the hosts that could run them.
+
+// iOS simulator runtime lane: pick the booted simulator device by name, overridable per host/CI image. CI on
+// CI passes its image's device explicitly. The local default follows the current Xcode image; override it with
+// -Popenrouter.iosSimulator=… when another simulator is installed.
+tasks.withType<KotlinNativeSimulatorTest>().configureEach {
+    device.set(providers.gradleProperty("openrouter.iosSimulator").orElse("iPhone 17 Pro"))
 }
 
-// Tier 2 native: linuxX64 runs natively on ubuntu CI; linuxArm64 and mingwX64 have no runner (they
-// cross-compile only), so disable their test tasks like the compile-only Apple targets.
-val compileOnlyNativeTargets = listOf("linuxArm64", "mingwX64")
-compileOnlyNativeTargets.forEach { target ->
-    tasks.matching { it.name == "${target}Test" }.configureEach { enabled = false }
+// AGP's android packaging/metadata tasks scan the android source-set directories (which include the generated
+// sources wired via kotlin-sdkgen 0.4.0) without declaring a dependency on the generation task, so a clean
+// android publish/assemble races generation. Make every such task run after generation. (Needed for the
+// artifact-size budget's publishToMavenLocal and for Android publication.)
+if (androidTargetEnabled) {
+    tasks.matching {
+        it.name.startsWith("prepareAndroidMain") ||
+            it.name.startsWith("mergeAndroidMain") ||
+            it.name.startsWith("bundleAndroidMain") ||
+            it.name.startsWith("generateAndroidMain")
+    }.configureEach { mustRunAfter("generateOpenrouterSdk") }
 }
 
-// The documented, host-safe verification gate used by CI. It compiles every declared target,
-// runs the runnable test lanes (JVM + macosArm64), and checks the public API baseline.
-// The generateOpenrouterSdk task is pulled in transitively as a compile dependency.
-// ktlint via CLI: the ktlint-gradle plugin cannot be applied (sdkgen 0.3.0's auto-integration
+// ktlint via CLI: the ktlint-gradle plugin cannot be applied (sdkgen's auto-integration
 // crashes on application against ktlint-gradle 14.2.0), so lint handwritten sources directly.
 // Generated sources live under build/ and are naturally out of scope.
 val ktlintCli: Configuration = configurations.create("ktlintCli")
@@ -125,25 +198,75 @@ tasks.register<JavaExec>("ktlintFormat") {
     workingDir = projectDir
 }
 
+tasks.register("checkSdkVersionConstant") {
+    group = "verification"
+    description = "Fails if SDK_VERSION in OpenRouterVersion.kt drifts from project.version."
+    val versionFile =
+        layout.projectDirectory.file("src/commonMain/kotlin/com/nabobery/openrouter/OpenRouterVersion.kt")
+    val projectVersion = project.version.toString()
+    inputs.file(versionFile)
+    inputs.property("projectVersion", projectVersion)
+    doLast {
+        val text = versionFile.asFile.readText()
+        val constant =
+            Regex("""SDK_VERSION:\s*String\s*=\s*"([^"]+)"""").find(text)?.groupValues?.get(1)
+                ?: throw GradleException("Could not find the SDK_VERSION constant in ${versionFile.asFile}.")
+        if (constant != projectVersion) {
+            throw GradleException(
+                "SDK_VERSION ('$constant') != project.version ('$projectVersion'); keep OpenRouterVersion.kt in lockstep.",
+            )
+        }
+    }
+}
+
+// Host-aware verification gate used by CI. It always compiles the host-agnostic targets (JVM, JS, and the three
+// Tier 2 native targets, which cross-compile from any host), adds the Apple compiles only on a macOS host (the
+// Apple toolchain is macOS-only), checks the public API baseline, lints, and runs only the runtime test lanes the
+// current host can actually execute. CI schedules the remaining native lanes on their matching runners.
+val verificationCompileTasks: List<String> =
+    buildList {
+        add("compileKotlinJvm")
+        add("compileKotlinJs")
+        add("compileKotlinLinuxX64")
+        add("compileKotlinLinuxArm64")
+        add("compileKotlinMingwX64")
+        if (hostIsMac) {
+            add("compileKotlinIosArm64")
+            add("compileKotlinIosSimulatorArm64")
+            add("compileKotlinIosX64")
+            add("compileKotlinMacosArm64")
+            add("compileKotlinMacosX64")
+        }
+        if (androidTargetEnabled) add("compileAndroidMain")
+    }
+
+val verificationHostTestLanes: List<String> =
+    buildList {
+        add("jvmTest")
+        add("jsNodeTest")
+        // Android host lane task is `testAndroidHostTest` (AGP KMP-library), not `androidHostTest`.
+        if (androidTargetEnabled) add("testAndroidHostTest")
+        when {
+            hostIsMac && hostIsArm -> {
+                add("macosArm64Test")
+                add("iosSimulatorArm64Test")
+            }
+            hostIsMac && !hostIsArm -> {
+                add("macosX64Test")
+                add("iosX64Test")
+            }
+            hostIsLinux && hostIsArm -> add("linuxArm64Test")
+            hostIsLinux -> add("linuxX64Test")
+            hostIsWindows -> add("mingwX64Test")
+        }
+    }
+
 tasks.register("verificationCheck") {
     group = "verification"
-    description = "Host-safe verification: compile all targets, run JVM + macOS tests, check API."
-    dependsOn(
-        "compileKotlinJvm",
-        "compileKotlinJs",
-        "compileKotlinIosArm64",
-        "compileKotlinIosSimulatorArm64",
-        "compileKotlinIosX64",
-        "compileKotlinMacosArm64",
-        "compileKotlinMacosX64",
-        "compileKotlinLinuxX64",
-        "compileKotlinLinuxArm64",
-        "compileKotlinMingwX64",
-        "jvmTest",
-        "macosArm64Test",
-        "apiCheck",
-        "ktlintCheck",
-    )
+    description = "Host-aware verification: compile all host-buildable targets, run the host's runtime lanes, check API."
+    dependsOn("checkSdkVersionConstant", "apiCheck", "ktlintCheck")
+    dependsOn(verificationCompileTasks)
+    dependsOn(verificationHostTestLanes)
 }
 
 sdkgen {

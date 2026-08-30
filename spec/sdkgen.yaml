@@ -21,12 +21,7 @@ overlays:
     conflictPolicy: fail
   - id: openrouter-full-spec-compat
     uri: overlays/full-spec-compat.yaml
-    sha256: d77a52a6bceda1d5696451f8c86040a17ebba389e674d8b1fca9e110ca23b5ee
-    zeroMatchPolicy: fail
-    conflictPolicy: fail
-  - id: openrouter-sse-payload
-    uri: overlays/sse-payload.yaml
-    sha256: 7575ac299572baa4e2d75848716160baf12326810322861180951985463f9da5
+    sha256: 24743575544b7d41e2a29b9014c6827d648e53ead74f7951b24308f0eb05164e
     zeroMatchPolicy: fail
     conflictPolicy: fail
 acceptedWaivers:

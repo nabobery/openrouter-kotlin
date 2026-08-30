@@ -2,7 +2,7 @@
 
 package com.nabobery.openrouter.files
 
-import com.nabobery.openrouter.FileListResponseNoMatchException
+import com.nabobery.openrouter.FileListResponse
 import com.nabobery.openrouter.FileListResponseSerializer
 import com.nabobery.openrouter.InlineFilesPostRequestMultipartX7e99eef0
 import com.nabobery.openrouter.OpenRouter
@@ -23,6 +23,9 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class FilesContractTest {
@@ -55,11 +58,10 @@ class FilesContractTest {
 
     private fun fileResponseBody() = body(fileJson("file_1"))
 
-    // A real OpenRouter *terminal* file-list page: OpenRouter sends `cursor: null` when there is no next page. The
-    // generated FileListResponse union branch predicate requires `cursor` to be present AND string-typed, so this
-    // (entirely normal) page fails every branch and decode throws — which is precisely why no curated `listAllFiles`
-    // walk is shipped. Recorded in docs/coverage/exception-register.md. The test below pins the defect rather than
-    // hiding it behind non-null string cursors.
+    // A real OpenRouter *terminal* file-list page: OpenRouter sends `cursor: null` when there is no next page. Under
+    // kotlin-sdkgen 0.4.0 the FileListResponse union branch predicate accepts an explicit JSON `null` for the
+    // nullable `cursor` property, so this (entirely normal) page decodes into the OpenRouter branch. Recorded in
+    // docs/coverage/exception-register.md; a curated `listAllFiles` cursor walk is possible but not currently exposed.
     private fun openRouterTerminalPageWithNullCursor(): String =
         """{"_shape":"openrouter","cursor":null,"data":[${fileJson("f1")}],""" +
             """"first_id":"f1","has_more":false,"last_id":"f1"}"""
@@ -143,16 +145,16 @@ class FilesContractTest {
     }
 
     @Test
-    fun terminalFileListPageWithNullCursorFailsToDecode_knownGeneratorDefect() {
-        // KNOWN GENERATOR DEFECT (docs/coverage/exception-register.md +
-        // docs/upstream/2026-08-29-kotlin-sdkgen-unknown-union-variant-proposal.md): the FileListResponse union
-        // branch predicate treats an explicit `cursor: null` as a non-match, so a normal terminal page — the shape
-        // OpenRouter actually returns for the last page — throws instead of decoding. This is exactly why a curated
-        // automatic file-list walk cannot be shipped as a working helper. When the generator is fixed to accept an
-        // explicit-null nullable branch field, this expectation must flip: the decode should succeed.
-        assertFailsWith<FileListResponseNoMatchException> {
-            SdkJson.decodeFromString(FileListResponseSerializer, openRouterTerminalPageWithNullCursor())
-        }
+    fun terminalFileListPageWithNullCursorDecodes() {
+        // kotlin-sdkgen 0.4.0 fixed the FileListResponse union branch predicate to accept an explicit `cursor: null`
+        // for the nullable branch field (docs/coverage/exception-register.md). The shape OpenRouter actually returns
+        // for the last page — `cursor: null`, `has_more: false` — now decodes into the OpenRouter branch instead of
+        // throwing FileListResponseNoMatchException, so a curated automatic file-list walk becomes possible.
+        val decoded = SdkJson.decodeFromString(FileListResponseSerializer, openRouterTerminalPageWithNullCursor())
+        val page = assertIs<FileListResponse.OpenRouterFileList>(decoded)
+        assertNull(page.cursor)
+        assertFalse(page.hasMore)
+        assertEquals(1, page.`data`.size)
     }
 
     @Test

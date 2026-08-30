@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
  * Lifecycle-safe streaming: the chat stream is collected on [lifecycleScope], so it is cancelled automatically
  * when the Activity is destroyed. The injected Ktor [HttpClient] owns a connection pool and coroutine scope, so
  * it is held as a field and closed in [onDestroy] (it survives configuration changes only within this Activity
- * instance; a real app would scope one client to the Application). Consumes the JVM variant of `:sdk` over OkHttp.
+ * instance; a real app would scope one client to the Application). Consumes the **android** variant of `:sdk` over
+ * OkHttp (this module is a `com.android.kotlin.multiplatform.library`, so it resolves `:sdk`'s androidJvm variant).
  */
 class MainActivity : ComponentActivity() {
     private var http: HttpClient? = null

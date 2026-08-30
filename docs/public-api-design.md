@@ -420,18 +420,17 @@ produced these deliberate deviations:
    runtime already protects ambiguous transport failures and partially emitted streams; lifecycle-contract tests pin
    those guarantees.
 
-**Hybrid client-defaults caveat.** Generated operations invoked directly take the *generated* defaults — which include
-**no retries** (`maxAttempts = 1`). Client-level retry/deadlines/observers apply only when a call passes
-`options = client.options()`; attribution and custom default headers apply to every call via the header-defaulting
-transport regardless. This gap is intentional and pinned by the `withoutOptionsThereIsNoRetry` lifecycle-contract
-test. If kotlin-sdkgen gains client-default injection, the wrapper can thin out around that capability.
+**Client defaults.** Generated operations inherit client-level retry, deadlines, observers, shared retry budget, and
+the User-Agent product token through `SdkClientConfig`. Callers use `options { }` only for per-call overrides and
+pagination bounds; attribution and custom default headers apply to every call via the header-defaulting transport.
 
 ## Inference and streaming implementation
 
-The inference and streaming alpha validates the curated inference surface against kotlin-sdkgen 0.3.0. All curated
-inference ops carry `options: CallOptions = CallOptions()`, mirroring the generated ops exactly, so the established
-hybrid-defaults rule ("pass `options = client.options()` to get client defaults") applies uniformly. Continuing the
-numbered list above:
+The inference and streaming surface is validated against kotlin-sdkgen 0.4.0. All curated inference ops carry
+`options: CallOptions = CallOptions()`, mirroring the generated ops exactly. The client defaults reach
+every call through `SdkClientConfig` (deltas 18–21 below), so `options { }` is per-call *overrides* only — the former
+hybrid rule ("pass `options = client.options()` to get client defaults") no longer applies. Continuing the numbered
+list above:
 
 5. **Curated inference overloads are extension functions on the generated clients.** `client.chat` stays the generated
    `ChatClient`; the curated `send`/`stream`/message-helpers/`messages { }` DSL are `com.nabobery.openrouter.chat`
@@ -476,16 +475,36 @@ numbered list above:
 13. **Byte-stream helpers** live in `com.nabobery.openrouter.io`: `byteStreamOf(bytes)`, `readAllBytes(maxBytes)`,
     `asFlow(chunkSize)` (cold; closes on completion/failure/cancellation with the corresponding cause).
 14. **Files:** `listFiles` returns the `_shape`-discriminated union and loses generated pagination flows. Curated
-    helpers are `FilesClient.upload` and `downloadBytes` only. There is deliberately **no** `listAllFiles` walk: the
-    generated union rejects an explicit `cursor: null`, which OpenRouter sends on the terminal page, so any automatic
-    walk would throw while decoding a normal last page (exception register + upstream proposal). `uploadFile` returns
-    `FileResponse`, and the multipart codec fixes part name/content-type (no curated `filename` param).
+    helpers are `FilesClient.upload` and `downloadBytes` only. A curated `listAllFiles` walk is now *possible* —
+    kotlin-sdkgen 0.4.0 fixed the explicit `cursor: null` decode that OpenRouter sends on the terminal page — but is
+    not currently exposed; only the generated multi-page flow over a union envelope remains unsupported (exception
+    register + upstream proposal). `uploadFile` returns `FileResponse`, and the multipart codec fixes part
+    name/content-type (no curated `filename` param).
 15. **STT:** curated `SttClient.transcribe(audio, model) { … }` over the multipart op.
 16. **`client.beta` is not present** — the 2026-08-29 contract GA'd Responses and Analytics, so no beta resources are
     generated. `@OpenRouterExperimentalApi` (WARNING-level opt-in) guards the pre-1.0 byte-stream/pagination/media
     helpers instead. `client.betaResponses` → `client.responses`; `betaAnalytics` removed.
 17. **Exception register** (`docs/coverage/exception-register.md`) records every omission/degradation; the coverage
     dashboard (`docs/coverage/operation-coverage.md`) is generated and CI-gated.
+
+### Client defaults reach every call
+
+18. **The hybrid gap is closed.** Client-level retry, deadlines, and observers are carried into every generated
+    executor through the runtime's `SdkClientConfig` at build time (kotlin-sdkgen 0.4.0, ADR 0022). A call made with
+    **no** `options` now retries, honours the client deadlines, and notifies the client observers — the former
+    `withoutOptionsThereIsNoRetry` behaviour is gone; its inverse
+    `ClientDefaultsContractTest.withoutOptionsClientRetryPolicyApplies` pins the new contract.
+19. **`options()` is per-call only.** `OpenRouter.options { … }` no longer re-emits the client defaults; it carries
+    the client-level pagination bounds (which are *not* part of `SdkClientConfig`) plus any per-call overrides. A
+    field left untouched stays at the runtime `Inherit` default, so the client value applies; a per-call
+    `retry`/`deadlines` override wins per the runtime precedence contract (ADR 0022 D2).
+20. **`User-Agent` product token.** Every call carries `openrouter-kotlin/<SDK_VERSION>` as the product token
+    (`SdkClientConfig.productToken`) when the transport can set that header. The reserved-header guard refuses a
+    caller-set `User-Agent`, so the SDK remains the sole owner of the product token. `SDK_VERSION` is kept in lockstep
+    with `project.version` by the `checkSdkVersionConstant` verification gate.
+21. **One shared retry budget.** `OpenRouterBuilder.retryBudget` (nullable `Int`, validated `>= 1`) sets a single
+    client-wide `RetryBudget` shared by the root facade and every resource client (ADR 0022 D2); `null` uses the
+    runtime default capacity. `ClientDefaultsContractTest.resourceClientsShareOneRetryBudget` pins the sharing.
 
 ### Streaming retry
 

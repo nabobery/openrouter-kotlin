@@ -38,33 +38,46 @@ jobs:
           python3 scripts/coverage-dashboard.py
           git diff --exit-code -- docs/coverage/operation-coverage.md
 
-      # Linux-runnable subset of the exit gate: JVM test lane (the fake-transport smoke
-      # test), JS cross-compile, and the JVM binary-compatibility check (apiCheck; klib /
-      # native ABI validation is not run here). The macOS/iOS lanes run in build-apple.
-      - name: Test (JVM), compile JS, API check, ktlint
-        run: ./gradlew :sdk:jvmTest :sdk:compileKotlinJs :sdk:apiCheck :sdk:ktlintCheck --console=plain
+      # The host-aware verification gate on ubuntu x64: compiles JVM/JS/all-three-native/android, runs the runtime
+      # lanes this host can execute (jvmTest, jsNodeTest, linuxX64Test, testAndroidHostTest — each common +
+      # real-engine `engineTest`), and checks the public API baseline (JVM ABI; android enabled so it validates the
+      # api/jvm dump), the SDK version constant, and ktlint. ubuntu-latest ships an Android SDK, so ANDROID_HOME is
+      # set and the Android Tier 1 target participates. Apple targets are macOS-only (covered by build-apple).
+      - name: Host-aware verification gate (compile all, JVM/JS-Node/linuxX64/androidHost lanes, API, ktlint)
+        run: ./gradlew :sdk:verificationCheck --console=plain
 
-      # Tier 2 native: compile all three targets (linuxX64/linuxArm64/mingwX64) and run the linuxX64 test
-      # lane natively on ubuntu (common + engineTest). linuxArm64/mingwX64 have no runner, so compile-only.
-      - name: Tier 2 native compile + linuxX64 test lane
-        run: ./gradlew :sdk:compileKotlinLinuxX64 :sdk:compileKotlinLinuxArm64 :sdk:compileKotlinMingwX64 :sdk:linuxX64Test --console=plain
+      # The headless-Chrome browser runtime lane is not in verificationCheck (it needs a browser); ubuntu-latest
+      # ships Chrome, so run it here.
+      - name: JS browser runtime lane (headless Chrome)
+        run: ./gradlew :sdk:jsBrowserTest --console=plain
 
-      # Compile the JVM and JS sample consumers (no network). The macOS-native sample compiles in build-apple
-      # (via samplesCheck); the Android sample compiles only when the runner's Android SDK made it part of the
-      # build (ubuntu runners ship one, so this includes it opportunistically).
-      - name: Compile sample consumers (JVM, JS)
-        run: ./gradlew :samples:jvm:compileKotlin :samples:js:compileKotlinJs --console=plain
+      # Host-aware sample consumers (no network): JVM (CIO), JS Node + browser, native-desktop (compiles all three
+      # native klibs, links the linuxX64 executable on this host), and — when the Android SDK made it part of the
+      # build — the android-variant KMP-library sample. The macOS-native/iOS samples build in build-apple.
+      - name: Compile sample consumers (host-aware samplesCheck)
+        run: ./gradlew samplesCheck --console=plain
 
-      - name: Assemble Android sample (when an Android SDK is present)
-        if: env.ANDROID_HOME != ''
-        run: ./gradlew :samples:android:assembleDebug --console=plain
+      # Compile-time & warning budget. kotlin-sdkgen 0.4.0 makes the generated JVM compile warning-free, which is
+      # locked at 0. Compile time is noisy, so the hosted runner gets a wide +50% ceiling that catches large
+      # regressions without treating the baseline as a performance target. JVM-only to bound cost.
+      - name: Compile-time & warning budget (JVM)
+        run: |
+          python3 scripts/budgets_test.py
+          ./scripts/measure-compile.sh compileKotlinJvm --out-dir build/budgets
+          python3 scripts/budgets.py check docs/budgets/compile-times.json build/budgets/compile-times.json --tolerance 0.5
+          python3 scripts/budgets.py check docs/budgets/warnings.json build/budgets/warnings.json --tolerance 0
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: compile-budget
+          path: build/budgets/
 
   build-apple:
-    # The full, host-safe verification gate. verificationCheck compiles every declared target
-    # (JVM, JS, iosArm64, iosSimulatorArm64, iosX64, macosArm64, macosX64), runs the
-    # runnable test lanes (JVM + macosArm64), and checks the public API baseline. iOS and
-    # non-host macOS targets are compile-only (no device/simulator execution).
-    runs-on: macos-14
+    # The full, host-aware verification gate on Apple silicon. On a macOS arm64 host verificationCheck compiles
+    # every declared target and runs the JVM, JS Node, macosArm64, and iosSimulatorArm64 runtime lanes (common +
+    # real-engine suites) plus the public-API baseline (JVM + klib ABI). iosArm64 is a device target (not executed);
+    # the deprecated Intel lanes (macosX64/iosX64) run nightly on macos-15-intel.
+    runs-on: macos-15 # macos-14 is deprecated by GitHub; macos-15 is arm64 with an iOS 18 simulator ("iPhone 16")
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
@@ -73,5 +86,58 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
 
-      - name: SDK verification + sample compile (all targets, JVM + macOS tests, API check, samples)
-        run: ./gradlew :sdk:verificationCheck samplesCheck --console=plain
+      - name: SDK verification + sample compile (all targets; JVM/JS/macOS/iOS-sim tests; API check; samples)
+        run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.iosSimulator="iPhone 16" --console=plain
+
+      # iOS Swift consumer: build the sample-owned XCFramework and compile/link the Swift executable against it
+      # (no network). This is the Tier 1 iOS "consumer sample" evidence.
+      - name: iOS Swift consumer (XCFramework facade)
+        run: ./scripts/ios-consumer-check.sh
+
+      # Artifact-size budget: the macOS job can publish every target (JVM, android, JS, and all native klibs incl.
+      # Apple), so it measures and gates the FULL baseline (+10%). Android is forced on (macos-15 ships an Android
+      # SDK) so the aar is produced and the measured set is complete — the checker now fails if any baseline artifact
+      # is missing from the measurement, so a partial run cannot pass the gate. Linux cannot compile the Apple klibs,
+      # so the size gate lives here.
+      - name: Artifact-size budget (+10%)
+        run: |
+          python3 scripts/budgets_test.py
+          ./scripts/measure-artifacts.sh -Popenrouter.androidTarget=true
+          python3 scripts/budgets.py check docs/budgets/artifact-sizes.json build/budgets/measured.json
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: artifact-sizes
+          path: build/budgets/measured.json
+
+  build-linux-arm64:
+    # Native runtime lane on Linux arm64 (free for public repos). The host-aware gate runs linuxArm64Test here (the
+    # only host that can). The Android target is forced off: the arm64 image may lack an arm aapt2, and the android
+    # host lane is already covered on build-linux.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Host-aware verification gate + samples (runs linuxArm64Test; links the linuxArm64 sample executable)
+        run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
+
+  build-windows:
+    # Native runtime lane on Windows (free for public repos). The host-aware gate runs mingwX64Test here, plus the
+    # host-agnostic jvmTest and jsNodeTest. First run downloads the Kotlin/Native MinGW toolchain (several minutes).
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+
+      - name: Host-aware verification gate + samples (runs mingwX64Test; links the WinHttp sample executable)
+        shell: bash
+        run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain

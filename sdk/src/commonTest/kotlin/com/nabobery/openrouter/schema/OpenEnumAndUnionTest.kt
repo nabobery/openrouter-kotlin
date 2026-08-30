@@ -21,7 +21,7 @@ import kotlin.test.assertTrue
 /**
  * Open enums preserve unknown values (`SdkUnknown`, round-trips byte-identical); discriminated unions are strict —
  * an unknown discriminator throws the union's `NoMatchException` at decode (a documented forward-compat gap,
- * `docs/coverage/exception-register.md` + `docs/upstream/2026-08-29-kotlin-sdkgen-unknown-union-variant-proposal.md`).
+ * recorded in `docs/coverage/exception-register.md`).
  */
 class OpenEnumAndUnionTest {
     private fun <T> assertUnknownRoundTrip(serializer: KSerializer<T>, wireValue: String, assertUnknown: (T) -> Unit) {

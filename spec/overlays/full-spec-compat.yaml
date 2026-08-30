@@ -1,7 +1,10 @@
 overlay: 1.1.0
 info:
   title: OpenRouter full-spec StandardProjection compatibility overlay
-  version: 2.0.0
+  # v2.1.0 (2026-08-30): each x-sdkgen-streaming block declares `payloadProperty: data`, so kotlin-sdkgen 0.4.0
+  #   projects each SSE `data:` field to the envelope's `data` property type natively. This retires the separate
+  #   sse-payload.yaml overlay (which hand-rewrote each text/event-stream schema to unwrap the Speakeasy envelope).
+  version: 2.1.0
 actions:
 - target: $['paths']['/embeddings']['post']['responses']['200']['content']['text/event-stream']
   remove: true
@@ -14,6 +17,7 @@ actions:
       requestFlag: stream
       responseContentType: text/event-stream
       sentinel: "[DONE]"
+      payloadProperty: data
 - target: "$['paths']['/chat/completions']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
   remove: true
 - target: "$['paths']['/images']['post']"
@@ -23,6 +27,7 @@ actions:
       requestFlag: stream
       responseContentType: text/event-stream
       sentinel: "[DONE]"
+      payloadProperty: data
 - target: "$['paths']['/images']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
   remove: true
 - target: "$['paths']['/byok']['get']"
@@ -188,6 +193,7 @@ actions:
       requestFlag: stream
       responseContentType: text/event-stream
       sentinel: "[DONE]"
+      payloadProperty: data
 - target: "$['paths']['/messages']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
   remove: true
 - target: "$['paths']['/responses']['post']"
@@ -197,6 +203,7 @@ actions:
       requestFlag: stream
       responseContentType: text/event-stream
       sentinel: "[DONE]"
+      payloadProperty: data
 - target: "$['paths']['/responses']['post']['responses']['200']['content']['text/event-stream']['x-speakeasy-sse-sentinel']"
   remove: true
 # StandardProjection rejects an allOf property when its type or nullability differs across branches. OverlayApplicator

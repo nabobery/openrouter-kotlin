@@ -51,14 +51,13 @@ invent server behavior.
 
 ### Overlay inventory
 
-Three overlays are pinned in [`spec/sdkgen.yaml`](../spec/sdkgen.yaml) (each with an `id`, `uri`, and `sha256`) and
+Two overlays are pinned in [`spec/sdkgen.yaml`](../spec/sdkgen.yaml) (each with an `id`, `uri`, and `sha256`) and
 applied in declaration order:
 
 | Id | File | Purpose | Removal condition |
 | --- | --- | --- | --- |
 | `openrouter-allof-resolution-audit` | `spec/overlays/allof-resolution-audit.yaml` | Audited `x-sdkgen-allof-resolution` overrides that select the refined protocol-specific `allOf` branch for object-merge conflicts (`/messages`, `/responses`). **Re-audited to v1.1.0 for the 2026-08-29 re-pin** — the Responses GA reshaping drifted nine content digests, each re-derived mechanically from the generator's diagnostics. | kotlin-sdkgen resolves divergent-`allOf` composition without per-property audit hints. |
-| `openrouter-full-spec-compat` | `spec/overlays/full-spec-compat.yaml` | StandardProjection compatibility: removes the `/embeddings` and `/rerank` `text/event-stream` nodes and stamps `x-sdkgen-streaming` metadata on the real streaming paths. **The `/files` `x-sdkgen-pagination` block was removed at the 2026-08-29 re-pin** (`FileListResponse` became a discriminated `oneOf` the generator cannot paginate). | kotlin-sdkgen handles the full spec's streaming metadata and non-streaming endpoints without projection fixes, and paginates over discriminated response envelopes. |
-| `openrouter-sse-payload` | `spec/overlays/sse-payload.yaml` | Unwraps the Speakeasy SSE event envelope: re-points each `text/event-stream` schema at its payload type so the four streaming ops decode `Flow<ChatStreamChunk>` / `Flow<StreamEvents>` / `Flow<MessagesStreamEvents>` / `Flow<ImageStreamEvent>` (adds the `ImageStreamEvent` named union). Without it every generated `*Stream` op throws `SdkSerializationException` on its first real event (proven by `StreamingWireTruthTest`). | kotlin-sdkgen unwraps SSE envelopes natively; then delete the overlay, regenerate, and re-baseline. |
+| `openrouter-full-spec-compat` | `spec/overlays/full-spec-compat.yaml` | StandardProjection compatibility: removes the `/embeddings` and `/rerank` `text/event-stream` nodes and stamps `x-sdkgen-streaming` metadata on the real streaming paths. Each streaming block declares **`payloadProperty: data`** (v2.1.0, 2026-08-30), so kotlin-sdkgen 0.4.0 projects each SSE `data:` field to the envelope's payload type natively — this retired the separate `sse-payload.yaml` overlay. **The `/files` `x-sdkgen-pagination` block was removed at the 2026-08-29 re-pin** (`FileListResponse` became a discriminated `oneOf` the generator cannot paginate). | kotlin-sdkgen infers SSE payloads without the `payloadProperty` hint, or OpenRouter stops describing envelopes; and paginates over discriminated response envelopes. |
 
 ### Re-pin log
 

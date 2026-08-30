@@ -8,7 +8,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteReadChannel
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.put
@@ -23,13 +22,12 @@ import kotlin.test.assertTrue
  * Proves credential -> SecuritySchemeAuthentication -> KtorSdkTransport -> decode, end to end on a
  * real Ktor pipeline (MockEngine), for both an inference POST and a management GET, plus a typed error.
  *
- * These run under [runBlocking] (real time) rather than `runTest`: a real Ktor engine hops dispatchers,
- * so under virtual time the operation's baked-in metadata deadline races the MockEngine response. This
- * mirrors the upstream adapter conformance suite, which drives every real-engine test with runBlocking.
+ * These run under [runRealTime] (`runTest` + `Dispatchers.Default`, real time) rather than plain `runTest`:
+ * a real Ktor engine hops dispatchers, so under virtual time the operation's baked-in metadata deadline races
+ * the MockEngine response.
  *
- * This test lives in the shared `engineTest` source set, so the same MockEngine lane runs on both the
- * JVM and macosArm64 test tasks (`runBlocking` resolves on both). JS has no `runBlocking` and does not
- * depend on `engineTest`.
+ * This test lives in the shared `engineTest` source set, so the same MockEngine lane runs on every host test
+ * task — JVM, Native, and JS (`runRealTime` is the cross-platform replacement for `runBlocking`, which JS lacks).
  */
 class KtorTransportLifecycleTest {
     private val apiKey = "sk-or-ktor-secret"
@@ -51,7 +49,7 @@ class KtorTransportLifecycleTest {
     }
 
     @Test
-    fun inferenceRoundTripThroughKtor() = runBlocking {
+    fun inferenceRoundTripThroughKtor() = runRealTime {
         var seenAuth: String? = null
         var seenReferer: String? = null
         var seenTitle: String? = null
@@ -90,7 +88,7 @@ class KtorTransportLifecycleTest {
     }
 
     @Test
-    fun managementRoundTripThroughKtor() = runBlocking {
+    fun managementRoundTripThroughKtor() = runRealTime {
         var seenPath: String? = null
         val httpClient =
             HttpClient(MockEngine) {
@@ -121,7 +119,7 @@ class KtorTransportLifecycleTest {
     }
 
     @Test
-    fun typedErrorFromKtorCarriesStatusAndRedactsSecret() = runBlocking {
+    fun typedErrorFromKtorCarriesStatusAndRedactsSecret() = runRealTime {
         val httpClient =
             HttpClient(MockEngine) {
                 engine {

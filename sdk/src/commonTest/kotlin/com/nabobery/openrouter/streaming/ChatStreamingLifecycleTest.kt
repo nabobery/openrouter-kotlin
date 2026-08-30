@@ -16,10 +16,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
@@ -31,7 +31,6 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
-import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -187,11 +186,14 @@ class ChatStreamingLifecycleTest {
         assertTrue(stream.closed)
     }
 
+    // The client's streamIdle deadline reaches a streaming call through SdkClientConfig even with no
+    // options(): the runtime folds client deadlines into a call that supplies none. This inverts the former
+    // `noStreamIdleDeadlineWithoutOptions` pin, which held only while defaults lived in options().
     @Test
-    fun noStreamIdleDeadlineWithoutOptions() = runTest {
+    fun streamIdleDeadlineAppliesWithoutOptions() = runTest {
         val gate = ChunkGate()
         val server = SseFakeServer()
-        server.sse(
+        val stream = server.sse(
             SseWireFixtures.chatChunk(content = "a"),
             SseWireFixtures.chatChunk(content = "b"),
             SseWireFixtures.DONE,
@@ -199,18 +201,14 @@ class ChatStreamingLifecycleTest {
         )
         val client = openRouterOver(server, deadlines = RequestDeadlines(streamIdle = 2.seconds))
 
-        val received = Channel<ChatStreamEvent>(Channel.UNLIMITED)
-        // No `options = client.options()` -> the client's idle deadline does not apply under hybrid defaults.
-        val job = launch { client.chat.stream(SseWireFixtures.userChatRequest()).collect { received.send(it) } }
-        received.receive()
-        advanceTimeBy(1.hours)
-        runCurrent()
+        val ex =
+            assertFailsWith<SdkTimeoutException> {
+                // gate never released after chunk 0 -> the next read stalls past the client idle deadline
+                client.chat.stream(SseWireFixtures.userChatRequest()).collect { }
+            }
 
-        assertTrue(job.isActive)
-        gate.release(0)
-        gate.release(1)
-        gate.release(2)
-        job.join()
+        assertEquals(TimeoutPhase.STREAM_IDLE, ex.phase)
+        assertTrue(stream.closed)
     }
 
     @Test
@@ -313,5 +311,22 @@ class ChatStreamingLifecycleTest {
 
         assertFalse(ex.toString().contains(secret))
         assertFalse((ex.message ?: "").contains(secret))
+    }
+
+    // A large (10,000-event) stream decodes to completion event-by-event: the decoder pulls one event at a time and
+    // terminates cleanly at scale, never getting stuck or dropping events. This pins "streaming decodes incrementally
+    // to completion" on EVERY lane — JVM, Native, iOS, and JS — since it lives in commonTest. (It does not by itself
+    // prove a bounded heap: the fixture pre-builds all chunks. The bounded-diagnostics guarantee is pinned by
+    // ChatStreamingFramingTest.malformedEventAfterValidEventsFailsWithBoundedDiagnostics.)
+    @Test
+    fun largeEventStreamDecodesIncrementallyToCompletion() = runTest {
+        val server = SseFakeServer()
+        val chunks = Array(10_000) { SseWireFixtures.chatChunk(content = "t$it ") } + SseWireFixtures.DONE
+        server.sse(*chunks)
+        val client = openRouterOver(server)
+
+        val decoded = client.chat.stream(SseWireFixtures.userChatRequest()).count()
+
+        assertEquals(10_000, decoded)
     }
 }

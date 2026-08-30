@@ -13,7 +13,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -21,14 +20,14 @@ import kotlin.test.assertTrue
 
 /**
  * Real-engine pagination lane over Ktor `MockEngine`, shared by the JVM and macosArm64 test tasks via the
- * `engineTest` source set. Runs under `runBlocking` (real time) with generous timeouts, like the streaming lane.
+ * `engineTest` source set. Runs under `runRealTime` (real time) with generous timeouts, like the streaming lane.
  * Proves the generated offset flows walk and cancel correctly through a real Ktor pipeline.
  */
 class KtorPaginationEngineTest {
     private val credential = OpenRouterCredentials.static("sk-or-page-engine")
 
     @Test
-    fun pagesWalkThroughKtor() = runBlocking {
+    fun pagesWalkThroughKtor() = runRealTime {
         val http =
             HttpClient(MockEngine) {
                 engine {
@@ -62,7 +61,7 @@ class KtorPaginationEngineTest {
     }
 
     @Test
-    fun cancellationMidWalkThroughKtor() = runBlocking {
+    fun cancellationMidWalkThroughKtor() = runRealTime {
         val secondPageCancelled = CompletableDeferred<Unit>()
         val http =
             HttpClient(MockEngine) {

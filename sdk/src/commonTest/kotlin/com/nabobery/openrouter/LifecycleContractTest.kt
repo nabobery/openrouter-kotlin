@@ -13,9 +13,6 @@ import com.nabobery.sdkgen.testing.FakeTransport
 import com.nabobery.sdkgen.testing.assertClosedNormally
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.put
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -26,34 +23,15 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class LifecycleContractTest {
-    private val apiKey = "sk-or-lifecycle-secret"
-    private val credential = OpenRouterCredentials.static(apiKey)
+    private val apiKey = LifecycleFixtures.API_KEY
+    private val credential = LifecycleFixtures.credential
+    private val jsonHeaders = LifecycleFixtures.jsonHeaders
 
-    private fun chatSuccessBody(id: String = "chat-fixture"): FakeByteStream = FakeByteStream(
-        listOf(
-            (
-                "{\"choices\":[],\"created\":1,\"id\":\"$id\",\"model\":\"test\"," +
-                    "\"object\":\"chat.completion\",\"system_fingerprint\":null}"
-                ).encodeToByteArray(),
-        ),
-    )
+    private fun chatSuccessBody(id: String = "chat-fixture"): FakeByteStream = LifecycleFixtures.chatSuccessBody(id)
 
-    private fun errorBody(code: Int): FakeByteStream =
-        FakeByteStream(listOf("{\"error\":{\"code\":$code,\"message\":\"e$code\"}}".encodeToByteArray()))
+    private fun errorBody(code: Int): FakeByteStream = LifecycleFixtures.errorBody(code)
 
-    private val jsonHeaders = listOf(SdkHeader("Content-Type", "application/json"))
-
-    private fun chatRequest(): ChatRequest = chatRequest {
-        messages =
-            listOf(
-                SdkJson.decodeFromJsonElement(
-                    buildJsonObject {
-                        put("role", "user")
-                        put("content", "hello")
-                    },
-                ),
-            )
-    }
+    private fun chatRequest(): ChatRequest = LifecycleFixtures.chatRequest()
 
     private fun root(
         transport: FakeTransport,
@@ -86,20 +64,9 @@ class LifecycleContractTest {
         success.assertClosedNormally()
     }
 
-    // 2. Without options(), the generated default (maxAttempts=1) never retries — pins the hybrid gap.
-    @Test
-    fun withoutOptionsThereIsNoRetry() = runTest {
-        val transport =
-            FakeTransport()
-                .enqueueResponse(429, jsonHeaders, errorBody(429))
-                .enqueueResponse(200, jsonHeaders, chatSuccessBody())
-        val client = root(transport)
-
-        assertFailsWith<ChatClient.SendChatCompletionRequestApiException> {
-            client.chat.sendChatCompletionRequest(chatRequest())
-        }
-        assertEquals(1, transport.capturedRequests.size)
-    }
+    // 2. The former `withoutOptionsThereIsNoRetry` pin was removed when the hybrid gap closed: client
+    //    defaults now reach every call through SdkClientConfig, so a call without options() DOES retry. Its
+    //    inverse is `ClientDefaultsContractTest.withoutOptionsClientRetryPolicyApplies`.
 
     // 3. A non-allowlisted 500 is not retried even with options() — protects billable POSTs.
     @Test
