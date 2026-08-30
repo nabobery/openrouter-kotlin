@@ -73,15 +73,23 @@ class OpenRouterConstructionTest {
         }
     }
 
+    // A plain options() leaves retry at Inherit: the client default now reaches the call through SdkClientConfig,
+    // not by being re-emitted into CallOptions. A per-call retry override still materialises Replace/Disabled.
     @Test
-    fun optionsRetryIsReplaceForDefaultPolicy() {
+    fun optionsRetryIsInheritByDefault() {
         val options = root(retryPolicy = RetryPolicy.Default).options()
+        assertEquals(PolicyOverride.Inherit, options.retry)
+    }
+
+    @Test
+    fun perCallRetryOverrideIsReplace() {
+        val options = root(retryPolicy = RetryPolicy.None).options { retry(RetryPolicy.Default) }
         assertIs<PolicyOverride.Replace<*>>(options.retry)
     }
 
     @Test
-    fun optionsRetryIsDisabledForNonePolicy() {
-        val options = root(retryPolicy = RetryPolicy.None).options()
+    fun perCallRetryOverrideIsDisabled() {
+        val options = root(retryPolicy = RetryPolicy.Default).options { retry(RetryPolicy.None) }
         assertEquals(PolicyOverride.Disabled, options.retry)
     }
 
@@ -91,10 +99,13 @@ class OpenRouterConstructionTest {
         assertEquals("abc", options.headers.single { it.name == "X-Correlation-ID" }.value)
     }
 
+    // Client deadlines now live in SdkClientConfig, so a plain options() carries none; a per-call override does.
     @Test
-    fun optionsCarriesClientDeadlines() {
-        val options = root(deadlines = RequestDeadlines(total = 30.seconds)).options()
-        val deadlines = assertNotNull(options.deadlines)
+    fun optionsCarriesNoClientDeadlinesButOverrideDoes() {
+        assertNull(root(deadlines = RequestDeadlines(total = 30.seconds)).options().deadlines)
+
+        val overridden = root().options { deadlines(RequestDeadlines(total = 30.seconds)) }
+        val deadlines = assertNotNull(overridden.deadlines)
         assertEquals(30_000L, deadlines.totalMillis)
         assertNull(deadlines.attemptMillis)
         assertNull(deadlines.idleMillis)

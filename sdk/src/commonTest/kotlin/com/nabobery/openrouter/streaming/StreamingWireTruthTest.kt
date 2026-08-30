@@ -17,17 +17,19 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 
 /**
  * Wire-truth proof: fed OpenRouter's documented SSE wire format ([SseWireFixtures], top-level
  * payload with no Speakeasy `{ "data": … }` envelope), the four generated `*Stream` operations
  * decode the payload directly into its typed model.
  *
- * Before the sse-payload overlay every operation threw `SdkSerializationException` because the generated decoder
- * expected the envelope. The overlay
- * re-points each `text/event-stream` schema at its payload type, so `chat` yields `ChatStreamChunk`,
- * `responses` yields `StreamEvents`, `messages` yields `MessagesStreamEvents`, and `images` yields
- * `ImageStreamEvent`.
+ * Before `payloadProperty` selection every operation threw `SdkSerializationException` because the generated decoder
+ * expected the whole Speakeasy envelope. kotlin-sdkgen 0.4.0's `x-sdkgen-streaming.payloadProperty: data`
+ * (declared in `full-spec-compat.yaml`, which retired the separate `sse-payload.yaml` schema-rewrite overlay)
+ * projects each `text/event-stream` element type to the envelope's `data` property type, so `chat` yields
+ * `ChatStreamChunk`, `responses` yields `StreamEvents`, `messages` yields `MessagesStreamEvents`, and `images`
+ * yields the image stream union (`InlineImageStreamingResponseDataX83955361`, the `data` property's anyOf type).
  */
 class StreamingWireTruthTest {
     private val credential = OpenRouterCredentials.static("sk-or-wire")
@@ -115,6 +117,9 @@ class StreamingWireTruthTest {
                     },
                 ).toList()
         assertEquals(1, events.size)
+        // payloadProperty projects the element type to the `data` anyOf union; the documented
+        // `image_generation.partial_image` payload decodes into its ImageGenPartialImageEvent branch.
+        assertNotNull(events.single().imageGenPartialImageEvent)
         body.assertClosedNormally()
     }
 }

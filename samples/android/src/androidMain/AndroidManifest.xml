@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Library module: it declares only the network permission it needs; a consuming app registers MainActivity. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

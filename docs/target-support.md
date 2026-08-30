@@ -5,31 +5,45 @@
 OpenRouter Kotlin publishes for actively maintained Kotlin target families that are materially useful for an HTTP client.
 Support is tiered by evidence, not marketing language.
 
-## Initial target-family matrix
+## Target matrix (evidence-based)
 
-| Tier | Target families | Required evidence |
-| --- | --- | --- |
-| 1 | JVM, Android, iOS (`iosArm64`, `iosSimulatorArm64`, `iosX64`), macOS (`macosArm64`, `macosX64`) | Compile, API validation, shared contract tests, Ktor transport tests, sample consumer |
-| 2 | Linux (`linuxX64`, `linuxArm64`), Windows (`mingwX64`), JS browser and Node.js | Compile, API/serialization tests, selected transport tests, smoke consumer |
-| 3 | Wasm JS and other actively maintained Kotlin targets with viable Ktor support | Compile and focused compatibility tests; experimental label |
+The tier assignments are decided in [ADR 0007](adr/0007-final-target-tiers-for-1-0.md); this table is the evidence
+mirror. **Compile** = the declared target compiles (from any host for native; Apple only on macOS). **klib ABI** =
+`apiCheck` validates the klib dump. **Common** / **Engine** = the fake-transport common suites / the real-Ktor
+`MockEngine` `engineTest` lane run on that target (`engineTest` runs on every lane via the `runRealTime` harness).
+The streaming lane is no longer compile-only anywhere a host runner exists.
 
-The exact Gradle target list is validated against the selected Kotlin and Ktor versions. A target is not
-published merely because Kotlin can declare it; HTTP engine availability and consumer value must exist.
+| Target | Tier | Compile | klib ABI | Common suites | Engine (`engineTest`) | Runtime lane | Sample |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `jvm` | 1 | ✅ | JVM ABI | ✅ | ✅ | `jvmTest` (PR) | jvm (CIO) |
+| `android` | 1 | ✅ | JVM ABI (`api/jvm`) | ✅ | — (host lane runs common) | `testAndroidHostTest` (PR); **device tests not run** | android (OkHttp) |
+| `macosArm64` | 1 | ✅ | ✅ | ✅ | ✅ | `macosArm64Test` (PR) | apple (Darwin) |
+| `iosSimulatorArm64` | 1 | ✅ | ✅ | ✅ | ✅ | `iosSimulatorArm64Test` (PR, macos-15) | ios (Swift/XCFramework) |
+| `iosArm64` | 1 | ✅ | ✅ | — | — | **device — not executed** | ios (Swift/XCFramework) |
+| `linuxX64` | 2 | ✅ | ✅ | ✅ | ✅ | `linuxX64Test` (PR, ubuntu) | native-desktop (CIO) |
+| `linuxArm64` | 2 | ✅ | ✅ | ✅ | ✅ | `linuxArm64Test` (PR, ubuntu-24.04-arm) | native-desktop (CIO) |
+| `mingwX64` | 2 | ✅ | ✅ | ✅ | ✅ | `mingwX64Test` (PR, windows) | native-desktop (WinHttp) |
+| `js` (Node) | 2 | ✅ | ✅ | ✅ | ✅ | `jsNodeTest` (PR) | js (Js) |
+| `js` (browser) | 2 | ✅ | ✅ | ✅ | ✅ | `jsBrowserTest` (PR, headless Chrome) | browser (Js) |
+| `macosX64` | 2 (deprecated) | ✅ | ✅ | ✅ | ✅ | `macosX64Test` (**nightly**, macos-15-intel) | — |
+| `iosX64` | 2 (deprecated) | ✅ | ✅ | ✅ | ✅ | `iosX64Test` (**nightly**, macos-15-intel) | — |
+| `wasmJs` | 3 | ❌ blocked upstream | — | — | — | `scripts/wasm-probe.sh` (fails until runtime ships wasmJs) | — |
 
-Generator dependency note: `kotlin-sdkgen` 0.1.0 published its runtime for arm64 Apple targets only. Version 0.2.0
-added `iosX64` and `macosX64`, and this matrix's Tier 1 builds against them. Wasm JS is not yet a generator runtime
-target and stays Tier 3/experimental.
+### Not executed (explicit disclosure)
 
-Streaming evidence (2026-08-28): on **JVM** and **macOS** (`macosArm64`), streaming is tested with the Ktor
-`MockEngine` SSE lane (`engineTest` source set) in addition to the fake-transport common suites — see
-[`docs/testing-strategy.md`](testing-strategy.md). iOS and JS remain **compile-only**: their streaming code compiles for
-the declared targets but no runtime streaming suite runs on them, so their claims are unchanged.
+- **iOS device** (`iosArm64`) runtime: no device farm — the simulator lane (`iosSimulatorArm64`) is the iOS runtime
+  evidence.
+- **Android device** tests: no emulator in CI — the JVM-hosted `testAndroidHostTest` lane is the Android runtime
+  evidence.
+- **`wasmJs`**: cannot compile because the kotlin-sdkgen runtime publishes no wasmJs variant.
+- **watchOS / tvOS / `androidNative*` / `linuxArm32Hfp` / wasmWasi**: not declared targets (no runtime artifacts or
+  no HTTP-client value).
 
-Tier 2 evidence (2026-08-29): `linuxX64`, `linuxArm64`, and `mingwX64` are declared `:sdk` targets and
-**compile** (CI-verified in `build-linux`). **Linux** additionally runs the common + `engineTest` suites on
-`linuxX64` natively on ubuntu (CI-verified). **Windows** (`mingwX64`) and `linuxArm64` compile only — they
-cross-compile from every host but have no CI runner, so no runtime lane executes. Android (`:sdk` target) stays
-**deferred** pending the plugin/AGP compatibility fix (the Android *sample* still consumes the JVM variant).
+`macosX64` and `iosX64` are deprecated upstream since Kotlin 2.3.20 (they still compile); they run compile + klib ABI
+on PRs and their runtime lanes nightly on `macos-15-intel`, and retire when Kotlin removes them.
+
+Engine choices per target are documented in [`samples/README.md`](../samples/README.md) (the one-sample-per-engine
+table); the policy below links to it rather than duplicating it.
 
 ## Engine policy
 

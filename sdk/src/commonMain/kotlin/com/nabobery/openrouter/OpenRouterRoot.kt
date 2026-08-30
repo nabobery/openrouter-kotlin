@@ -34,6 +34,7 @@ import com.nabobery.openrouter.videogeneration.VideoGenerationClient
 import com.nabobery.openrouter.workspaces.WorkspacesClient
 import com.nabobery.sdkgen.runtime.CallOptions
 import com.nabobery.sdkgen.runtime.CallOptionsBuilder
+import com.nabobery.sdkgen.runtime.SdkClientConfig
 import com.nabobery.sdkgen.runtime.SdkConfigurationException
 import com.nabobery.sdkgen.runtime.SdkHeader
 import com.nabobery.sdkgen.runtime.SdkTransport
@@ -43,6 +44,7 @@ import com.nabobery.sdkgen.runtime.auth.TrustedHosts
 import com.nabobery.sdkgen.runtime.bodies.TransferObserver
 import com.nabobery.sdkgen.runtime.callOptions
 import com.nabobery.sdkgen.runtime.observation.SdkLifecycleObserver
+import com.nabobery.sdkgen.runtime.resilience.RetryBudget
 import com.nabobery.sdkgen.transport.ktor.KtorSdkTransport
 import io.ktor.client.HttpClient
 
@@ -52,18 +54,18 @@ public annotation class OpenRouterDsl
 
 /**
  * Curated OpenRouter client root: one reusable entry point carrying client-level defaults
- * (retry, deadlines, attribution, observers) over the complete generated surface.
+ * (retry, deadlines, attribution, observers, `User-Agent` product token) over the complete
+ * generated surface.
  *
- * Client defaults reach a call through [options]: pass `options = client.options()` (or
- * `client.options { ... }` for per-call overrides) to any generated operation. Generated
- * operations invoked without it use the generated defaults — which include NO retries.
- * Attribution and custom default headers apply to every call regardless, via the transport.
+ * Client defaults apply to **every** generated call — they are carried into each generated
+ * executor through `SdkClientConfig` at build time, so an operation invoked with no `options`
+ * still retries, honours the client deadlines, and notifies the client observers. `options { }`
+ * is for per-call *overrides* (which layer on top of the client defaults) and per-call
+ * pagination bounds; a plain `client.options()` carries only the client-level pagination default.
+ * Attribution and custom default headers apply to every call via the transport.
  */
 public class OpenRouter internal constructor(
     private val generated: OpenRouterClient,
-    private val retryPolicy: RetryPolicy,
-    private val deadlines: RequestDeadlines?,
-    private val observers: List<SdkLifecycleObserver>,
     private val paginationLimits: PaginationLimits? = null,
 ) {
     public val analytics: AnalyticsClient get() = generated.analytics
@@ -97,17 +99,21 @@ public class OpenRouter internal constructor(
     public val workspaces: WorkspacesClient get() = generated.workspaces
 
     /**
-     * Client defaults materialised as a per-call [CallOptions]; [overrides] layer curated per-call values on top.
+     * A per-call [CallOptions] carrying the client-level pagination default; [overrides] layer curated per-call
+     * values on top.
+     *
+     * Client retry/deadlines/observers are **not** re-emitted here — they reach the call through the generated
+     * executor's `SdkClientConfig`. A field left untouched by [overrides] stays at the runtime's `Inherit` default,
+     * so the client value applies; a per-call `retry`/`deadlines` in [overrides] wins over the client default per
+     * the runtime precedence contract. Pagination bounds are not part of `SdkClientConfig`, so the client-level
+     * [PaginationLimits] default (if any) is still materialised here.
      *
      * The override receiver is the curated [OpenRouterCallOptions], not the raw runtime [CallOptionsBuilder], so
      * the reserved-header guarantee (Authorization, Content-Type, and other SDK-controlled protocol headers cannot
      * be overridden) is enforced on this primary per-call path exactly as it is at build time.
      */
     public fun options(overrides: (OpenRouterCallOptions.() -> Unit)? = null): CallOptions = callOptions {
-        retry(retryPolicy.toOverride())
-        deadlines?.let { deadlines(it.toSdkDeadlines()) }
         paginationLimits?.let { pagination(it.toBounds()) }
-        observers.forEach { observer(it) }
         overrides?.let { OpenRouterCallOptions(this).apply(it) }
     }
 
@@ -185,14 +191,25 @@ public class OpenRouterBuilder internal constructor() {
     /** Absolute `http(s)` base URL; its origin is always trusted for credential forwarding. */
     public var baseUrl: String = OpenRouter.DEFAULT_BASE_URL
 
-    /** Client-level retry defaults reached per call via [OpenRouter.options]. */
+    /** Client-level retry default applied to every call through the runtime client config; overridable per call. */
     public var retryPolicy: RetryPolicy = RetryPolicy.Default
 
-    /** Client-level layered deadlines reached per call via [OpenRouter.options]. */
+    /** Client-level layered deadlines applied to every call through the runtime client config; overridable per call. */
     public var deadlines: RequestDeadlines? = null
 
-    /** Client-level automatic-pagination bounds reached per call via [OpenRouter.options]; unbounded when null. */
+    /**
+     * Client-level automatic-pagination bounds applied to every call through [OpenRouter.options]; unbounded when
+     * null. (Pagination bounds ride the per-call options, unlike retry/deadlines, which the runtime client config
+     * inherits directly on every call.)
+     */
     public var paginationLimits: PaginationLimits? = null
+
+    /**
+     * Client-wide retry capacity: one [RetryBudget] is shared by the root facade and every resource client built
+     * from it (ADR 0022 D2), so a burst of retries on one resource depletes the quota for the others. `null` uses
+     * the runtime default capacity; an explicit value must be `>= 1`.
+     */
+    public var retryBudget: Int? = null
 
     /** Attribution headers (HTTP-Referer / X-OpenRouter-Title / categories) applied to every call. */
     public var attribution: Attribution? = null
@@ -261,15 +278,31 @@ public class OpenRouterBuilder internal constructor() {
         val defaults = mergedDefaults.values.toList()
         val effectiveTransport =
             if (defaults.isEmpty()) baseTransport else HeaderDefaultingTransport(baseTransport, defaults)
+        retryBudget?.let {
+            if (it < 1) throw SdkConfigurationException("retryBudget must be at least 1 when set, got $it.")
+        }
+        // One SdkClientConfig carries the client defaults into every generated executor (ADR 0022): retry and
+        // deadlines fold into each call's CallOptions when the call leaves them at Inherit; observers, the shared
+        // retry budget, and the User-Agent product token are applied once, to the executor. Pagination bounds are
+        // deliberately absent (they are not part of SdkClientConfig; OpenRouter.options() materialises them).
+        val clientConfig =
+            SdkClientConfig(
+                retry = retryPolicy.toOverride(),
+                deadlines = deadlines?.toSdkDeadlines(),
+                observers = observers.toList(),
+                retryBudget = retryBudget?.let { RetryBudget(capacity = it) } ?: RetryBudget(),
+                productToken = "openrouter-kotlin/$SDK_VERSION",
+            )
         val generated =
             OpenRouterClient(
                 transport = effectiveTransport,
                 baseUri = baseUrl,
+                clientConfig = clientConfig,
                 // One generated resource client binds scheme id "bearer" instead of "apiKey"; register both.
                 credentialProviders = mapOf("apiKey" to credential, "bearer" to credential),
                 trustedHosts = TrustedHosts.of(baseUrl, extraTrustedOrigins),
             )
-        return OpenRouter(generated, retryPolicy, deadlines, observers.toList(), paginationLimits)
+        return OpenRouter(generated, paginationLimits)
     }
 
     private fun validateBaseUrl(url: String) {

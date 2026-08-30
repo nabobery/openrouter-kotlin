@@ -15,7 +15,6 @@ Kotlin Multiplatform client SDK for OpenRouter.
 | [Specification sync and release](./spec-sync-and-release.md) | Defines OpenAPI drift, generation, compatibility review, and publication | Maintainers |
 | [Security and privacy](./security-and-privacy.md) | Defines credential, diagnostics, transport, and supply-chain controls | Security reviewers and maintainers |
 | [Compatibility policy](./compatibility-policy.md) | Defines stability, SemVer, deprecation, experimental APIs, and target lifecycle | Consumers and maintainers |
-| [Implementation plan](./plans/2026-07-23-openrouter-kotlin-implementation-plan.md) | Breaks delivery into dependency-ordered phases and gates | Engineering |
 | [Architecture decisions](./adr/README.md) | Records the decisions that should not be re-litigated without new evidence | Maintainers |
 
 ## Source-of-truth order
@@ -47,4 +46,3 @@ projects. This avoids documenting speculative syntax.
 
 Update the affected requirement, design, API reference, test plan, and ADR together. A change is incomplete if code and
 documentation describe different contracts. Generated source is not edited by hand.
-

@@ -23,7 +23,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +36,7 @@ import kotlin.time.Duration.Companion.seconds
  * The real-engine SSE lane: the curated `client.chat.stream(...)` driven through a real Ktor pipeline
  * (`MockEngine`) whose response body is a concurrently written `ByteChannel`, proving incremental delivery,
  * cancellation ownership, in-band errors, and the stream-idle deadline on an actual engine. Shared by the JVM
- * and macosArm64 test tasks via the `engineTest` source set; runs under `runBlocking` (real time). Timeouts are
+ * and macosArm64 test tasks via the `engineTest` source set; runs under `runRealTime` (real time). Timeouts are
  * bounded (≤ 10 s) with generous per-call operation deadlines so a scheduling hiccup under full-suite CPU load
  * cannot trip a spurious transport timeout, while a genuine hang still fails.
  */
@@ -90,7 +89,7 @@ class KtorStreamingEngineTest {
     }
 
     @Test
-    fun multipleEventsAndDoneDecodeThroughKtor() = runBlocking {
+    fun multipleEventsAndDoneDecodeThroughKtor() = runRealTime {
         // MockEngine delivers a streaming response body once its producer completes (it does not expose a
         // half-open duplex body), so this proves multi-event SSE decoding end-to-end through a real Ktor
         // pipeline. Incremental "first event before the body completes" and mid-stream cancellation are proven
@@ -123,7 +122,7 @@ class KtorStreamingEngineTest {
     }
 
     @Test
-    fun cancellationClosesTheEngineResponse() = runBlocking {
+    fun cancellationClosesTheEngineResponse() = runRealTime {
         val lane =
             sseLane { channel ->
                 channel.send(SseWireFixtures.chatChunk(content = "Hel"))
@@ -149,7 +148,7 @@ class KtorStreamingEngineTest {
     }
 
     @Test
-    fun midStreamErrorChunkIsAValueThroughKtor() = runBlocking {
+    fun midStreamErrorChunkIsAValueThroughKtor() = runRealTime {
         val lane =
             sseLane { channel ->
                 channel.send(SseWireFixtures.chatChunk(content = "Hel"))
@@ -178,7 +177,7 @@ class KtorStreamingEngineTest {
     }
 
     @Test
-    fun commentsAndDoneThroughKtor() = runBlocking {
+    fun commentsAndDoneThroughKtor() = runRealTime {
         val lane =
             sseLane { channel ->
                 channel.send(SseWireFixtures.COMMENT)
@@ -200,7 +199,7 @@ class KtorStreamingEngineTest {
     }
 
     @Test
-    fun streamIdleDeadlineFiresThroughKtor() = runBlocking {
+    fun streamIdleDeadlineFiresThroughKtor() = runRealTime {
         val lane =
             sseLane { channel ->
                 channel.send(SseWireFixtures.chatChunk(content = "Hel"))

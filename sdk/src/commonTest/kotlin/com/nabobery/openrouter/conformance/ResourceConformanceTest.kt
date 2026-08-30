@@ -15,7 +15,6 @@ import com.nabobery.sdkgen.runtime.UnknownApiException
 import com.nabobery.sdkgen.testing.FakeByteStream
 import com.nabobery.sdkgen.testing.FakeTransport
 import kotlinx.coroutines.test.runTest
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -118,34 +117,12 @@ class ResourceConformanceTest {
         assertEquals(decoded.meta.asOf, success.json.meta.asOf)
     }
 
-    // ---- Known generator defect: enum-typed PATH parameters render as the enum NAME, not the wire value. ----
-    // getWorkspaceBudget/deleteWorkspaceBudget/upsertWorkspaceBudget send `/budgets/Daily` where OpenRouter documents
-    // the lowercase wire value `daily`. Tracked in docs/coverage/exception-register.md and the upstream proposal. We
-    // do NOT assert the broken path as if it were correct: the characterization test pins current behaviour so a
-    // regression is loud, and the @Ignore-d intent test carries the correct expectation to un-ignore once fixed.
+    // ---- Enum-typed PATH parameters bind the documented wire value (fixed in kotlin-sdkgen 0.4.0). ----
+    // getWorkspaceBudget/deleteWorkspaceBudget/upsertWorkspaceBudget now send `/budgets/daily`, the lowercase wire
+    // value OpenRouter documents, rather than the enum name `Daily`. The 0.3.0 characterization test that pinned the
+    // defect (getWorkspaceBudgetEncodesEnumNameNotWireValue_knownGeneratorDefect) was deleted when the fix landed.
 
     @Test
-    fun getWorkspaceBudgetEncodesEnumNameNotWireValue_knownGeneratorDefect() = runTest {
-        // The correct wire value exists on the model and is what the request SHOULD use.
-        assertEquals("daily", WorkspaceBudgetInterval.Daily.value)
-
-        val transport = FakeTransport().enqueueResponse(200, json, FakeByteStream(listOf("{}".encodeToByteArray())))
-        val client = OpenRouter(credential, transport)
-        try {
-            client.workspaces.getWorkspaceBudget("ws", WorkspaceBudgetInterval.Daily)
-        } catch (expected: SdkSerializationException) {
-            // stub body; see the matrix above.
-        }
-        val uri = transport.capturedRequests.single().uri
-        // DEFECT: renders the enum object name, so this currently holds. When the generator is fixed, this fails and
-        // the @Ignore-d intent test below should be un-ignored.
-        assertTrue(uri.contains("/budgets/Daily"), "expected the known-defect path, got '$uri'")
-        assertTrue(!uri.contains("/budgets/daily"), "path unexpectedly already uses the correct wire value: '$uri'")
-    }
-
-    // Un-ignore when kotlin-sdkgen renders enum path parameters by their wire value; then delete the defect test above.
-    @Test
-    @Ignore
     fun getWorkspaceBudgetShouldEncodeLowercaseWireValue() = runTest {
         val transport = FakeTransport().enqueueResponse(200, json, FakeByteStream(listOf("{}".encodeToByteArray())))
         val client = OpenRouter(credential, transport)

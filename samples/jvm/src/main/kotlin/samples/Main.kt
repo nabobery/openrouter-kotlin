@@ -55,7 +55,6 @@ fun main(args: Array<String>) =
                 client.chat.send(
                     model = model,
                     messages = listOf(userMessage("Say hello in one sentence.")),
-                    options = client.options(),
                 ) { maxTokens = 32 }
             println(result.choices.firstOrNull()?.message?.content?.raw)
 

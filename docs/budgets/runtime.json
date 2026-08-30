@@ -1,0 +1,8 @@
+{
+  "bufferedChatDecode-allocBytesPerOp": 218487.96,
+  "bufferedChatDecode-microsPerOp": 24.88,
+  "chatStreamDecode200Events-allocBytesPerEvent": 6257.96,
+  "chatStreamDecode200Events-microsPerOp": 284.97,
+  "firstEventLatency-allocBytesPerOp": 127554.76,
+  "firstEventLatency-microsPerOp": 48.85
+}

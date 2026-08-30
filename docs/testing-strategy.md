@@ -55,15 +55,16 @@ the implementation is incremental.
 
 ### Inference and streaming suites
 
-The inference and streaming alpha realizes the matrix above as these suites. All common suites run on JVM + macOS;
-`engineTest` is a shared source set that runs the real-Ktor lane across both. Counts: JVM 126 tests and macosArm64
-120 tests — all passing.
+The inference and streaming surface realizes the matrix above as these suites. The common suites run on every host
+lane and `engineTest` (the shared real-Ktor source set) runs on every lane too via the `runRealTime`
+harness (see the target matrix below). Full-suite counts: JVM 188 and macosArm64 181 — all passing (per-lane counts
+in [`target-support.md`](target-support.md)).
 
 | Suite | Lane | Contracts covered |
 | --- | --- | --- |
 | `StreamingWireTruthTest` | commonTest (JVM + macOS) | 4 wire-truth decode tests — chat / responses / messages / images payloads decode (RED before the SSE payload overlay, GREEN after) |
 | `ChatStreamingFramingTest` | commonTest (JVM + macOS) | 14 framing rows — one-event-per-chunk & many-in-one, delimiter split across chunks, UTF-8 codepoint split, CRLF, comments/retry/id/blank ignored, multiline `data` joined, metadata-only skipped, `[DONE]` ends without emission, EOF completes, usage-only final chunk, non-success → typed `ApiException`, malformed → bounded `SdkSerializationException`, event over byte budget → `SdkStreamingException`, unknown finish reason preserved |
-| `ChatStreamingLifecycleTest` | commonTest (JVM + macOS) | 13 lifecycle rows — first event before response completes, cancellation before headers, cancellation after first event closes body with `CancellationException`, `take(1)` closes upstream, downstream failure closes upstream with same cause, backpressure, stream-idle deadline (STREAM_IDLE phase), no idle deadline without `options()`, **streaming never retried even pre-first-byte**, no retry after emission, two collections start two requests, attribution + options headers reach stream requests, secret never leaks in failures |
+| `ChatStreamingLifecycleTest` | commonTest (all lanes) | 14 lifecycle rows — first event before response completes, cancellation before headers, cancellation after first event closes body with `CancellationException`, `take(1)` closes upstream, downstream failure closes upstream with same cause, backpressure, stream-idle deadline (STREAM_IDLE phase), **stream-idle deadline applies with no `options()`** (client deadline inherited through `SdkClientConfig`), **streaming never retried even pre-first-byte**, no retry after emission, two collections start two requests, attribution + options headers reach stream requests, secret never leaks in failures, large (10k-event) stream decodes incrementally to completion |
 | `KtorStreamingEngineTest` | engineTest (JVM + macOS, real Ktor MockEngine) | 5 rows — multiple events + `[DONE]` decode, cancellation closes the engine response, mid-stream error as value, comments + `[DONE]`, stream-idle deadline fires |
 | `InferenceStreamingContractTest` | commonTest (JVM + macOS) | Responses & Messages golden payload identity, typed events + text deltas, messages typed error-as-value with `errorType`, idle deadline, cancellation |
 | `LiveChatSmokeTest` | jvmTest (opt-in) | Gated by `OPENROUTER_LIVE_TESTS=1` + `OPENROUTER_API_KEY`; 2 requests; nightly `.github/workflows/live.yml` |
@@ -72,7 +73,7 @@ The inference and streaming alpha realizes the matrix above as these suites. All
 > body completes" and mid-stream cancellation observation are proven on the fake transport (and the upstream
 > transport-ktor conformance suite), not in `KtorStreamingEngineTest`.
 
-> **Streaming is never retried.** kotlin-sdkgen 0.3.0 disables retry **entirely** for the streaming response mode
+> **Streaming is never retried.** kotlin-sdkgen 0.4.0 disables retry **entirely** for the streaming response mode
 > (`SdkExecutor.kt`: `retry ... .takeUnless { responseMode == STREAMING }`). No streaming op is retried — not even a
 > pre-first-byte 429, which surfaces immediately as the typed `ApiException`. This is stricter and safer than the
 > buffered path (which retries an allowlisted 429), because an opened stream cannot be transparently restarted; it
@@ -134,10 +135,17 @@ untrusted absolute hosts, cancellation, and failure after earlier pages. Automat
 
 ## Target matrix
 
-Tier 1 targets run common contracts and at least one Ktor engine integration. Tier 2 targets run common contracts where
-hosted and selected smoke tests. Tier 3 must compile and pass focused serialization/API checks before publication.
+The per-target evidence matrix and its CI lanes are in [`target-support.md`](target-support.md) (mirroring
+[ADR 0007](adr/0007-final-target-tiers-for-1-0.md)). The real-Ktor `engineTest` lane runs on **every**
+host test lane via the `runRealTime` harness (`runTest` + `Dispatchers.Default`, real time — the cross-platform
+replacement for `runBlocking`, which JS lacks), so no target is streaming compile-only where a host runner exists:
 
-Host-unavailable tests are reported as explicit matrix limitations, never silently counted as passes.
+- **PR CI:** `jvmTest`, `jsNodeTest`, `jsBrowserTest` (headless Chrome), `testAndroidHostTest`, `linuxX64Test`
+  (ubuntu), `linuxArm64Test` (ubuntu-24.04-arm), `mingwX64Test` (windows), `macosArm64Test` + `iosSimulatorArm64Test`
+  (macos-15) — each running the common **and** `engineTest` suites.
+- **Nightly:** `macosX64Test` + `iosX64Test` on `macos-15-intel`; the benchmark suite (`perf.yml`).
+- **Not executed (disclosed):** iOS device (`iosArm64`), Android device tests, `wasmJs` (blocked upstream). These are
+  reported as explicit limitations in `target-support.md`, never silently counted as passes.
 
 ## Live test controls
 

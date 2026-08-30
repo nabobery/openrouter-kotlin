@@ -5,3 +5,6 @@ local.properties
 .DS_Store
 *.log
 .idea/
+# SwiftPM build output for the iOS Swift-consumer sample.
+.build/
+samples/ios/SwiftConsumer/.build/

@@ -1,3 +1,5 @@
+import kotlinx.validation.ExperimentalBCVApi
+
 plugins {
     // Version-pin KMP/serialization here so :sdk can apply them without versions.
     alias(libs.plugins.kotlin.multiplatform) apply false
@@ -10,23 +12,47 @@ plugins {
 // `sdk.api`. The dump lives in `sdk/api/sdk.klib.api`; `apiCheck` validates it. Non-Apple hosts skip Apple
 // targets unless strictValidation is set, so the full-target baseline is produced on the macOS host.
 apiValidation {
-    @OptIn(kotlinx.validation.ExperimentalBCVApi::class)
+    // :benchmarks is an internal kotlinx-benchmark module with no published API — keep it out of ABI validation.
+    ignoredProjects.add("benchmarks")
+    @OptIn(ExperimentalBCVApi::class)
     klib {
         enabled = true
     }
 }
 
-// Compiles every always-present sample consumer with no network access. The macOS-native sample's compile task
-// only exists on a macOS host, so this aggregate is host-specific (run on the Apple CI runner); the Linux CI job
-// compiles the JVM and JS samples directly. Not wired into :sdk:verificationCheck, which stays host-safe on Linux.
+// Host-aware sample verification (no network). Every host compiles the JVM, JS (Node + browser), and native-desktop
+// (Linux CIO + Windows WinHttp) sample klibs; a native-desktop *executable* links only on its matching host (linking
+// needs the platform sysroot), the macOS-native + iOS samples build only on macOS, and the Android sample builds
+// only when an Android SDK made it part of the build. This aggregate runs on each CI runner.
+// Host detection from the public `os.name` / `os.arch` system properties (Gradle's `org.gradle.internal.os`
+// package is an unstable internal API). Evaluated once at configuration time.
+val samplesOsName = System.getProperty("os.name").lowercase()
+val samplesHostMac = samplesOsName.contains("mac") || samplesOsName.contains("darwin")
+val samplesHostWindows = samplesOsName.contains("windows")
+val samplesHostLinux = samplesOsName.contains("linux")
+val samplesHostArm = System.getProperty("os.arch").let { it == "aarch64" || it == "arm64" }
 tasks.register("samplesCheck") {
     group = "verification"
-    description = "Compiles every sample consumer (no network)."
+    description = "Compiles every sample consumer for the current host (no network)."
     dependsOn(
         ":samples:jvm:compileKotlin",
         ":samples:js:compileKotlinJs",
-        ":samples:apple:compileKotlinMacosArm64",
+        ":samples:browser:compileKotlinJs",
+        ":samples:native-desktop:compileKotlinLinuxX64",
+        ":samples:native-desktop:compileKotlinLinuxArm64",
+        ":samples:native-desktop:compileKotlinMingwX64",
     )
-    // The Android sample only participates when an Android SDK made it part of the build.
-    findProject(":samples:android")?.let { dependsOn(":samples:android:assembleDebug") }
+    when {
+        samplesHostMac -> {
+            dependsOn(":samples:apple:compileKotlinMacosArm64")
+            // The iOS Swift-consumer facade module (Task 11) compiles here too, once it is part of the build.
+            findProject(":samples:ios:shared")?.let { dependsOn(":samples:ios:shared:compileKotlinMacosArm64") }
+        }
+        samplesHostLinux && samplesHostArm -> dependsOn(":samples:native-desktop:linkDebugExecutableLinuxArm64")
+        samplesHostLinux -> dependsOn(":samples:native-desktop:linkDebugExecutableLinuxX64")
+        samplesHostWindows -> dependsOn(":samples:native-desktop:linkDebugExecutableMingwX64")
+    }
+    // The Android sample (a com.android.kotlin.multiplatform.library consuming the android variant of :sdk) only
+    // participates when an Android SDK made it part of the build.
+    findProject(":samples:android")?.let { dependsOn(":samples:android:compileAndroidMain") }
 }

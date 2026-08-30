@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>OpenRouter Kotlin — browser sample</title>
+  </head>
+  <body>
+    <h1>OpenRouter Kotlin — browser streaming sample</h1>
+    <p>Consumes <code>:sdk</code> over Ktor's <code>Js</code> (fetch) engine. Your key stays in the browser.</p>
+    <p>
+      <input id="apiKey" type="password" size="48" placeholder="OpenRouter API key (sk-or-…)" />
+      <button id="run">Stream a reply</button>
+    </p>
+    <pre id="output" style="white-space: pre-wrap; border: 1px solid #ccc; padding: 12px; min-height: 4em;"></pre>
+    <!-- Webpack bundle produced by :samples:browser:jsBrowserDevelopmentWebpack (output name: browser.js). -->
+    <script src="browser.js"></script>
+  </body>
+</html>

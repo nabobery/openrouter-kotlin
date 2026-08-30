@@ -333,7 +333,9 @@ OpenRouter-specific overlays and the curated facade.
 ## 14. Target architecture
 
 Common code owns all product behavior. Platform source sets are permitted only for environment credentials, platform
-metadata, and unavoidable integrations. Engine selection remains in consumer code. See [target support](./target-support.md).
+metadata, and unavoidable integrations. Engine selection remains in consumer code. The final 1.0 target tiers are
+decided in [ADR 0007](./adr/0007-final-target-tiers-for-1-0.md); the evidence matrix is in
+[target support](./target-support.md).
 
 ## 15. Observability
 

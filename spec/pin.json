@@ -4,10 +4,9 @@
   "sizeBytes": 1426283,
   "retrievedAt": "2026-08-29T05:25:41Z",
   "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-08-29 via scripts/fetch-upstream-spec.sh (previous pin b901d462… ported from the kotlin-sdkgen v0.3.0 corpus, originally retrieved 2026-08-17).",
-  "generator": "io.github.nabobery.kotlin-sdkgen:0.3.0",
+  "generator": "io.github.nabobery.kotlin-sdkgen:0.4.0",
   "overlays": [
     { "id": "openrouter-allof-resolution-audit", "file": "overlays/allof-resolution-audit.yaml", "sha256": "ac788905398ee8bed890d2404cc6d3e0459041a28722e7e930b27d2d3c14cd07" },
-    { "id": "openrouter-full-spec-compat", "file": "overlays/full-spec-compat.yaml", "sha256": "d77a52a6bceda1d5696451f8c86040a17ebba389e674d8b1fca9e110ca23b5ee" },
-    { "id": "openrouter-sse-payload", "file": "overlays/sse-payload.yaml", "sha256": "7575ac299572baa4e2d75848716160baf12326810322861180951985463f9da5" }
+    { "id": "openrouter-full-spec-compat", "file": "overlays/full-spec-compat.yaml", "sha256": "24743575544b7d41e2a29b9014c6827d648e53ead74f7951b24308f0eb05164e" }
   ]
 }
