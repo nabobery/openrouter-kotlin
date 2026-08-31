@@ -1,6 +1,7 @@
 import com.android.build.api.dsl.KotlinMultiplatformAndroidLibraryExtension
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeSimulatorTest
+import java.io.File
 
 // Host detection from the public `os.name` / `os.arch` system properties (Gradle's `org.gradle.internal.os`
 // package is an unstable internal API and may change across Gradle upgrades). Evaluated once at configuration time.
@@ -196,6 +197,41 @@ tasks.register<JavaExec>("ktlintFormat") {
     mainClass.set("com.pinterest.ktlint.Main")
     args("--format", "src/**/*.kt")
     workingDir = projectDir
+}
+
+// `sdkgen diff` (kotlin-sdkgen CLI, frozen v1alpha1 contract) over two generation manifests — the semantic
+// layer of the compatibility report (docs/compat/README.md). Inputs arrive as -Pcompat.from / -Pcompat.to and
+// the JSON output goes to -Pcompat.out. Exit 1 means "differences found" and is EXPECTED; only exit 2 (usage)
+// is a real failure, so the exit value is ignored and the consumer (scripts/compat-report.py) reads the JSON.
+// Property reads and the output stream are deferred to execution (argumentProviders + doFirst) so the task is
+// configuration-cache safe and never evaluates the -P properties unless it actually runs.
+val sdkgenCli: Configuration = configurations.create("sdkgenCli")
+dependencies { sdkgenCli(libs.sdkgen.cli) }
+
+tasks.register<JavaExec>("sdkgenDiff") {
+    group = "verification"
+    description = "kotlin-sdkgen CLI `diff` over two generation manifests (semantic compatibility layer)."
+    classpath = sdkgenCli
+    mainClass.set("com.nabobery.sdkgen.cli.CliModuleKt")
+    isIgnoreExitValue = true
+    val from = providers.gradleProperty("compat.from")
+    val to = providers.gradleProperty("compat.to")
+    val out = providers.gradleProperty("compat.out")
+    // Capture the project directory as a plain File at configuration time. Resolving the output path against it in
+    // doFirst keeps the task configuration-cache safe: `file(...)` would capture a reference to the Project (a
+    // disallowed script object), whereas a captured File serializes cleanly.
+    val projectDir = layout.projectDirectory.asFile
+    argumentProviders.add(
+        CommandLineArgumentProvider {
+            listOf("diff", "--from", from.get(), "--to", to.get(), "--format", "json")
+        },
+    )
+    doFirst {
+        val outPath = out.get()
+        val target = File(outPath).let { if (it.isAbsolute) it else projectDir.resolve(outPath) }
+        target.parentFile?.mkdirs()
+        standardOutput = target.outputStream()
+    }
 }
 
 tasks.register("checkSdkVersionConstant") {

@@ -31,9 +31,25 @@ Any intentional deviation must be documented, tested, and included in release no
 
 ## Documentation model
 
-The current documents are product requirements, engineering reference, and architectural explanation. Tutorials and
-task-oriented how-to guides will be added after the corresponding public API exists and can be compiled in sample
-projects. This avoids documenting speculative syntax.
+The documents here follow the [Diátaxis](https://diataxis.fr/) model: **reference** (engineering references, the
+module/package overview, and source KDoc), **explanation** (architecture and design), **tutorials** (learning-oriented), and
+**how-to guides** (goal-oriented). Product-requirement and architectural-explanation documents live here directly;
+the tutorials and how-tos are under [`guides/`](guides/README.md).
+
+Every code example in the guides is **real, compiled Kotlin**: examples are `// region` blocks in the
+`:samples:docs` module (and the Android/iOS sample modules), injected into Markdown by `scripts/docs-snippets.py`
+(`kt → md`) and compiled by `samplesCheck` / CI, with a `docs-snippets.py check` freshness gate. We chose this
+direction over a `md → kt` tool (such as kotlinx-knit): the examples then refactor with the IDE and add no plugin
+to the build classpath. This keeps examples from documenting speculative syntax — a guide can only show a compiling
+API.
+
+| Kind | Where |
+| --- | --- |
+| Tutorials | [`guides/tutorials/`](guides/tutorials/) |
+| How-to guides | [`guides/how-to/`](guides/how-to/) |
+| Reference (design) | this directory (e.g. `public-api-design.md`, `system-design.md`) |
+| Reference (API) | [`api/module.md`](api/module.md) and KDoc on public source declarations |
+| Explanation | `adr/`, `system-design.md` |
 
 ## Status language
 

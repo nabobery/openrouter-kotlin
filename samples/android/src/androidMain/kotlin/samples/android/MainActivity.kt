@@ -40,15 +40,19 @@ class MainActivity : ComponentActivity() {
             return
         }
 
+        // region client
         val http = HttpClient(OkHttp).also { this.http = it }
         val client = OpenRouter(credential = OpenRouterCredentials.static(apiKey), httpClient = http)
+        // endregion
 
+        // region lifecycle-stream
         lifecycleScope.launch {
             client.chat
                 .stream(model = "openrouter/free", messages = listOf(userMessage("Say hello in one sentence.")))
                 .contentDeltas()
                 .collect { delta -> textView.append(delta) }
         }
+        // endregion
     }
 
     override fun onDestroy() {

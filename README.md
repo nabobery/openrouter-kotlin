@@ -2,15 +2,15 @@
 
 A Kotlin Multiplatform SDK for the [OpenRouter](https://openrouter.ai) API.
 
-The client surface (100 of 101 operations of the 2026-08-29 contract; one accepted waiver) is
+The client surface (100 of 101 operations of the 2026-08-30 contract; one accepted waiver) is
 **generated** by the [`kotlin-sdkgen`](https://github.com/nabobery/kotlin-sdkgen) `0.4.0` Gradle
 plugin from the OpenAPI spec pinned in [`spec/`](spec/) — it is not hand-written. Generation is
 deterministic and reproducible from a clean clone. Responses are GA (`client.responses`); the
 new `containers`, `scim`, `datasets.getSessionCost`, and `workspaces.getWorkspaceBudget`
 operations are covered. See [`docs/coverage/`](docs/coverage/) for the coverage dashboard and
-exception register.
+exception register, and the compile-checked [guides](docs/guides/README.md) (tutorials and how-tos) to get started.
 
-> **Status: coverage beta.** On top of the generated surface, a curated inference facade
+> **Status: release-candidate preparation.** On top of the generated surface, a curated inference facade
 > (chat / responses / messages) plus incremental SSE streaming is now callable end-to-end. It
 > is exercised through a fake transport and the real Ktor `MockEngine` SSE lane on **every host test lane**
 > (`engineTest` via the `runRealTime` harness): JVM, JS (Node + headless Chrome), macOS arm64, and the iOS
@@ -138,6 +138,15 @@ python3 scripts/coverage-dashboard.py
 # Refresh the pinned spec from live upstream (future drift automation can reuse this)
 bash scripts/fetch-upstream-spec.sh
 
+# Re-pin end-to-end from live upstream (fetch → re-pin → regenerate twice → re-baseline)
+bash scripts/drift-refresh.sh
+
+# Layered compatibility report of the current branch vs a base ref (classifies patch/minor/breaking)
+bash scripts/compat-snapshot.sh --base-ref origin/main --report build/compat/report.md
+
+# Refresh the compiled-guide snippets after editing an example (kt -> md), then check freshness
+python3 scripts/docs-snippets.py update && python3 scripts/docs-snippets.py check
+
 # Complete verification gate (host-safe): compile every declared target, run the JVM + macOS
 # test lanes, and check the public API baseline. This is what CI enforces; run it on
 # a macOS host (it drives the Apple compile/test lanes).
@@ -180,6 +189,14 @@ sdk/         The :sdk Kotlin Multiplatform module (generated sources land under 
 scripts/     check-drift.sh — the generation drift gate
 docs/        Design documentation and ADRs
 ```
+
+## Contributing and security
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — build prerequisites, the verification gate, the
+  "never hand-edit generated sources" rule, and commit conventions.
+- [SECURITY.md](SECURITY.md) — how to report a vulnerability privately, supported versions,
+  and the incident-response procedure.
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — Contributor Covenant 2.1.
 
 ## License
 

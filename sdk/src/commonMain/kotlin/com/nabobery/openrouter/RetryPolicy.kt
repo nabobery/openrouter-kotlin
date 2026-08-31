@@ -37,6 +37,7 @@ public class RetryPolicy(
     public val retryConnectionFailures: Boolean = true,
     retryableStatusCodes: Set<Int> = DEFAULT_RETRYABLE_STATUS_CODES,
 ) {
+    /** The HTTP status codes eligible for retry; a defensive immutable copy of the constructor argument. */
     public val retryableStatusCodes: Set<Int> = retryableStatusCodes.toSet()
 
     init {
@@ -76,8 +77,13 @@ public class RetryPolicy(
     }
 
     public companion object {
+        /** The default retryable status allowlist: only `429` (rate limiting), which is always safe to replay. */
         public val DEFAULT_RETRYABLE_STATUS_CODES: Set<Int> = setOf(429)
+
+        /** The default policy: 3 attempts, 500 ms → 60 s exponential backoff (×2.0), retry on 429 and safe connection failures. */
         public val Default: RetryPolicy = RetryPolicy()
+
+        /** A policy that never retries (a single attempt). */
         public val None: RetryPolicy = RetryPolicy(maxAttempts = 1)
     }
 }

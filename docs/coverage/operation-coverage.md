@@ -39,14 +39,14 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | byok | getBYOKKey | GET | `/byok/{id}` | none | no | no | — |
 | byok | listBYOKKeys | GET | `/byok` | none | no | no | — |
 | byok | updateBYOKKey | PATCH | `/byok/{id}` | json | no | no | — |
-| chat | sendChatCompletionRequest | POST | `/chat/completions` | json | no | yes | LifecycleContractTest.kt |
+| chat | sendChatCompletionRequest | POST | `/chat/completions` | json | no | yes | ClientDefaultsContractTest.kt |
 | classifications | getTaskClassifications | GET | `/classifications/task` | none | no | no | — |
 | containers | downloadContainerFileContent | GET | `/containers/{container_id}/files/{file_id}/content` | none | no | no | ResourceConformanceTest.kt |
 | containers | getContainerFile | GET | `/containers/{container_id}/files/{file_id}` | none | no | no | ResourceConformanceTest.kt |
 | containers | listContainerFiles | GET | `/containers/{container_id}/files` | none | no | no | ResourceConformanceTest.kt |
 | containers | promoteContainerFile | POST | `/containers/{container_id}/files/{file_id}/promote` | none | no | no | ResourceConformanceTest.kt |
 | credits | createCoinbaseCharge | POST | `/credits/coinbase` | none | no | no | — |
-| credits | getCredits | GET | `/credits` | none | no | no | LifecycleContractTest.kt |
+| credits | getCredits | GET | `/credits` | none | no | no | ClientDefaultsContractTest.kt |
 | datasets | getAppRankings | GET | `/datasets/app-rankings` | none | yes | no | — |
 | datasets | getRankingsDaily | GET | `/datasets/rankings-daily` | none | no | no | — |
 | datasets | getSessionCost | GET | `/datasets/session-cost` | none | no | no | ResourceConformanceTest.kt |

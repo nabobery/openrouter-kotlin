@@ -1,6 +1,6 @@
 {
   "_comment": "Drift baseline for the plugin-native generation model. The published kotlin-sdkgen 0.3.0 plugin generates a content-addressed snapshot under build/ (not checked in). Every field below is validated by scripts/check-drift.sh after regenerating from the pinned spec; a mismatch is drift. Spec digest and generator coordinate provenance live in spec/pin.json and spec/sdkgen.yaml (the spec digest is additionally enforced by the generator at generation time).",
-  "snapshotContentAddress": "048c58c82e05a2eb8893c9b2a6628beab825495c14c70041520b9eebe9e72e2f",
+  "snapshotContentAddress": "a8341cc47c95487234992dde1b62d2a4d78695cf03d01770407655079bdd1526",
   "fileCount": 1850,
   "kotlinFileCount": 1849
 }

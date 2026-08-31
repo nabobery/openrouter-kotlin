@@ -24,6 +24,8 @@ include(":benchmarks")
 // project(":sdk") and compile in CI. The Android sample is included only when an Android SDK is present, so the
 // root build never requires one.
 include(":samples:jvm", ":samples:js", ":samples:apple", ":samples:native-desktop", ":samples:browser")
+// Compiled documentation snippets: docs/guides/**/*.md examples are injected from this JVM module (kt -> md).
+include(":samples:docs")
 // The iOS Swift consumer's shared Kotlin facade module (exported as an XCFramework). The Swift package under
 // samples/ios/SwiftConsumer consumes the built XCFramework and is driven by scripts/ios-consumer-check.sh.
 include(":samples:ios:shared")

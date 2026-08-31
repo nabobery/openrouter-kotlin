@@ -1,7 +1,7 @@
 version: v1alpha1
 source:
   uri: openapi.yaml
-  sha256: b2a4948af336b2e1cbd372eda898cec603cf463f7a64196f1ea12bb0a70a6007
+  sha256: e88b0cec03addc6cffca291d8c1bb98d3409ea4cb6a3d6fb41d11439e4242ba4
   acquisition:
     mode: local
     offline: true
@@ -16,7 +16,7 @@ source:
 overlays:
   - id: openrouter-allof-resolution-audit
     uri: overlays/allof-resolution-audit.yaml
-    sha256: ac788905398ee8bed890d2404cc6d3e0459041a28722e7e930b27d2d3c14cd07
+    sha256: 550c410a0b696193ac33e46c92e2f0f7110359d793e0444cda1ecdae94fe34d4
     zeroMatchPolicy: fail
     conflictPolicy: fail
   - id: openrouter-full-spec-compat

@@ -475,11 +475,16 @@ list above:
 13. **Byte-stream helpers** live in `com.nabobery.openrouter.io`: `byteStreamOf(bytes)`, `readAllBytes(maxBytes)`,
     `asFlow(chunkSize)` (cold; closes on completion/failure/cancellation with the corresponding cause).
 14. **Files:** `listFiles` returns the `_shape`-discriminated union and loses generated pagination flows. Curated
-    helpers are `FilesClient.upload` and `downloadBytes` only. A curated `listAllFiles` walk is now *possible* —
-    kotlin-sdkgen 0.4.0 fixed the explicit `cursor: null` decode that OpenRouter sends on the terminal page — but is
-    not currently exposed; only the generated multi-page flow over a union envelope remains unsupported (exception
-    register + upstream proposal). `uploadFile` returns `FileResponse`, and the multipart codec fixes part
-    name/content-type (no curated `filename` param).
+    helpers are `FilesClient.upload`, `downloadBytes`, and now `listAllFiles` — a bounded curated cursor walk over
+    the union (`@OpenRouterExperimentalApi`), unblocked by kotlin-sdkgen 0.4.0's fix for the explicit `cursor: null`
+    terminal page. It yields a cold `Flow<FileListEntry>` (a small sealed interface wrapping the three provider file
+    records so the shapes are not flattened into one lossy model), follows the provider-specific continuation
+    (`cursor` for OpenRouter; `after`/`after_id` = `last_id` for OpenAI/Anthropic), honours **every**
+    `PaginationLimits` field (a `maxElapsed` budget covers the whole walk via a monotonic deadline applied per fetch,
+    never around `emit`, so already-emitted items are never replayed), and fails closed with `SdkPaginationException`
+    if a server repeats a continuation token. Only the *generated* multi-page flow over a union envelope remains
+    unsupported (exception register + upstream proposal). `uploadFile` returns `FileResponse`, and the multipart
+    codec fixes part name/content-type (no curated `filename` param).
 15. **STT:** curated `SttClient.transcribe(audio, model) { … }` over the multipart op.
 16. **`client.beta` is not present** — the 2026-08-29 contract GA'd Responses and Analytics, so no beta resources are
     generated. `@OpenRouterExperimentalApi` (WARNING-level opt-in) guards the pre-1.0 byte-stream/pagination/media

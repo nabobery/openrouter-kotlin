@@ -8,3 +8,7 @@ local.properties
 # SwiftPM build output for the iOS Swift-consumer sample.
 .build/
 samples/ios/SwiftConsumer/.build/
+
+# Python bytecode caches (test companions import scripts via importlib).
+__pycache__/
+*.py[cod]

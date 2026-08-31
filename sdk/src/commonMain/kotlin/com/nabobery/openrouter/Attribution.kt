@@ -11,6 +11,7 @@ public class Attribution(
     public val title: String? = null,
     categories: List<String> = emptyList(),
 ) {
+    /** App category tags sent as `X-OpenRouter-Categories`; a defensive immutable copy of the constructor argument. */
     public val categories: List<String> = categories.toList()
 
     internal fun toHeaders(): List<SdkHeader> = buildList {

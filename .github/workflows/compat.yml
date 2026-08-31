@@ -1,0 +1,68 @@
+name: Compatibility
+
+# Layered compatibility report on spec/API pull requests (docs/compat/README.md). The report classifies the
+# change on seven layers; `unclassified` always fails, `breaking` fails unless the PR carries `compat:breaking`.
+# Unprivileged and offline beyond Gradle/oasdiff resolution.
+on:
+  pull_request:
+    paths:
+      - spec/**
+      - sdk/api/**
+      - sdk/src/commonMain/**
+      - sdk/build.gradle.kts
+      - gradle/libs.versions.toml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: compat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compat:
+    name: Compatibility report vs PR base
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with: { distribution: temurin, java-version: "25" }
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+      - name: Install oasdiff (pinned; verified before extract)
+        run: bash scripts/install-oasdiff.sh
+      - name: Compatibility report against the PR base
+        id: compat
+        # Branch names are attacker-controlled; pass the base ref through env and quote it (never interpolate a
+        # context value into the run script — enforced repo-wide by scripts/workflow-audit.py rule h).
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --no-tags origin "refs/heads/$BASE_REF:refs/remotes/origin/$BASE_REF"
+          set +e
+          bash scripts/compat-snapshot.sh --base-ref "origin/$BASE_REF" --report build/compat/report.md
+          echo "code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+          cat build/compat/report.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: compat-report
+          path: build/compat/report.md
+          if-no-files-found: warn
+      - name: Gate on the release classification
+        env:
+          CODE: ${{ steps.compat.outputs.code }}
+          BREAKING_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'compat:breaking') }}
+        run: |
+          if [ "$CODE" = "1" ]; then
+            echo "::error::compatibility unclassified — a layer changed in a way the rules cannot classify (fix the input, not the rule)"; exit 1
+          fi
+          if [ "$CODE" = "3" ]; then
+            if [ "$BREAKING_LABEL" = "true" ]; then echo "breaking change acknowledged via the compat:breaking label"; exit 0; fi
+            echo "::error::breaking compatibility change requires the compat:breaking label and a written rationale"; exit 1
+          fi
+          echo "compatibility OK (patch/minor)"

@@ -1,0 +1,33 @@
+name: SDK parity
+
+# Weekly refresh of the official TypeScript/Python/Go parity inventories. Unprivileged, no secrets. It fetches
+# the PINNED commits (deterministic) so `render --check` stays green, and additionally reports how far each pin
+# is behind the repo's current main. Bumping a pin is a human PR (detection only).
+on:
+  schedule:
+    - cron: "0 7 * * 1" # weekly, Monday 07:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Fetch official inventories and check parity freshness
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Fetch pinned inventories, report drift from main, and verify the matrix is fresh
+        run: |
+          python3 scripts/parity_matrix_test.py
+          python3 scripts/parity-matrix.py fetch
+          python3 scripts/parity-matrix.py render --check
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: parity-inventory
+          path: docs/parity/inventory/
+          if-no-files-found: warn

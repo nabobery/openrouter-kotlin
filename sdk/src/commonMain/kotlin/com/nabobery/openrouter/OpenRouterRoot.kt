@@ -68,34 +68,91 @@ public class OpenRouter internal constructor(
     private val generated: OpenRouterClient,
     private val paginationLimits: PaginationLimits? = null,
 ) {
+    /** The analytics resource (usage and activity). */
     public val analytics: AnalyticsClient get() = generated.analytics
+
+    /** The Anthropic-compatible messages resource. */
     public val anthropicMessages: AnthropicMessagesClient get() = generated.anthropicMessages
+
+    /** The API-keys resource. */
     public val apiKeys: ApiKeysClient get() = generated.apiKeys
+
+    /** The benchmarks resource. */
     public val benchmarks: BenchmarksClient get() = generated.benchmarks
+
+    /** The bring-your-own-key (BYOK) provider-keys resource. */
     public val byok: ByokClient get() = generated.byok
+
+    /** The chat-completions resource; curated `send`/`stream` helpers live in `com.nabobery.openrouter.chat`. */
     public val chat: ChatClient get() = generated.chat
+
+    /** The classifications resource. */
     public val classifications: ClassificationsClient get() = generated.classifications
+
+    /** The containers resource. */
     public val containers: ContainersClient get() = generated.containers
+
+    /** The credits resource. */
     public val credits: CreditsClient get() = generated.credits
+
+    /** The datasets resource. */
     public val datasets: DatasetsClient get() = generated.datasets
+
+    /** The embeddings resource. */
     public val embeddings: EmbeddingsClient get() = generated.embeddings
+
+    /** The endpoints resource. */
     public val endpoints: EndpointsClient get() = generated.endpoints
+
+    /** The files resource; curated `upload`/`downloadBytes`/`listAllFiles` helpers live in `…openrouter.files`. */
     public val files: FilesClient get() = generated.files
+
+    /** The generations resource. */
     public val generations: GenerationsClient get() = generated.generations
+
+    /** The guardrails resource. */
     public val guardrails: GuardrailsClient get() = generated.guardrails
+
+    /** The images resource. */
     public val images: ImagesClient get() = generated.images
+
+    /** The models resource; curated `getModelsPages`/`getModelsItems` flows page it. */
     public val models: ModelsClient get() = generated.models
+
+    /** The OAuth resource. */
     public val oAuth: OAuthClient get() = generated.oAuth
+
+    /** The observability resource. */
     public val observability: ObservabilityClient get() = generated.observability
+
+    /** The organization resource. */
     public val organization: OrganizationClient get() = generated.organization
+
+    /** The presets resource. */
     public val presets: PresetsClient get() = generated.presets
+
+    /** The providers resource. */
     public val providers: ProvidersClient get() = generated.providers
+
+    /** The rerank resource. */
     public val rerank: RerankClient get() = generated.rerank
+
+    /** The responses resource (GA); curated helpers live in `com.nabobery.openrouter.responses`. */
     public val responses: ResponsesClient get() = generated.responses
+
+    /** The SCIM user/group provisioning resource. */
     public val scim: ScimClient get() = generated.scim
+
+    /** The speech-to-text resource; curated `transcribe` helper lives in `com.nabobery.openrouter.stt`. */
     public val stt: SttClient get() = generated.stt
+
+    /** The text-to-speech resource. */
     public val tts: TtsClient get() = generated.tts
+
+    /** The video-generation resource. */
     public val videoGeneration: VideoGenerationClient get() = generated.videoGeneration
+
+    /** The workspaces resource. */
     public val workspaces: WorkspacesClient get() = generated.workspaces
 
     /**
@@ -118,6 +175,7 @@ public class OpenRouter internal constructor(
     }
 
     public companion object {
+        /** The default OpenRouter API base URL. */
         public const val DEFAULT_BASE_URL: String = "https://openrouter.ai/api/v1"
     }
 }

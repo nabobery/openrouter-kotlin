@@ -16,12 +16,25 @@ jobs:
     steps:
       # Actions are pinned to full commit SHAs (version tags are mutable). The trailing
       # comment records the human-readable release each SHA corresponds to.
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Fail-closed workflow security audit: every `uses:` pins a 40-hex SHA, top-level permissions are
+      # `contents: read`, secrets are allowlisted per job, checkouts disable credential persistence, and
+      # write-capable jobs never execute anything from an artifact. This is the tripwire for the drift
+      # workflow's privilege split; it runs before anything else touches the tree.
+      - name: Workflow security audit (pins, permissions, secret isolation)
+        run: |
+          python3 scripts/workflow_audit_test.py
+          python3 scripts/drift_refresh_test.py
+          python3 scripts/workflow-audit.py check
+          python3 scripts/workflow-audit.py report --check
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       # Regenerate from the pinned spec and assert the produced surface reproduces the
       # committed baseline (spec/generated.lock.json) byte-for-byte. Generated sources are
@@ -37,6 +50,34 @@ jobs:
           python3 scripts/coverage_dashboard_test.py
           python3 scripts/coverage-dashboard.py
           git diff --exit-code -- docs/coverage/operation-coverage.md
+
+      # Offline freshness gates for the generated/curated docs (no network, no Gradle): the official-SDK parity
+      # matrix is regenerated from the committed pinned inventories and must match the committed file.
+      - name: Official SDK parity matrix freshness (offline)
+        run: |
+          python3 scripts/parity_matrix_test.py
+          python3 scripts/parity-matrix.py render --check
+
+      # Compiled-guide snippet freshness (offline): docs/guides examples are injected from the :samples:docs module
+      # (and the sample modules), so a stale block means an example drifted from a compiling API. samplesCheck
+      # compiles the snippet sources; this only checks the injected Markdown matches.
+      - name: Compiled guide snippet freshness (offline)
+        run: |
+          python3 scripts/docs_snippets_test.py
+          python3 scripts/docs-snippets.py check
+
+      # Docs-vs-code consistency (offline): targets, default constants, spec pins, and coverage totals must agree
+      # between the code and every document that quotes them.
+      - name: Docs consistency gate (offline)
+        run: |
+          python3 scripts/docs_consistency_test.py
+          python3 scripts/docs-consistency.py check
+
+      # KDoc completeness (offline): every public stable symbol in the curated sources carries KDoc (PRD §7).
+      - name: KDoc completeness gate (offline)
+        run: |
+          python3 scripts/kdoc_audit_test.py
+          python3 scripts/kdoc-audit.py check
 
       # The host-aware verification gate on ubuntu x64: compiles JVM/JS/all-three-native/android, runs the runtime
       # lanes this host can execute (jvmTest, jsNodeTest, linuxX64Test, testAndroidHostTest — each common +
@@ -66,7 +107,7 @@ jobs:
           ./scripts/measure-compile.sh compileKotlinJvm --out-dir build/budgets
           python3 scripts/budgets.py check docs/budgets/compile-times.json build/budgets/compile-times.json --tolerance 0.5
           python3 scripts/budgets.py check docs/budgets/warnings.json build/budgets/warnings.json --tolerance 0
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: compile-budget
@@ -79,12 +120,14 @@ jobs:
     # the deprecated Intel lanes (macosX64/iosX64) run nightly on macos-15-intel.
     runs-on: macos-15 # macos-14 is deprecated by GitHub; macos-15 is arm64 with an iOS 18 simulator ("iPhone 16")
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       - name: SDK verification + sample compile (all targets; JVM/JS/macOS/iOS-sim tests; API check; samples)
         run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.iosSimulator="iPhone 16" --console=plain
@@ -104,7 +147,7 @@ jobs:
           python3 scripts/budgets_test.py
           ./scripts/measure-artifacts.sh -Popenrouter.androidTarget=true
           python3 scripts/budgets.py check docs/budgets/artifact-sizes.json build/budgets/measured.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: artifact-sizes
@@ -116,12 +159,14 @@ jobs:
     # host lane is already covered on build-linux.
     runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       - name: Host-aware verification gate + samples (runs linuxArm64Test; links the linuxArm64 sample executable)
         run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
@@ -131,12 +176,14 @@ jobs:
     # host-agnostic jvmTest and jsNodeTest. First run downloads the Kotlin/Native MinGW toolchain (several minutes).
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: temurin
           java-version: "25"
-      - uses: gradle/actions/setup-gradle@748248ddd2a24f49513d8f472f81c3a07d4d50e1 # v4.4.4
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       - name: Host-aware verification gate + samples (runs mingwX64Test; links the WinHttp sample executable)
         shell: bash

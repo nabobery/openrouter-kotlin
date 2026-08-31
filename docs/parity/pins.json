@@ -1,0 +1,23 @@
+{
+  "_comment": "Pinned commits of the official OpenRouter Speakeasy SDKs. scripts/parity-matrix.py fetch reads each pinned commit's .speakeasy/gen.lock + gen.yaml to build docs/parity/inventory/<sdk>.json; render builds the matrix offline. Bumping a pin is a human PR (parity.yml only reports how far behind main each pin is).",
+  "speakeasyVersion": "1.787.0",
+  "retrievedAt": "2026-08-30",
+  "typescript": {
+    "repo": "OpenRouterTeam/typescript-sdk",
+    "commit": "24d6822ff5f6ee552996ae84825ae8d839517b5f",
+    "sdkVersion": "1.2.84",
+    "docChecksum": "eaaf882a7a1b67d88c54534f59459d1c"
+  },
+  "python": {
+    "repo": "OpenRouterTeam/python-sdk",
+    "commit": "f3266859350bd92764df47ff852ae64eac4ded4a",
+    "sdkVersion": "1.1.104",
+    "docChecksum": "83d0b70a137715a101f22c01da7386c4"
+  },
+  "go": {
+    "repo": "OpenRouterTeam/go-sdk",
+    "commit": "1c66a05dde316e06572b10b4e4986b241bd9a1b3",
+    "sdkVersion": "0.7.97",
+    "docChecksum": "925eb2db9df1bb359f092b9bf1311c82"
+  }
+}

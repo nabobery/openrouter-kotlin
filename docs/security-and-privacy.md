@@ -1,5 +1,9 @@
 # Security and privacy
 
+See also the full [STRIDE threat model](security/threat-model.md) (per-boundary controls with evidence and
+residuals) and the [secret-isolation report](security/secret-isolation-report.md) (a CI-checked, generated table
+of every workflow's permissions and secret usage).
+
 ## Assets and threats
 
 | Asset | Threat |
@@ -93,16 +97,22 @@ prompt or response by default. Cancellation immediately stops further consumptio
 
 ## Supply-chain controls
 
-- Pin the OpenRouter spec by SHA-256.
-- Pin generator and build plugin versions.
-- Use Gradle dependency verification and lock files where appropriate.
-- Review overlays and generated diffs.
-- Run secret scanning and dependency vulnerability analysis.
-- Generate an SBOM.
-- Sign Maven publications.
-- Produce build provenance/attestation.
-- Publish only from protected workflows and immutable tags.
-- Separate drift PR permissions from release permissions.
+| Control | Status | Where |
+| --- | --- | --- |
+| Spec pinned by SHA-256; generator/plugin versions pinned | implemented | `spec/pin.json`, `spec/sdkgen.yaml`, `gradle/libs.versions.toml` |
+| Overlays digest-pinned; generated diff reviewed via the drift PR | implemented | `spec/sdkgen.yaml`, `.github/workflows/drift.yml` |
+| Gradle dependency verification (PGP trusted keys; checksum fallback for unsigned artifacts) | planned | not yet configured |
+| npm/yarn lock for the JS target | implemented | `kotlin-js-store/yarn.lock` |
+| Secret scanning (gitleaks: PR/push + weekly history) | implemented | `.github/workflows/gitleaks.yml`, `.gitleaks.toml` |
+| Dependency vulnerability review on PRs (fail on high) | implemented | `.github/workflows/dependency-review.yml` |
+| OpenSSF Scorecard (weekly + push) | implemented | `.github/workflows/scorecard.yml` |
+| CodeQL (Kotlin/Java, weekly, 90-min cap) | implemented | `.github/workflows/codeql.yml` |
+| Dependabot (Gradle + Actions, weekly) | implemented | `.github/dependabot.yml` |
+| Workflow SHA pins + least privilege + secret isolation, machine-checked | implemented | `scripts/workflow-audit.py`, `docs/security/secret-isolation-report.md` |
+| GitHub native secret scanning + push protection | operator action | repository settings |
+| SBOM (CycloneDX) | planned | future release work |
+| Signed Maven publications; build provenance/attestation | planned | future release work |
+| Publish only from protected workflows and immutable tags; drift/release permission separation | planned/partial | `docs/spec-sync-and-release.md` |
 
 ## CI permissions
 
@@ -124,11 +134,5 @@ documented server contract.
 
 ## Incident response
 
-1. Privately report vulnerabilities through the repository security policy.
-2. Assess credential, artifact, and behavioral impact.
-3. Revoke affected release or automation credentials.
-4. Patch supported release lines.
-5. Publish an advisory and migration instructions.
-6. Rotate signing/release material if compromise is possible.
-7. Record the corrective control and regression test.
-
+The reporting channel and the seven-step incident procedure live in [SECURITY.md](../SECURITY.md) (private
+reporting via GitHub Security Advisories, supported versions, and the response steps).

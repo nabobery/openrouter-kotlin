@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, github-actions]
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, gradle]
+    groups:
+      kotlin:
+        patterns: ["org.jetbrains.kotlin*", "org.jetbrains.kotlinx*"]
+      ktor:
+        patterns: ["io.ktor*"]
+    ignore:
+      # Kotlin and kotlin-sdkgen move together (a generator version pins a Kotlin version);
+      # bump them deliberately with a regeneration, never by bot.
+      - dependency-name: "org.jetbrains.kotlin*"
+      - dependency-name: "io.github.nabobery*"
