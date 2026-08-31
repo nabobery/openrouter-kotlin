@@ -12,6 +12,7 @@ androidx-lifecycle = "2.8.7"
 kotlinx-benchmark = "0.4.17"
 
 [libraries]
+sdkgen-cli = { module = "io.github.nabobery:kotlin-sdkgen-cli", version.ref = "sdkgen" }
 sdkgen-runtime = { module = "io.github.nabobery:kotlin-sdkgen-runtime", version.ref = "sdkgen" }
 sdkgen-testing = { module = "io.github.nabobery:kotlin-sdkgen-testing", version.ref = "sdkgen" }
 sdkgen-transport-ktor = { module = "io.github.nabobery:kotlin-sdkgen-transport-ktor", version.ref = "sdkgen" }

@@ -4,6 +4,7 @@ import OpenRouterSample
 // Constructs the sample facade over the XCFramework, then — only when OPENROUTER_API_KEY is set — awaits a one-shot
 // completion (Kotlin `suspend fun` is exposed to Swift as `async`). With no key it just proves the framework links
 // and the facade constructs, then releases the HTTP client. Compile-and-link is the CI evidence; the call is opt-in.
+// region ios-consumer
 let facade = OpenRouterFacade()
 
 if let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !apiKey.isEmpty {
@@ -23,3 +24,4 @@ if let apiKey = ProcessInfo.processInfo.environment["OPENROUTER_API_KEY"], !apiK
     print("OPENROUTER_API_KEY not set — facade constructed and XCFramework linked; skipping the network call.")
     facade.close()
 }
+// endregion

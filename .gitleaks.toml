@@ -1,0 +1,35 @@
+# gitleaks configuration. Extends the default rule set and allowlists the SDK's non-secret test fixtures and the
+# pinned OpenAPI document (which contains illustrative example values, not live credentials).
+title = "openrouter-kotlin gitleaks config"
+
+[extend]
+useDefault = true
+
+# Detect a real OpenRouter key (`sk-or-v1-` + a long hex secret). The default rule set has no OpenRouter rule and
+# only flags generic keys when a keyword sits next to the value, so a committed live key could otherwise slip
+# through. The placeholder fixtures use `sk-or-<word>` (never `sk-or-v1-<hex>`), so this rule fires only on the
+# real shape; the allowlist below is scoped so it never suppresses this rule.
+[[rules]]
+id = "openrouter-api-key"
+description = "OpenRouter API key (sk-or-v1-…)"
+regex = '''sk-or-v1-[0-9a-fA-F]{32,}'''
+keywords = ["sk-or-v1-"]
+
+[allowlist]
+description = "Structurally-fake placeholder keys used by tests, samples, documentation, and the pinned spec."
+# No source path is excluded. In particular, the custom OpenRouter-key rule must inspect the pinned OpenAPI document:
+# a digest proves integrity against the recorded bytes, not that those bytes are free of credentials.
+# Fake placeholder credentials used across tests/samples/docs. Anchored and bounded to the test naming convention
+# (`sk-or-<word>[-<short-suffix>…]`, `key-<n>`) so they can NOT match a real `sk-or-v1-<64 hex>` key: the `v1`
+# segment breaks the leading `[a-z]+`, and the length bounds exclude the 64-hex tail. RE2 has no look-around, so
+# the anchoring is what keeps this from shadowing a genuine leaked key.
+regexes = [
+  '''\bsk-or-[a-z]+(?:-[a-z0-9]{1,10})*\b''',
+  '''\bkey-[0-9]{1,6}\b''',
+  # Exact illustrative values embedded in the upstream OpenAPI examples. Keeping these value-specific preserves
+  # scanning for every other credential-shaped value in the spec.
+  '''sk-proj-abc123\.\.\.''',
+  '''c56454edb818d6b14bc0d61c46025f1450b0f4012d12304ab40aacb519fcbc93''',
+  '''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''',
+  '''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''',
+]

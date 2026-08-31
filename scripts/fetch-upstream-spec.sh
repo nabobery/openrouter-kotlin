@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 # Fetch the canonical OpenRouter OpenAPI document with size/format/digest reporting (spec-sync doc "Drift workflow").
+# Default stdout is the `key=value` report drift-refresh.sh parses; pass --json for a JSON object instead.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 URL="https://openrouter.ai/openapi.yaml"
+JSON=0
+if [ "${1:-}" = "--json" ]; then JSON=1; shift; fi
 OUT="${1:-spec/openapi.yaml}"
 TMP="$(mktemp)"
 curl --fail --silent --show-error --location --max-time 120 --max-filesize 16777216 --proto '=https' --tlsv1.2 "$URL" -o "$TMP"
@@ -14,4 +17,10 @@ SHA="$(shasum -a 256 "$TMP" | cut -d' ' -f1)"
 SIZE="$(wc -c < "$TMP" | tr -d ' ')"
 OPS="$(grep -c 'operationId:' "$TMP")"
 mv "$TMP" "$OUT"
-printf 'source=%s\nsha256=%s\nsizeBytes=%s\noperations=%s\nretrievedAt=%s\n' "$URL" "$SHA" "$SIZE" "$OPS" "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+if [ "$JSON" = "1" ]; then
+  printf '{"source":"%s","sha256":"%s","sizeBytes":%s,"operations":%s,"retrievedAt":"%s"}\n' \
+    "$URL" "$SHA" "$SIZE" "$OPS" "$AT"
+else
+  printf 'source=%s\nsha256=%s\nsizeBytes=%s\noperations=%s\nretrievedAt=%s\n' "$URL" "$SHA" "$SIZE" "$OPS" "$AT"
+fi

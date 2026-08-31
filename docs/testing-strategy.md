@@ -29,7 +29,7 @@ flowchart TB
 | Generated OpenRouter consumer | Every PR | Exact API compiles and representative calls encode/decode |
 | Target compile/API matrix | Every PR or merge queue | Published declarations work across targets |
 | Runtime target matrix | Merge/nightly by tier | Engine-specific behavior |
-| Official SDK parity | Scheduled and release | Defaults, operations, errors, headers, stream fixtures |
+| Official SDK parity | PR (offline freshness) + weekly refresh | Operation matrix and curated behaviour rows vs the pinned official TS/Py/Go inventories — see `docs/parity/official-sdk-parity.md` |
 | Live smoke | Nightly/release, budgeted | Detect server/spec behavior drift |
 | Isolated publication consumer | Release | Maven metadata and target resolution |
 
@@ -131,7 +131,7 @@ untrusted absolute hosts, cancellation, and failure after earlier pages. Automat
 - Authentication is not forwarded on redirects or pagination to untrusted hosts.
 - Error previews are byte-bounded and redacted.
 - Spec acquisition verifies digest.
-- Publication resolves with dependency verification enabled.
+- Before publication, resolve the complete publication graph with dependency verification enabled.
 
 ## Target matrix
 
@@ -168,6 +168,23 @@ A release candidate stores:
 - Publication rehearsal output.
 - SBOM, signatures, and provenance.
 - Known limitations and accepted waivers.
+
+## Machine-checked CI gates
+
+Beyond the test lanes, offline gates keep tooling, docs, and security invariants honest (each a stdlib-only Python
+script with a `_test.py` companion, run on `build-linux`):
+
+| Gate | Script | Enforces |
+| --- | --- | --- |
+| Drift | `check-drift.sh` | regeneration reproduces the committed baseline (content address + file counts) |
+| Coverage dashboard | `coverage-dashboard.py` | `docs/coverage/operation-coverage.md` is fresh |
+| Workflow secret isolation | `workflow-audit.py` | SHA-pinned actions, least-privilege permissions, no artifact-derived execution in write jobs |
+| Compatibility | `compat-report.py` (+ `compat.yml`) | layered OpenAPI→semantic→source→ABI→wire→behaviour→targets classification; fail on unclassified, `compat:breaking` label rule |
+| Official-SDK parity | `parity-matrix.py` | the generated matrix matches the pinned TS/Py/Go inventories |
+| Compiled-guide snippets | `docs-snippets.py` | every guide example matches its compiled `:samples:docs` region |
+| Docs-vs-code consistency | `docs-consistency.py` | targets, default constants, spec pins, and coverage totals agree |
+| KDoc completeness | `kdoc-audit.py` | every public curated symbol has KDoc |
+| Budgets | `budgets.py` | artifact size, compile time, warning count (0), runtime latency/throughput |
 
 ## Acceptance gates
 

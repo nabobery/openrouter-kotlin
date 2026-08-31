@@ -6,6 +6,10 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.binary.compatibility.validator)
+    // Dokka is intentionally not applied because its bundled jackson-core shadows the one the sdkgen YAML parser
+    // needs when both plugins share the :sdk classpath
+    // (`YAMLParser._updateToken(JsonToken)`, changed in Jackson 2.22), breaking `generateOpenrouterSdk` even after
+    // forcing the Jackson version. Source KDoc is instead checked by scripts/kdoc-audit.py.
 }
 
 // Enable klib ABI validation (BCV experimental) so the native/JS klib surface is baselined alongside the JVM
@@ -36,6 +40,7 @@ tasks.register("samplesCheck") {
     description = "Compiles every sample consumer for the current host (no network)."
     dependsOn(
         ":samples:jvm:compileKotlin",
+        ":samples:docs:compileKotlin",
         ":samples:js:compileKotlinJs",
         ":samples:browser:compileKotlinJs",
         ":samples:native-desktop:compileKotlinLinuxX64",
@@ -45,7 +50,7 @@ tasks.register("samplesCheck") {
     when {
         samplesHostMac -> {
             dependsOn(":samples:apple:compileKotlinMacosArm64")
-            // The iOS Swift-consumer facade module (Task 11) compiles here too, once it is part of the build.
+            // The iOS Swift-consumer facade module compiles here too when it is part of the build.
             findProject(":samples:ios:shared")?.let { dependsOn(":samples:ios:shared:compileKotlinMacosArm64") }
         }
         samplesHostLinux && samplesHostArm -> dependsOn(":samples:native-desktop:linkDebugExecutableLinuxArm64")
@@ -53,6 +58,9 @@ tasks.register("samplesCheck") {
         samplesHostWindows -> dependsOn(":samples:native-desktop:linkDebugExecutableMingwX64")
     }
     // The Android sample (a com.android.kotlin.multiplatform.library consuming the android variant of :sdk) only
-    // participates when an Android SDK made it part of the build.
+    // participates when an Android SDK made it part of the build. A runnable com.android.application APK is blocked
+    // by the KGP-2.3.20/AGP-9.2.1 support ceiling (KGP 2.3.20 supports AGP ≤ 9.0.0; AGP 9.2.1's built-in Kotlin
+    // delegates to KGP's legacy KotlinAndroidTarget, which references the removed BaseVariant). This module compiles
+    // the Activity against the android variant instead.
     findProject(":samples:android")?.let { dependsOn(":samples:android:compileAndroidMain") }
 }

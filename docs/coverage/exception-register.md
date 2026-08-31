@@ -20,16 +20,16 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 
 ## Degraded capabilities
 
-### `listFiles` — generated pagination flows dropped (union response envelope)
+### `listFiles` — generated pagination flows dropped (union response envelope); curated walk shipped
 
 | Field | Value |
 | --- | --- |
 | Owner | openrouter-kotlin-maintainers |
-| Reason | As of the 2026-08-29 re-pin `FileListResponse` is a `_shape`-discriminated `oneOf` (`OpenRouterFileList \| OpenAIFileList \| AnthropicFileList`); kotlin-sdkgen (through 0.4.0) cannot address the `/data` items path on a union envelope. The `/files` `x-sdkgen-pagination` overlay block was removed. |
-| User impact | `FilesClient.listFiles(...)` returns the union, but the generated `listFilesPages()`/`listFilesItems()` flows are absent for this one operation. The terminal-page decode block is **gone** — kotlin-sdkgen 0.4.0 fixed explicit-null nullable branch fields, so `cursor: null` pages now decode (pinned by `FilesContractTest.terminalFileListPageWithNullCursorDecodes`); a single-page listing works. Only the generated multi-page *flow* over a union envelope remains unsupported. |
-| Workaround | A curated `listAllFiles(...)` cursor walk is now **possible** (0.4.0 unblocked the terminal `cursor: null` page), but is not currently exposed. `fromRaw(JsonElement)` can accept the raw JSON if a caller issues the request themselves. |
-| Expiry | Next kotlin-sdkgen release that paginates over discriminated response envelopes. |
-| 1.0 disposition | Upstream generator support for pagination over discriminated (`oneOf`) response envelopes. |
+| Reason | As of the 2026-08-29 re-pin `FileListResponse` is a `_shape`-discriminated `oneOf` (`OpenRouterFileList \| OpenAiFileList \| AnthropicFileList`); kotlin-sdkgen (through 0.4.0) cannot address the `/data` items path on a union envelope. The `/files` `x-sdkgen-pagination` overlay block was removed, so the generated `listFilesPages()`/`listFilesItems()` flows are absent for this one operation. |
+| User impact | `FilesClient.listFiles(...)` returns the union and a single-page listing works (0.4.0 fixed explicit-null nullable branch fields, so `cursor: null` terminal pages decode — pinned by `FilesContractTest.terminalFileListPageWithNullCursorDecodes`). Only the **generated** multi-page flow over a union envelope remains unsupported. |
+| Workaround | **Shipped:** the curated `FilesClient.listAllFiles(...)` bounded cursor walk (`@OpenRouterExperimentalApi`) follows the provider-specific continuation (`cursor` for OpenRouter; `after`/`after_id` = `last_id` for OpenAI/Anthropic), honours every `PaginationLimits` field, and fails closed with `SdkPaginationException` on a repeated continuation token. Proven by the `FilesContractTest.listAllFiles*` matrix. `fromRaw(JsonElement)` remains available for callers who issue the request themselves. |
+| Expiry | Next kotlin-sdkgen release that paginates over discriminated response envelopes (the curated walk can then defer to the generated flow). |
+| 1.0 disposition | Upstream generator support for pagination over discriminated (`oneOf`) response envelopes; the curated helper stays as the ergonomic surface. |
 
 ### Unknown union discriminators throw at decode (forward-compat gap)
 

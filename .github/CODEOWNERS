@@ -1,0 +1,10 @@
+# Default owner for everything in the repository.
+* @nabobery
+
+# High-sensitivity paths. The daily drift PR always touches spec/, the ABI baselines, the
+# coverage dashboard, and the compatibility reports — these lines guarantee those changes
+# request review even when a bot opens the PR.
+/spec/            @nabobery
+/sdk/api/         @nabobery
+/docs/coverage/   @nabobery
+/docs/compat/     @nabobery

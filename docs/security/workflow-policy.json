@@ -1,0 +1,31 @@
+{
+  "secretsAllowlist": {
+    "live.yml/live-smoke": ["OPENROUTER_API_KEY"],
+    "drift.yml/open-pr": ["DRIFT_APP_PRIVATE_KEY", "GITHUB_TOKEN"],
+    "parity.yml/refresh": [],
+    "docs.yml/deploy": ["GITHUB_TOKEN"],
+    "scorecard.yml/analysis": ["GITHUB_TOKEN"],
+    "codeql.yml/analyze": ["GITHUB_TOKEN"],
+    "gitleaks.yml/scan": ["GITHUB_TOKEN"]
+  },
+  "scheduledSecretUsers": ["live.yml", "drift.yml", "scorecard.yml", "codeql.yml", "gitleaks.yml"],
+  "writeCapableJobs": ["drift.yml/open-pr", "docs.yml/deploy", "scorecard.yml/analysis", "codeql.yml/analyze"],
+  "writeJobAllowedCommands": {
+    "drift.yml/open-pr": [
+      "python3 scripts/validate-drift-patch.py drift/drift.patch",
+      "set -eu",
+      "export GIT_INDEX_FILE=\"$(mktemp)\"",
+      "git read-tree HEAD",
+      "git apply --cached --check drift/drift.patch",
+      "git apply --cached drift/drift.patch",
+      "git diff --cached --name-only -z HEAD > \"$RUNNER_TEMP/drift-touched\"",
+      "if [ -s \"$RUNNER_TEMP/drift-touched\" ] && \\",
+      "git ls-files -s -z --pathspec-from-file=\"$RUNNER_TEMP/drift-touched\" --pathspec-file-nul \\",
+      "| tr '\\0' '\\n' | awk 'NF {print $1}' | grep -Ev '^100644$'; then",
+      "echo \"::error::non-regular or executable entries among patch-touched paths after apply\"; exit 1",
+      "fi",
+      "git checkout-index -a -f",
+      "unset GIT_INDEX_FILE"
+    ]
+  }
+}
