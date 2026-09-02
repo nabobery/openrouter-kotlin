@@ -1,0 +1,53 @@
+name: Release rehearsal
+
+# Credential-free rehearsal of the release pipeline: stage -> inventory -> consumer matrix -> SBOM -> bundle, with no
+# signing and no upload. Runs on demand, weekly, and on PRs that touch the publication machinery. macos-15 is the only
+# runner that stages every publication (Apple klibs + the Android aar).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 0" # Sundays 06:00 UTC
+  pull_request:
+    paths:
+      - "publication/**"
+      - "testing/**"
+      - "sdk/build.gradle.kts"
+      - "gradle/openrouter-publication.gradle.kts"
+      - "gradle/libs.versions.toml"
+      - "scripts/release-*"
+      - "scripts/central-*"
+      - "scripts/publication-*"
+      - "scripts/consumer-matrix.sh"
+      - ".github/workflows/release*.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  rehearse:
+    runs-on: macos-15
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: temurin
+          java-version: "25"
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+      - name: Rehearse (stage, inventory, consumer matrix, SBOM, bundle)
+        run: bash scripts/release-rehearsal.sh
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: release-rehearsal
+          path: |
+            build/publication-inventory.json
+            build/central-bundle.zip
+            build/sbom/
+            build/consumer-matrix.log
+          retention-days: 14
+          if-no-files-found: warn

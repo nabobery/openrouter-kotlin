@@ -6,10 +6,12 @@ plugins {
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
     alias(libs.plugins.binary.compatibility.validator)
-    // Dokka is intentionally not applied because its bundled jackson-core shadows the one the sdkgen YAML parser
-    // needs when both plugins share the :sdk classpath
-    // (`YAMLParser._updateToken(JsonToken)`, changed in Jackson 2.22), breaking `generateOpenrouterSdk` even after
-    // forcing the Jackson version. Source KDoc is instead checked by scripts/kdoc-audit.py.
+    // Dokka is applied ONLY in the `:publication:dokka` sibling project — never here on the root and never on `:sdk`
+    // or `:testing`. Its bundled jackson-core shadows the one the sdkgen YAML parser needs whenever both plugins
+    // share a classloader (`YAMLParser._updateToken(JsonToken)`, changed in Jackson 2.22), which breaks
+    // `generateOpenrouterSdk` even after forcing the Jackson version. Sibling-project isolation keeps Dokka's
+    // classpath off the buildscript classpath that hosts the sdkgen plugin. Source KDoc is additionally checked by
+    // scripts/kdoc-audit.py.
 }
 
 // Enable klib ABI validation (BCV experimental) so the native/JS klib surface is baselined alongside the JVM

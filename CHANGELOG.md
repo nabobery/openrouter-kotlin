@@ -7,6 +7,8 @@ any release; each is called out under **Breaking** and described in [`docs/migra
 
 ## [Unreleased]
 
+## [0.1.0-rc.1] - 2026-09-02
+
 ### Added
 
 - Curated inference facade over the generated clients: `chat.send` / `chat.stream`, the `messages { }` DSL and
@@ -29,6 +31,15 @@ any release; each is called out under **Breaking** and described in [`docs/migra
   model with a CI-checked secret-isolation report, dependency/security scanning workflows, and a KDoc completeness gate.
 - Compile-checked tutorials and how-to guides ([`docs/guides/`](docs/guides/README.md)) whose examples are injected
   from a compiled module and freshness-gated.
+- **Maven Central publication.** Both modules stage under ADR 0006 coordinates
+  (`io.github.nabobery:openrouter-kotlin` and `…:openrouter-kotlin-testing`) with POM metadata, sources, a
+  lightweight `-javadoc.jar` (the full Dokka reference site is published to GitHub Pages), in-memory PGP signatures,
+  a CycloneDX 1.6 SBOM, and SLSA build provenance. Upload is a stdlib Publisher API v1 client (`USER_MANAGED`), and a
+  privilege-split release workflow validates → verifies → signs/stages/attests/uploads → releases. Every stage is
+  proven credential-free by `scripts/release-rehearsal.sh` and an isolated consumer matrix that resolves the
+  published coordinates (JVM, Android, Apple, Native, JS).
+- **`openrouter-kotlin-testing`** companion artifact: `OpenRouter.fake`, a capability-matched fake transport, and
+  contract-proven chat/stream/error fixtures for consumer tests — no network, no secrets.
 
 ### Changed
 
@@ -52,4 +63,5 @@ any release; each is called out under **Breaking** and described in [`docs/migra
 See [`docs/migration/0.x-generated-renames.md`](docs/migration/0.x-generated-renames.md) for the before/after symbol
 table.
 
-[Unreleased]: https://github.com/nabobery/openrouter-kotlin/commits/main
+[Unreleased]: https://github.com/nabobery/openrouter-kotlin/compare/v0.1.0-rc.1...HEAD
+[0.1.0-rc.1]: https://github.com/nabobery/openrouter-kotlin/releases/tag/v0.1.0-rc.1

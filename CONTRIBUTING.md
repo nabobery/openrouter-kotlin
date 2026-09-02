@@ -59,6 +59,13 @@ explains why** — never widen a tolerance to make a run pass.
   note, and must update `CHANGELOG.md` and (for a release) `docs/migration/`.
 - No CLA and **no DCO sign-off** is required.
 
+## Releasing
+
+Releases are cut by a maintainer following [`docs/release-runbook.md`](docs/release-runbook.md): rehearse
+credential-free with `bash scripts/release-rehearsal.sh`, set the version with
+`python3 scripts/release-version.py set <version>`, tag `v<version>` on the merged commit, and dispatch the
+protected **Release** workflow. Maven Central is immutable — a bad release is superseded by a patch, never edited.
+
 ## Security
 
 Do not file public issues for vulnerabilities — see [SECURITY.md](SECURITY.md) for private

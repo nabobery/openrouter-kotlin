@@ -27,13 +27,15 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 <!-- workflow-audit:start -->
 | workflow | job | write? | secrets | triggers | fork-safe? |
 | --- | --- | --- | --- | --- | --- |
-| ci.yml | build-linux | read | - | push,pull_request | yes |
-| ci.yml | build-apple | read | - | push,pull_request | yes |
-| ci.yml | build-linux-arm64 | read | - | push,pull_request | yes |
-| ci.yml | build-windows | read | - | push,pull_request | yes |
+| ci.yml | build-linux | read | - | push,pull_request,workflow_call | yes |
+| ci.yml | build-apple | read | - | push,pull_request,workflow_call | yes |
+| ci.yml | build-linux-arm64 | read | - | push,pull_request,workflow_call | yes |
+| ci.yml | build-windows | read | - | push,pull_request,workflow_call | yes |
 | codeql.yml | analyze | write | - | schedule,workflow_dispatch | no |
 | compat.yml | compat | read | - | pull_request | yes |
 | dependency-review.yml | dependency-review | write | - | pull_request | no |
+| docs.yml | build | read | - | release,workflow_dispatch | yes |
+| docs.yml | deploy | write | - | release,workflow_dispatch | no |
 | drift.yml | detect | read | - | schedule,workflow_dispatch | yes |
 | drift.yml | open-pr | write | DRIFT_APP_PRIVATE_KEY,GITHUB_TOKEN | schedule,workflow_dispatch | no |
 | gitleaks.yml | scan | read | GITHUB_TOKEN | pull_request,push,schedule | no |
@@ -42,6 +44,11 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 | parity.yml | refresh | read | - | schedule,workflow_dispatch | yes |
 | perf.yml | bench-jvm-linux | read | - | schedule,workflow_dispatch | yes |
 | perf.yml | bench-macos | read | - | schedule,workflow_dispatch | yes |
+| release-rehearsal.yml | rehearse | read | - | workflow_dispatch,schedule,pull_request | yes |
+| release.yml | validate | read | - | workflow_dispatch | yes |
+| release.yml | verify | read | - | workflow_dispatch | yes |
+| release.yml | stage-and-publish | write | GPG_SIGNING_KEY,GPG_SIGNING_PASSPHRASE,MAVEN_CENTRAL_PASSWORD,MAVEN_CENTRAL_USERNAME | workflow_dispatch | no |
+| release.yml | github-release | write | GITHUB_TOKEN | workflow_dispatch | no |
 | scorecard.yml | analysis | write | - | schedule,push | no |
 <!-- workflow-audit:end -->
 

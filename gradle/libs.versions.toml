@@ -4,6 +4,8 @@ sdkgen = "0.4.0"
 kotlinx-serialization = "1.11.0"
 kotlinx-coroutines = "1.11.0"
 binary-compatibility-validator = "0.18.1"
+dokka = "2.2.0"
+cyclonedx = "3.4.1"
 ktor = "3.5.2"
 ktlint-cli = "1.8.0"
 agp = "9.2.1"
@@ -38,6 +40,8 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 sdkgen = { id = "io.github.nabobery.kotlin-sdkgen", version.ref = "sdkgen" }
 binary-compatibility-validator = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compatibility-validator" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+cyclonedx = { id = "org.cyclonedx.bom", version.ref = "cyclonedx" }
 android-application = { id = "com.android.application", version.ref = "agp" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 kotlinx-benchmark = { id = "org.jetbrains.kotlinx.benchmark", version.ref = "kotlinx-benchmark" }

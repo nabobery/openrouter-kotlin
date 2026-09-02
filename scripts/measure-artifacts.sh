@@ -20,7 +20,8 @@ done
 TMP_REPO="$(mktemp -d)"
 trap 'rm -rf "$TMP_REPO"' EXIT
 
-./gradlew :sdk:publishToMavenLocal -Dmaven.repo.local="$TMP_REPO" --console=plain ${EXTRA_GRADLE_ARGS[@]+"${EXTRA_GRADLE_ARGS[@]}"}
+# Both published modules are measured: the full consumer download is :sdk + :testing across every target.
+./gradlew :sdk:publishToMavenLocal :openrouter-kotlin-testing:publishToMavenLocal -Dmaven.repo.local="$TMP_REPO" --console=plain ${EXTRA_GRADLE_ARGS[@]+"${EXTRA_GRADLE_ARGS[@]}"}
 
 mkdir -p "$(dirname "$OUT")"
 # Emit a JSON object of artifact basename -> byte size for the primary consumable artifacts.
@@ -28,8 +29,9 @@ python3 - "$TMP_REPO" "$OUT" "$MERGE" <<'PY'
 import json, os, pathlib, re, sys
 repo, out, merge = sys.argv[1], sys.argv[2], sys.argv[3]
 root = pathlib.Path(repo) / "io" / "github" / "nabobery"
-# Strip the embedded version (e.g. sdk-jvm-0.1.0-SNAPSHOT.jar -> sdk-jvm.jar) so the baseline is version-stable.
-version = re.compile(r"-\d+\.\d+\.\d+(?:-SNAPSHOT)?(?=(?:-metadata)?\.(?:jar|klib|aar)$)")
+# Strip the embedded version (e.g. openrouter-kotlin-jvm-0.1.0-rc.1.jar -> openrouter-kotlin-jvm.jar) so the baseline
+# is version-stable.
+version = re.compile(r"-\d+\.\d+\.\d+(?:-(?:SNAPSHOT|rc\.\d+))?(?=(?:-metadata)?\.(?:jar|klib|aar)$)")
 sizes = {}
 if root.exists():
     for path in root.rglob("*"):

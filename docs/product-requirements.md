@@ -148,7 +148,7 @@ wire and endpoint parity plus Kotlin-specific coroutine and multiplatform behavi
 | FR-API-003 | Add curated overloads only where they reduce routine complexity or provide Kotlin semantics. |
 | FR-API-004 | Reuse the same immutable public request/response models in generated calls, overloads, and DSLs. |
 | FR-API-005 | Provide typed normal calls and `WithResponse` alternatives exposing status and headers. |
-| FR-API-006 | Put generated beta resources under `client.beta`; mark curated unstable APIs with Kotlin opt-in annotations. |
+| FR-API-006 | Mark curated unstable APIs with Kotlin opt-in annotations. (The `client.beta` grouping is **not applicable to the pinned contract**: the 2026-08-29 GA re-pin removed all beta resources — Responses and Analytics GA'd — so no beta surface exists to group.) |
 | FR-API-007 | Preserve unknown enum and union variants and their raw values. |
 | FR-API-008 | Preserve absent, explicit-null, and present states where the contract distinguishes them. |
 | FR-API-009 | Use `JsonElement`/`JsonObject`, never `Any`, for open JSON. |
@@ -162,7 +162,7 @@ The pinned specification owns the exact inventory. Required capability families 
 - Models, providers, endpoints, routing data, presets, and ZDR-related discovery.
 - Credits, generations, feedback, usage, analytics, observability, and benchmarks.
 - Keys, organizations, workspaces, BYOK credentials, guardrails, files, and datasets.
-- Stable and beta resources present in the release contract.
+- All resources present in the pinned GA contract (no beta resources exist since the 2026-08-29 GA re-pin).
 
 Every omitted operation requires an owner, reason, user impact, workaround, and 1.0 disposition.
 

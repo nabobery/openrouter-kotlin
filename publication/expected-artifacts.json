@@ -1,0 +1,32 @@
+{
+  "group": "io.github.nabobery",
+  "artifacts": {
+    "openrouter-kotlin": {
+      "root": { "extension": "jar" },
+      "targets": {
+        "jvm": "jar", "android": "aar", "js": "klib",
+        "iosarm64": "klib", "iossimulatorarm64": "klib", "iosx64": "klib",
+        "macosarm64": "klib", "macosx64": "klib",
+        "linuxx64": "klib", "linuxarm64": "klib", "mingwx64": "klib"
+      },
+      "extraFiles": {
+        "iosarm64": ["-metadata.jar"], "iossimulatorarm64": ["-metadata.jar"], "iosx64": ["-metadata.jar"],
+        "macosarm64": ["-metadata.jar"], "macosx64": ["-metadata.jar"]
+      }
+    },
+    "openrouter-kotlin-testing": {
+      "root": { "extension": "jar" },
+      "targets": {
+        "jvm": "jar", "android": "aar", "js": "klib",
+        "iosarm64": "klib", "iossimulatorarm64": "klib", "iosx64": "klib",
+        "macosarm64": "klib", "macosx64": "klib",
+        "linuxx64": "klib", "linuxarm64": "klib", "mingwx64": "klib"
+      },
+      "extraFiles": {
+        "iosarm64": ["-metadata.jar"], "iossimulatorarm64": ["-metadata.jar"], "iosx64": ["-metadata.jar"],
+        "macosarm64": ["-metadata.jar"], "macosx64": ["-metadata.jar"]
+      }
+    }
+  },
+  "requiredPerPublication": [".pom", ".module", "-sources.jar", "-javadoc.jar"]
+}

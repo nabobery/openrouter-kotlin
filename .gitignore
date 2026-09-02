@@ -4,6 +4,7 @@ build/
 local.properties
 .DS_Store
 *.log
+*.hprof
 .idea/
 # SwiftPM build output for the iOS Swift-consumer sample.
 .build/
@@ -12,3 +13,8 @@ samples/ios/SwiftConsumer/.build/
 # Python bytecode caches (test companions import scripts via importlib).
 __pycache__/
 *.py[cod]
+
+# Consumer matrix (publication/consumers/): its .gradle/ and **/build/ are covered above. Keep the generated JS
+# store out of git but commit its lockfile for reproducible Node resolution.
+publication/consumers/kotlin-js-store/*
+!publication/consumers/kotlin-js-store/yarn.lock

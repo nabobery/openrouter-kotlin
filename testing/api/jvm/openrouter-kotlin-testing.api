@@ -1,0 +1,28 @@
+public final class com/nabobery/openrouter/testing/OpenRouterFakeKt {
+	public static final field TEST_API_KEY Ljava/lang/String;
+	public static final fun fake (Lcom/nabobery/openrouter/OpenRouter$Companion;Lcom/nabobery/sdkgen/testing/FakeTransport;Lkotlin/jvm/functions/Function1;)Lcom/nabobery/openrouter/OpenRouter;
+	public static synthetic fun fake$default (Lcom/nabobery/openrouter/OpenRouter$Companion;Lcom/nabobery/sdkgen/testing/FakeTransport;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/nabobery/openrouter/OpenRouter;
+	public static final fun openRouterFakeTransport ()Lcom/nabobery/sdkgen/testing/FakeTransport;
+}
+
+public final class com/nabobery/openrouter/testing/OpenRouterFixtures {
+	public static final field INSTANCE Lcom/nabobery/openrouter/testing/OpenRouterFixtures;
+	public final fun chatChunkJson (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Z)Ljava/lang/String;
+	public static synthetic fun chatChunkJson$default (Lcom/nabobery/openrouter/testing/OpenRouterFixtures;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ZILjava/lang/Object;)Ljava/lang/String;
+	public final fun chatCompletionJson (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;II)Ljava/lang/String;
+	public static synthetic fun chatCompletionJson$default (Lcom/nabobery/openrouter/testing/OpenRouterFixtures;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;IIILjava/lang/Object;)Ljava/lang/String;
+	public final fun errorJson (ILjava/lang/String;)Ljava/lang/String;
+	public final fun modelsPageJson ()Ljava/lang/String;
+}
+
+public final class com/nabobery/openrouter/testing/OpenRouterFixturesKt {
+	public static final fun enqueueChatCompletion (Lcom/nabobery/sdkgen/testing/FakeTransport;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static synthetic fun enqueueChatCompletion$default (Lcom/nabobery/sdkgen/testing/FakeTransport;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static final fun enqueueChatStream (Lcom/nabobery/sdkgen/testing/FakeTransport;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static synthetic fun enqueueChatStream$default (Lcom/nabobery/sdkgen/testing/FakeTransport;[Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static final fun enqueueError (Lcom/nabobery/sdkgen/testing/FakeTransport;ILjava/lang/String;I)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static synthetic fun enqueueError$default (Lcom/nabobery/sdkgen/testing/FakeTransport;ILjava/lang/String;IILjava/lang/Object;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static final fun enqueueJson (Lcom/nabobery/sdkgen/testing/FakeTransport;ILjava/lang/String;Ljava/util/List;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+	public static synthetic fun enqueueJson$default (Lcom/nabobery/sdkgen/testing/FakeTransport;ILjava/lang/String;Ljava/util/List;ILjava/lang/Object;)Lcom/nabobery/sdkgen/testing/FakeTransport;
+}
+

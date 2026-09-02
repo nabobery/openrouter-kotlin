@@ -49,6 +49,7 @@ API.
 | How-to guides | [`guides/how-to/`](guides/how-to/) |
 | Reference (design) | this directory (e.g. `public-api-design.md`, `system-design.md`) |
 | Reference (API) | [`api/module.md`](api/module.md) and KDoc on public source declarations |
+| Reference (generated site) | the Dokka HTML site — built with `./gradlew :publication:dokka:dokkaGeneratePublicationHtml` and published to GitHub Pages; each `-javadoc.jar` contains a lightweight overview linking to it |
 | Explanation | `adr/`, `system-design.md` |
 
 ## Status language

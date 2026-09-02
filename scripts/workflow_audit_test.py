@@ -284,6 +284,34 @@ class RuleTest(unittest.TestCase):
         )
         self.assertNotIn("exec", rules(audit("codeql.yml", text)))
 
+    def test_e_idtoken_attestations_write_job_may_run_gradle(self):
+        # The release stage-and-publish job holds id-token: write + attestations: write to sign/attest and upload,
+        # but NOT contents/pull-requests write — neither id-token nor attestations is a code-injection write, so the
+        # job may run Gradle (staging, signing, the consumer matrix). This pins the privilege-split design assumption.
+        text = textwrap.dedent(
+            f"""\
+            name: Release
+            on:
+              workflow_dispatch:
+            permissions:
+              contents: read
+            jobs:
+              stage-and-publish:
+                runs-on: macos-15
+                permissions:
+                  contents: read
+                  id-token: write
+                  attestations: write
+                steps:
+                  - uses: actions/checkout@{SHA} # v1
+                    with:
+                      persist-credentials: false
+                  - name: Stage and sign
+                    run: ./gradlew publishAllPublicationsToIsolatedRepository
+            """
+        )
+        self.assertNotIn("exec", rules(audit("release.yml", text)))
+
     def test_f_checkout_without_persist_credentials_fails(self):
         text = BASE.replace("        with:\n          persist-credentials: false\n", "")
         self.assertIn("persist", rules(audit("ci.yml", text)))

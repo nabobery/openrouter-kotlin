@@ -17,6 +17,20 @@ rootProject.name = "openrouter-kotlin"
 
 include(":sdk")
 
+// The deterministic fake-transport test kit published as io.github.nabobery:openrouter-kotlin-testing (ADR 0006).
+// Same target matrix as :sdk; depends on project(":sdk") and re-exports kotlin-sdkgen-testing. The project is named
+// `:openrouter-kotlin-testing` (its directory stays `testing/`) so its klib `unique_name`
+// (`<group>:<project name>`) does not collide with kotlin-sdkgen-testing's own `io.github.nabobery:testing` klib —
+// a clash the JS/native klib resolvers reject. This also makes the publication artifactId rewrite a no-op.
+include(":openrouter-kotlin-testing")
+project(":openrouter-kotlin-testing").projectDir = file("testing")
+
+// Publication tooling isolated in sibling projects so their Jackson-bearing classloaders (Dokka, CycloneDX) never
+// meet the sdkgen YAML parser (Decision 4). :publication:dokka feeds every publication's javadoc jar.
+include(":publication:dokka")
+// CycloneDX SBOM over the published JVM runtime graph, also isolated (cyclonedx-core-java brings Jackson).
+include(":publication:sbom")
+
 // Runtime benchmarks (kotlinx-benchmark). Not built by the PR gate — run nightly via .github/workflows/perf.yml.
 include(":benchmarks")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """kdoc-audit.py — every public stable symbol in the curated sources has KDoc (PRD §7).
 
-Scans the curated Kotlin sources (`sdk/src/commonMain`, `sdk/src/jvmMain`) for `public` declarations
+Scans the curated Kotlin sources (`sdk/src/commonMain`, `sdk/src/jvmMain`, `testing/src/commonMain`) for `public` declarations
 (`class`/`interface`/`object`/`fun`/`val`/`var`/`annotation class`/`typealias`) that are **not** immediately
 preceded by a `/** … */` KDoc block. `override` members and non-public declarations are skipped; the generated
 surface lives under `build/` and is never scanned. `check` exits 1 listing every offender as `path:line: decl`.
@@ -20,7 +20,7 @@ _DECL = re.compile(
     r"external\s+|suspend\s+|operator\s+|infix\s+|tailrec\s+|const\s+|lateinit\s+|fun\s+interface\s+)*"
     r"(class|interface|object|fun|val|var|annotation class|typealias)\b"
 )
-_SOURCE_ROOTS = ("sdk/src/commonMain", "sdk/src/jvmMain")
+_SOURCE_ROOTS = ("sdk/src/commonMain", "sdk/src/jvmMain", "testing/src/commonMain")
 
 
 def offenders(text: str) -> list[tuple[int, str]]:

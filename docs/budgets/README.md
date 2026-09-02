@@ -29,3 +29,14 @@ the Android aar (the gate runs `measure-artifacts.sh -Popenrouter.androidTarget=
 Android SDK). Because the checker now fails on a missing baseline artifact, the measured set must be complete — a
 partial run (e.g. one that omitted the aar) fails the gate instead of silently passing. `--merge` remains available
 to fold a separately-measured set (e.g. a Linux run) into the measurement when a single host cannot build them all.
+
+> **2026-09-02 — added the `openrouter-kotlin-testing-*` keys** for the new companion test-kit module (its target
+> matrix mirrors the SDK). The artifacts are small (JVM jar ~8 KB, each klib ~13 KB, aar ~8 KB) — it is a thin
+> handwritten facade over `kotlin-sdkgen-testing`, which the consumer resolves separately. The SDK keys were
+> re-measured in the same run and unchanged.
+>
+> **2026-09-02 — keys renamed to the ADR 0006 artifactIds** (`sdk-*` → `openrouter-kotlin-*`). Values were
+> re-recorded from a fresh macOS-host measurement in the same change. The rename is a publication-time artifactId
+> rewrite and cannot alter compiled artifact contents (the `-metadata.jar` values are byte-identical across the
+> rename, and two consecutive measurements are byte-identical — the build is deterministic); the small deltas from
+> the prior baseline are host/packaging variance predating this change, not a content regression.
