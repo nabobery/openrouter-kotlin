@@ -13,7 +13,7 @@ exits non-zero when a hard invariant is violated, and CI additionally diffs this
 - Spec operations (`operationId:` in `spec/openapi.yaml`): **101**
 - Generated operations: **100**
 - Omitted (accepted waivers): **1** — deleteScimGroupMapping
-- Generated operations with an evidence file (curated/test/sample reference): **19**
+- Generated operations with an evidence file (curated/test/sample reference): **21**
 
 The *evidence* column names the first non-generated file (a test where one exists) whose
 comment-stripped source references the operation. A reference points to where coverage lives; it is
@@ -31,7 +31,7 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | apikeys | deleteKeys | DELETE | `/keys/{hash}` | none | no | no | — |
 | apikeys | getCurrentKey | GET | `/key` | none | no | no | — |
 | apikeys | getKey | GET | `/keys/{hash}` | none | no | no | — |
-| apikeys | list | GET | `/keys` | none | no | no | — |
+| apikeys | list | GET | `/keys` | none | no | no | FilesContractTest.kt |
 | apikeys | updateKeys | PATCH | `/keys/{hash}` | json | no | no | — |
 | benchmarks | getBenchmarks | GET | `/benchmarks` | none | no | no | — |
 | byok | createBYOKKey | POST | `/byok` | json | no | no | — |
@@ -57,7 +57,7 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | files | deleteFile | DELETE | `/files/{file_id}` | none | no | no | — |
 | files | downloadFileContent | GET | `/files/{file_id}/content` | none | no | no | FilesExtensions.kt |
 | files | getFileMetadata | GET | `/files/{file_id}` | none | no | no | — |
-| files | listFiles | GET | `/files` | none | no | no | — |
+| files | listFiles | GET | `/files` | none | no | no | FilesExtensions.kt |
 | files | uploadFile | POST | `/files` | multipart | no | no | FilesContractTest.kt |
 | generations | getGeneration | GET | `/generation` | none | no | no | — |
 | generations | listGenerationContent | GET | `/generation/content` | none | no | no | — |

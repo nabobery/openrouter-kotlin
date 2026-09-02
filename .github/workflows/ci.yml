@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Callable as the full four-host gate from release.yml (the release runs it on the tag commit before staging).
+  workflow_call:
 
 # Least privilege: CI only needs to read the repository. Grant more per-job only if a
 # job genuinely needs it (none do today).
@@ -85,7 +87,7 @@ jobs:
       # api/jvm dump), the SDK version constant, and ktlint. ubuntu-latest ships an Android SDK, so ANDROID_HOME is
       # set and the Android Tier 1 target participates. Apple targets are macOS-only (covered by build-apple).
       - name: Host-aware verification gate (compile all, JVM/JS-Node/linuxX64/androidHost lanes, API, ktlint)
-        run: ./gradlew :sdk:verificationCheck --console=plain
+        run: ./gradlew :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck --console=plain
 
       # The headless-Chrome browser runtime lane is not in verificationCheck (it needs a browser); ubuntu-latest
       # ships Chrome, so run it here.
@@ -130,7 +132,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       - name: SDK verification + sample compile (all targets; JVM/JS/macOS/iOS-sim tests; API check; samples)
-        run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.iosSimulator="iPhone 16" --console=plain
+        run: ./gradlew :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck samplesCheck -Popenrouter.iosSimulator="iPhone 16" --console=plain
 
       # iOS Swift consumer: build the sample-owned XCFramework and compile/link the Swift executable against it
       # (no network). This is the Tier 1 iOS "consumer sample" evidence.
@@ -169,7 +171,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
       - name: Host-aware verification gate + samples (runs linuxArm64Test; links the linuxArm64 sample executable)
-        run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
+        run: ./gradlew :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
 
   build-windows:
     # Native runtime lane on Windows (free for public repos). The host-aware gate runs mingwX64Test here, plus the
@@ -187,4 +189,4 @@ jobs:
 
       - name: Host-aware verification gate + samples (runs mingwX64Test; links the WinHttp sample executable)
         shell: bash
-        run: ./gradlew :sdk:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
+        run: ./gradlew :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain

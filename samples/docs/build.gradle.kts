@@ -14,6 +14,7 @@ dependencies {
     implementation(project(":sdk"))
     implementation(libs.ktor.client.cio)
     implementation(libs.kotlinx.coroutines.core)
-    // The fake-transport guide compiles against the published testing artifact, exactly as a consumer's tests would.
-    implementation(libs.sdkgen.testing)
+    // The fake-transport guide compiles against the openrouter-kotlin-testing artifact, exactly as a consumer's
+    // tests would (it re-exports kotlin-sdkgen-testing plus the OpenRouter-specific fake and fixtures).
+    implementation(project(":openrouter-kotlin-testing"))
 }

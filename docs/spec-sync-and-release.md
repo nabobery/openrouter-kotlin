@@ -142,16 +142,38 @@ headers, resource grouping, stream termination, errors, and retries are reviewed
 
 ## Release workflow
 
-1. Select an already reviewed spec/generator state.
-2. Run clean generation and assert no diff.
-3. Run full test, target, compatibility, security, and documentation gates.
-4. Publish to a temporary/isolated repository and compile representative consumers.
-5. Generate sources, documentation, POM, signatures, checksums, SBOM, and provenance.
-6. Upload the KMP root and all target publications to the Maven Central Portal.
-7. Validate the deployment contents.
-8. Publish through an explicitly approved protected environment.
-9. Verify Central resolution and samples.
-10. Publish GitHub release notes and compatibility report.
+Implemented as the privilege-split `.github/workflows/release.yml`; the full operator procedure is
+[`docs/release-runbook.md`](release-runbook.md). Each stage maps to a job or script:
+
+1. Select an already reviewed spec/generator state → the tagged `main` commit (`validate` job: tag = `v<version>`,
+   ancestor of `main`, `release-version.py check`).
+2. Run clean generation and assert no diff → `scripts/check-drift.sh` inside `scripts/release-rehearsal.sh`.
+3. Run full test, target, compatibility, security, and documentation gates → the `verify` job calls `ci.yml`
+   (`workflow_call`, all four hosts).
+4. Publish to an isolated repository and compile representative consumers → `publishAllPublicationsToIsolatedRepository`
+   + `scripts/consumer-matrix.sh` (`publication/consumers/`, `FAIL_ON_PROJECT_REPOS`).
+5. Generate sources, documentation, POM, signatures, checksums, SBOM, provenance → the publication script plugin
+   (`gradle/openrouter-publication.gradle.kts`), `:publication:sbom`, and `actions/attest`.
+6. Upload the KMP root and all target publications → `scripts/central-bundle.py` + `scripts/central-portal.py upload`
+   (`USER_MANAGED`).
+7. Validate the deployment contents → `scripts/publication-inventory.py check` (staged) + the Portal's own
+   `VALIDATED` state.
+8. Publish through an explicitly approved protected environment → the `maven-central` environment (required
+   reviewers); `publish=true` or a manual Portal click.
+9. Verify Central resolution and samples → the consumer matrix re-run against the validated deployment.
+10. Publish GitHub release notes → the `github-release` job (`gh release create`, bundle + inventory + SBOM attached).
+
+### Operator setup (one-time; not created by automation)
+
+- Verify the `io.github.nabobery` namespace on the Central Portal (auto-verifies through the GitHub username used at
+  sign-up), and generate a **Portal user token** → repository secrets `MAVEN_CENTRAL_USERNAME` /
+  `MAVEN_CENTRAL_PASSWORD`.
+- Generate a **release-only GPG key** (RSA 4096 or Ed25519), publish it to `keys.openpgp.org` and
+  `keyserver.ubuntu.com`, and store the ASCII-armored secret key + passphrase as `GPG_SIGNING_KEY` /
+  `GPG_SIGNING_PASSPHRASE`.
+- Create the **`maven-central` environment** with required reviewers, restricted to `v*` tags.
+- Add a **`v*` tag ruleset** blocking deletion and force-push and requiring signed tags.
+- (If publishing docs) set **Pages source = GitHub Actions**.
 
 ## Maven Central requirements
 
@@ -165,7 +187,17 @@ once under the same version. Include:
 - Cryptographic signatures and checksums.
 - Correct dependency metadata.
 
-Release CI uses Central Portal user tokens and in-memory signing material from protected secrets.
+Release CI uses Central Portal user tokens and in-memory signing material from protected secrets. The exact expected
+set — every coordinate, target, POM field, and (release mode) `.asc` — is `publication/expected-artifacts.json`,
+enforced by `scripts/publication-inventory.py check`.
+
+### Publishing limits
+
+Central meters each namespace against ~1,167 files / 78 MB / 7 releases per 3-month average (soft since 2026-06-16,
+rate-limited since 2026-08-11). A single release of this generated multi-target SDK is large — **396 upload files,
+approximately 234 MiB** across both modules' 24 publications. Therefore: cap cadence at **two releases per month** unless a
+generated-SDK exemption is granted, batch spec drift into scheduled releases, keep SBOM/provenance on the GitHub
+Release (not Central), and watch the Portal Usage Center.
 
 ## Version and rollback
 

@@ -6,11 +6,17 @@
     "docs.yml/deploy": ["GITHUB_TOKEN"],
     "scorecard.yml/analysis": ["GITHUB_TOKEN"],
     "codeql.yml/analyze": ["GITHUB_TOKEN"],
-    "gitleaks.yml/scan": ["GITHUB_TOKEN"]
+    "gitleaks.yml/scan": ["GITHUB_TOKEN"],
+    "release.yml/validate": [],
+    "release.yml/stage-and-publish": ["GPG_SIGNING_KEY", "GPG_SIGNING_PASSPHRASE", "MAVEN_CENTRAL_USERNAME", "MAVEN_CENTRAL_PASSWORD"],
+    "release.yml/github-release": ["GITHUB_TOKEN"]
   },
   "scheduledSecretUsers": ["live.yml", "drift.yml", "scorecard.yml", "codeql.yml", "gitleaks.yml"],
-  "writeCapableJobs": ["drift.yml/open-pr", "docs.yml/deploy", "scorecard.yml/analysis", "codeql.yml/analyze"],
+  "writeCapableJobs": ["drift.yml/open-pr", "docs.yml/deploy", "scorecard.yml/analysis", "codeql.yml/analyze", "release.yml/github-release"],
   "writeJobAllowedCommands": {
+    "release.yml/github-release": [
+      "gh release create \"$RELEASE_TAG\" --verify-tag --prerelease --title \"$RELEASE_TAG\" --notes-file release/release-notes.md release/central-bundle.zip release/publication-inventory.json release/bom.json"
+    ],
     "drift.yml/open-pr": [
       "python3 scripts/validate-drift-patch.py drift/drift.patch",
       "set -eu",

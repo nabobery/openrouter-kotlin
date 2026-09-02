@@ -27,7 +27,7 @@ through a privilege split.
 - **B2** SDK ↔ OpenRouter over HTTPS (responses, redirects, pagination URLs, SSE bytes).
 - **B3** build-time spec/overlay acquisition and generation.
 - **B4** CI automation (drift/parity/docs jobs, tokens, artifacts).
-- **B5** future publication.
+- **B5** publication.
 
 ---
 
@@ -117,11 +117,17 @@ through a privilege split.
 - **Evidence:** `docs/security/secret-isolation-report.md` (generated table), the auditor's fork-safe column.
   **Status: implemented.**
 
-## B5 — future publication
+## B5 — publication
 
-- Artifact signing, SBOM, and build provenance/attestation are **planned**; the future release
-  workflow will be secret-isolated from drift/PR jobs, and `GPG_SIGNING_KEY` / `MAVEN_CENTRAL_*` will be readable
-  only by the release job. **Status: planned.**
+- Artifact signing (in-memory PGP), a CycloneDX 1.6 SBOM, and SLSA build provenance + SBOM attestation are
+  **implemented** (`gradle/openrouter-publication.gradle.kts`, `publication/sbom/`, `.github/workflows/release.yml`).
+- The release workflow is privilege-split into four jobs (`validate` → `verify` → `stage-and-publish` →
+  `github-release`), secret-isolated from the drift/PR jobs: `GPG_SIGNING_KEY` / `GPG_SIGNING_PASSPHRASE` /
+  `MAVEN_CENTRAL_*` are readable only by `stage-and-publish` (gated behind the `maven-central` environment with
+  required reviewers), which holds no `contents: write`; the `github-release` job holds `contents: write` but runs
+  only a single verbatim-allowlisted `gh release create` (enforced by `scripts/workflow-audit.py`, rule e). Upload is
+  `USER_MANAGED` — a human validates and publishes. Provenance is verified with
+  `gh attestation verify central-bundle.zip --repo nabobery/openrouter-kotlin`. **Status: implemented.**
 
 ## Out of scope
 

@@ -110,9 +110,9 @@ prompt or response by default. Cancellation immediately stops further consumptio
 | Dependabot (Gradle + Actions, weekly) | implemented | `.github/dependabot.yml` |
 | Workflow SHA pins + least privilege + secret isolation, machine-checked | implemented | `scripts/workflow-audit.py`, `docs/security/secret-isolation-report.md` |
 | GitHub native secret scanning + push protection | operator action | repository settings |
-| SBOM (CycloneDX) | planned | future release work |
-| Signed Maven publications; build provenance/attestation | planned | future release work |
-| Publish only from protected workflows and immutable tags; drift/release permission separation | planned/partial | `docs/spec-sync-and-release.md` |
+| SBOM (CycloneDX 1.6) of the published runtime graph | implemented | `publication/sbom/`, `.github/workflows/release.yml` |
+| Signed Maven publications (in-memory PGP); SLSA build provenance + SBOM attestation | implemented | `gradle/openrouter-publication.gradle.kts`, `.github/workflows/release.yml` |
+| Publish only from protected workflows and immutable tags; validate/verify/stage/release permission separation | implemented | `.github/workflows/release.yml`, `docs/release-runbook.md` |
 
 ## CI permissions
 

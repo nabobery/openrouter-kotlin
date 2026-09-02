@@ -15,9 +15,8 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.sdkgen)
-    // maven-publish creates the per-target publications the artifact-size budget measures. The KMP plugin populates
-    // them from the declared targets; no publication is configured by hand here.
-    `maven-publish`
+    // Publication (maven-publish + signing) is configured by gradle/openrouter-publication.gradle.kts, applied after
+    // the kotlin {} block — Gradle-core plugins only, so nothing third-party joins the sdkgen buildscript classpath.
     // The Android KMP-library plugin is applied below only when the Android target is enabled, so a contributor
     // on a bare box without an Android SDK can still build every other target.
     alias(libs.plugins.android.kotlin.multiplatform.library) apply false
@@ -27,9 +26,10 @@ plugins {
     // follow-up (pin a compatible ktlint-gradle, or lint handwritten sources via CLI).
 }
 
-// Coordinates for local consumption by the sample subprojects and future publication.
+// Coordinates for local consumption by the sample subprojects and publication (ADR 0006). The version is the single
+// source of truth in gradle.properties (openrouter.version); scripts/release-version.py keeps SDK_VERSION in lockstep.
 group = "io.github.nabobery"
-version = "0.1.0-SNAPSHOT"
+version = providers.gradleProperty("openrouter.version").get()
 
 // The Android Tier 1 target needs an Android SDK. It is enabled automatically when one is present (mirroring the
 // settings.gradle.kts sample detection) and can be forced on/off with `-Popenrouter.androidTarget=true|false` — a
@@ -148,6 +148,12 @@ kotlin {
         }
     }
 }
+
+// Publication (ADR 0006 coordinates, POM, javadoc jars, signing) — shared with :testing.
+extra["openrouterArtifactId"] = "openrouter-kotlin"
+extra["openrouterArtifactDescription"] =
+    "Kotlin Multiplatform client for the OpenRouter API, generated from the pinned OpenAPI contract with a curated facade."
+apply(from = rootProject.file("gradle/openrouter-publication.gradle.kts"))
 
 // Every native test task stays ENABLED. Kotlin/Native disables a test task on a host that cannot execute its target
 // (e.g. `macosX64Test`/`mingwX64Test`/`linuxArm64Test` on an arm macOS host print "disabled — cannot run on the

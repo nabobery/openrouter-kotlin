@@ -1,0 +1,24 @@
+// Klib ABI Dump
+// Targets: [iosArm64, iosSimulatorArm64, iosX64, js, linuxArm64, linuxX64, macosArm64, macosX64, mingwX64]
+// Rendering settings:
+// - Signature version: 2
+// - Show manifest properties: true
+// - Show declarations: true
+
+// Library unique name: <io.github.nabobery:openrouter-kotlin-testing>
+final object com.nabobery.openrouter.testing/OpenRouterFixtures { // com.nabobery.openrouter.testing/OpenRouterFixtures|null[0]
+    final fun chatChunkJson(kotlin/String, kotlin/String = ..., kotlin/String = ..., kotlin/Boolean = ...): kotlin/String // com.nabobery.openrouter.testing/OpenRouterFixtures.chatChunkJson|chatChunkJson(kotlin.String;kotlin.String;kotlin.String;kotlin.Boolean){}[0]
+    final fun chatCompletionJson(kotlin/String, kotlin/String = ..., kotlin/String = ..., kotlin/String = ..., kotlin/Int = ..., kotlin/Int = ...): kotlin/String // com.nabobery.openrouter.testing/OpenRouterFixtures.chatCompletionJson|chatCompletionJson(kotlin.String;kotlin.String;kotlin.String;kotlin.String;kotlin.Int;kotlin.Int){}[0]
+    final fun errorJson(kotlin/Int, kotlin/String): kotlin/String // com.nabobery.openrouter.testing/OpenRouterFixtures.errorJson|errorJson(kotlin.Int;kotlin.String){}[0]
+    final fun modelsPageJson(): kotlin/String // com.nabobery.openrouter.testing/OpenRouterFixtures.modelsPageJson|modelsPageJson(){}[0]
+}
+
+final const val com.nabobery.openrouter.testing/TEST_API_KEY // com.nabobery.openrouter.testing/TEST_API_KEY|{}TEST_API_KEY[0]
+    final fun <get-TEST_API_KEY>(): kotlin/String // com.nabobery.openrouter.testing/TEST_API_KEY.<get-TEST_API_KEY>|<get-TEST_API_KEY>(){}[0]
+
+final fun (com.nabobery.openrouter/OpenRouter.Companion).com.nabobery.openrouter.testing/fake(com.nabobery.sdkgen.testing/FakeTransport = ..., kotlin/Function1<com.nabobery.openrouter/OpenRouterBuilder, kotlin/Unit> = ...): com.nabobery.openrouter/OpenRouter // com.nabobery.openrouter.testing/fake|fake@com.nabobery.openrouter.OpenRouter.Companion(com.nabobery.sdkgen.testing.FakeTransport;kotlin.Function1<com.nabobery.openrouter.OpenRouterBuilder,kotlin.Unit>){}[0]
+final fun (com.nabobery.sdkgen.testing/FakeTransport).com.nabobery.openrouter.testing/enqueueChatCompletion(kotlin/String, kotlin/String = ..., kotlin/String = ...): com.nabobery.sdkgen.testing/FakeTransport // com.nabobery.openrouter.testing/enqueueChatCompletion|enqueueChatCompletion@com.nabobery.sdkgen.testing.FakeTransport(kotlin.String;kotlin.String;kotlin.String){}[0]
+final fun (com.nabobery.sdkgen.testing/FakeTransport).com.nabobery.openrouter.testing/enqueueChatStream(kotlin/Array<out kotlin/String>..., kotlin/String = ..., kotlin/String = ...): com.nabobery.sdkgen.testing/FakeTransport // com.nabobery.openrouter.testing/enqueueChatStream|enqueueChatStream@com.nabobery.sdkgen.testing.FakeTransport(kotlin.Array<out|kotlin.String>...;kotlin.String;kotlin.String){}[0]
+final fun (com.nabobery.sdkgen.testing/FakeTransport).com.nabobery.openrouter.testing/enqueueError(kotlin/Int, kotlin/String, kotlin/Int = ...): com.nabobery.sdkgen.testing/FakeTransport // com.nabobery.openrouter.testing/enqueueError|enqueueError@com.nabobery.sdkgen.testing.FakeTransport(kotlin.Int;kotlin.String;kotlin.Int){}[0]
+final fun (com.nabobery.sdkgen.testing/FakeTransport).com.nabobery.openrouter.testing/enqueueJson(kotlin/Int, kotlin/String, kotlin.collections/List<com.nabobery.sdkgen.runtime/SdkHeader> = ...): com.nabobery.sdkgen.testing/FakeTransport // com.nabobery.openrouter.testing/enqueueJson|enqueueJson@com.nabobery.sdkgen.testing.FakeTransport(kotlin.Int;kotlin.String;kotlin.collections.List<com.nabobery.sdkgen.runtime.SdkHeader>){}[0]
+final fun com.nabobery.openrouter.testing/openRouterFakeTransport(): com.nabobery.sdkgen.testing/FakeTransport // com.nabobery.openrouter.testing/openRouterFakeTransport|openRouterFakeTransport(){}[0]

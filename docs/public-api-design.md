@@ -28,7 +28,6 @@ io.github.nabobery:openrouter-kotlin-testing
 com.nabobery.openrouter
 com.nabobery.openrouter.models
 com.nabobery.openrouter.resources
-com.nabobery.openrouter.beta
 com.nabobery.openrouter.errors
 com.nabobery.openrouter.transport
 com.nabobery.openrouter.testing
@@ -52,7 +51,6 @@ public class OpenRouter(
     public val chat: ChatResource
     public val responses: ResponsesResource
     public val models: ModelsResource
-    public val beta: BetaResource
 }
 ```
 
@@ -142,7 +140,7 @@ client.providers.list(request)
 client.credits.get(request)
 client.generations.get(request)
 client.keys.create(request)
-client.beta.responses.create(request)
+client.responses.create(request)
 ```
 
 No `.raw` client exists. Exact and curated entry points appear together:

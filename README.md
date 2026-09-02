@@ -19,8 +19,25 @@ exception register, and the compile-checked [guides](docs/guides/README.md) (tut
 > (`com.android.kotlin.multiplatform.library`) whose common suites run on the JVM-hosted
 > `testAndroidHostTest` lane (its sample builds only when an Android SDK is present). The full generated
 > surface — including the exact `/messages` and `/responses` operations — is present and callable
-> (kotlin-sdkgen 0.4.0). The project is **not yet published**: no Maven coordinates exist, and
-> publication remains future work.
+> (kotlin-sdkgen 0.4.0). The first release candidate publishes under the coordinates below.
+
+## Install
+
+Published to Maven Central under `io.github.nabobery` (the runtime and its companion test kit):
+
+```kotlin
+dependencies {
+    implementation("io.github.nabobery:openrouter-kotlin:<version>")
+    testImplementation("io.github.nabobery:openrouter-kotlin-testing:<version>")
+}
+```
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.nabobery/openrouter-kotlin.svg)](https://central.sonatype.com/artifact/io.github.nabobery/openrouter-kotlin)
+
+Kotlin Multiplatform: the root coordinate carries Gradle module metadata, so each target (JVM, Android, Apple,
+Native, JS) selects its own variant — depend on the root artifact, never a `-jvm`/`-js` suffix. **While the version
+is `0.x`, minor releases may break; pin an exact version.** The full API reference is published at
+[nabobery.github.io/openrouter-kotlin](https://nabobery.github.io/openrouter-kotlin/).
 
 ## How it works
 
