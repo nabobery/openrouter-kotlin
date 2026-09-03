@@ -16,6 +16,10 @@ permissions:
 jobs:
   build-linux:
     runs-on: ubuntu-latest
+    # Linux cross-compiles the complete multiplatform surface, including Apple and Windows targets; the default
+    # 5 GiB project heap exhausted during Kotlin/Native compilation in CI. Keep this override scoped to this lane.
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx8g
     steps:
       # Actions are pinned to full commit SHAs (version tags are mutable). The trailing
       # comment records the human-readable release each SHA corresponds to.

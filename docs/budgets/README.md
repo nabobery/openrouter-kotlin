@@ -15,6 +15,11 @@ coverage dashboard. The checker and its tests are `scripts/budgets.py` / `script
 | `warnings.json` | Kotlin compiler-warning count (JVM generated compile) | 0 (may only shrink) | `scripts/measure-compile.sh` | **gated** on `build-linux` (the hard Task-13 gate) |
 | `runtime.json` | First-event latency, 200-event decode time, stream allocation/event, other allocation/op | +100% (noisy hosts; allocation is host-stable) | `benchmarks/` (kotlinx-benchmark) + JMH `-prof gc`, folded via `scripts/bench-to-runtime.py` | **gated** on `perf.yml` (nightly) |
 
+> **2026-09-03 — calibrated `compile-times.json` on `ubuntu-latest`.** The former 92,047 ms value came from a
+> faster local macOS host and was not portable to the Linux CI runner. Two clean Linux measurements were 230,340 ms
+> and 254,852 ms; the baseline uses the slower observed value as the initial Linux calibration. The existing +50%
+> tolerance remains in place to catch substantial regressions without treating runner noise as a failure.
+
 ## Artifact sizes
 
 The current sizes are large — the JVM jar is ~27 MB, each native klib ~17 MB, the android aar ~24 MB — because the
