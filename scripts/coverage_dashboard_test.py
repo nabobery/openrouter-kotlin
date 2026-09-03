@@ -35,6 +35,11 @@ class OperationInventoryTest(unittest.TestCase):
         self.assertTrue(any("duplicate spec" in error for error in errors))
         self.assertTrue(any("duplicate generated" in error for error in errors))
 
+    def test_evidence_selection_is_independent_of_file_traversal_order(self) -> None:
+        files = [("zTest.kt", "operation"), ("aTest.kt", "operation")]
+        self.assertEqual("aTest.kt", coverage_dashboard.find_evidence("operation", files))
+        self.assertEqual("aTest.kt", coverage_dashboard.find_evidence("operation", list(reversed(files))))
+
 
 if __name__ == "__main__":
     unittest.main()

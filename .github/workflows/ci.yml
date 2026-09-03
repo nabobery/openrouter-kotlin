@@ -184,6 +184,10 @@ jobs:
     # Native runtime lane on Windows (free for public repos). The host-aware gate runs mingwX64Test here, plus the
     # host-agnostic jvmTest and jsNodeTest. First run downloads the Kotlin/Native MinGW toolchain (several minutes).
     runs-on: windows-latest
+    # Windows compiles the complete multiplatform surface in one Gradle process; the default 5 GiB project heap
+    # exhausted during cross-target compilation in CI. Keep this override scoped to the memory-constrained lane.
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx8g
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

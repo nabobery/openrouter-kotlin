@@ -106,7 +106,9 @@ def evidence_files() -> list[tuple[str, str]]:
 def find_evidence(op: str, files: list[tuple[str, str]]) -> str | None:
     """First non-generated file (tests preferred) referencing `op` as a whole word, else None."""
     word = re.compile(r'\b' + re.escape(op) + r'\b')
-    hits = [rel for rel, text in files if word.search(text)]
+    # Sort matches explicitly: glob/filesystem traversal order differs across hosts, and several tests may
+    # reference the same operation. The dashboard must choose the same evidence pointer everywhere.
+    hits = sorted(rel for rel, text in files if word.search(text))
     if not hits:
         return None
     # Prefer a Test file as the evidence pointer; else the first curated/sample reference.
