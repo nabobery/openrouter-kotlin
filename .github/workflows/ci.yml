@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-  # Callable as the full four-host gate from release.yml (the release runs it on the tag commit before staging).
+  workflow_dispatch:
+  # Callable as the full cross-platform gate from release.yml (the release runs it on the tag commit before staging).
   workflow_call:
 
 # Least privilege: CI only needs to read the repository. Grant more per-job only if a

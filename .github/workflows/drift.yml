@@ -120,7 +120,8 @@ jobs:
       - name: Apply into a temporary index, verify modes, then check out
         run: |
           set -eu
-          export GIT_INDEX_FILE="$(mktemp)"
+          GIT_INDEX_FILE="$(mktemp)"
+          export GIT_INDEX_FILE
           git read-tree HEAD
           git apply --cached --check drift/drift.patch
           git apply --cached drift/drift.patch

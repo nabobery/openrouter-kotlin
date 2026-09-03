@@ -27,9 +27,9 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 <!-- workflow-audit:start -->
 | workflow | job | write? | secrets | triggers | fork-safe? |
 | --- | --- | --- | --- | --- | --- |
-| ci.yml | build-linux | read | - | push,pull_request,workflow_call | yes |
-| ci.yml | build-apple | read | - | push,pull_request,workflow_call | yes |
-| ci.yml | build-windows | read | - | push,pull_request,workflow_call | yes |
+| ci.yml | build-linux | read | - | push,pull_request,workflow_dispatch,workflow_call | yes |
+| ci.yml | build-apple | read | - | push,pull_request,workflow_dispatch,workflow_call | yes |
+| ci.yml | build-windows | read | - | push,pull_request,workflow_dispatch,workflow_call | yes |
 | codeql.yml | analyze | write | - | schedule,workflow_dispatch | no |
 | compat.yml | compat | read | - | pull_request | yes |
 | dependency-review.yml | dependency-review | write | - | pull_request | no |
@@ -37,7 +37,7 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 | docs.yml | deploy | write | - | release,workflow_dispatch | no |
 | drift.yml | detect | read | - | schedule,workflow_dispatch | yes |
 | drift.yml | open-pr | write | DRIFT_APP_PRIVATE_KEY,GITHUB_TOKEN | schedule,workflow_dispatch | no |
-| gitleaks.yml | scan | read | GITHUB_TOKEN | pull_request,push,schedule | no |
+| gitleaks.yml | scan | read | GITHUB_TOKEN | pull_request,push,workflow_dispatch,schedule | no |
 | live.yml | live-smoke | read | OPENROUTER_API_KEY | schedule,workflow_dispatch | no |
 | nightly-targets.yml | intel-macos | read | - | schedule,workflow_dispatch | yes |
 | parity.yml | refresh | read | - | schedule,workflow_dispatch | yes |
@@ -48,7 +48,7 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 | release.yml | verify | read | - | workflow_dispatch | yes |
 | release.yml | stage-and-publish | write | GPG_SIGNING_KEY,GPG_SIGNING_PASSPHRASE,MAVEN_CENTRAL_PASSWORD,MAVEN_CENTRAL_USERNAME | workflow_dispatch | no |
 | release.yml | github-release | write | GITHUB_TOKEN | workflow_dispatch | no |
-| scorecard.yml | analysis | write | - | schedule,push | no |
+| scorecard.yml | analysis | write | - | schedule,push,workflow_dispatch | no |
 <!-- workflow-audit:end -->
 
 ## Controls (enforced by `scripts/workflow-audit.py check`, CI-gated)

@@ -20,7 +20,8 @@
     "drift.yml/open-pr": [
       "python3 scripts/validate-drift-patch.py drift/drift.patch",
       "set -eu",
-      "export GIT_INDEX_FILE=\"$(mktemp)\"",
+      "GIT_INDEX_FILE=\"$(mktemp)\"",
+      "export GIT_INDEX_FILE",
       "git read-tree HEAD",
       "git apply --cached --check drift/drift.patch",
       "git apply --cached drift/drift.patch",

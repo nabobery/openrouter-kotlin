@@ -149,7 +149,7 @@ Implemented as the privilege-split `.github/workflows/release.yml`; the full ope
    ancestor of `main`, `release-version.py check`).
 2. Run clean generation and assert no diff → `scripts/check-drift.sh` inside `scripts/release-rehearsal.sh`.
 3. Run full test, target, compatibility, security, and documentation gates → the `verify` job calls `ci.yml`
-   (`workflow_call`, all four hosts).
+   (`workflow_call`, all supported host lanes).
 4. Publish to an isolated repository and compile representative consumers → `publishAllPublicationsToIsolatedRepository`
    + `scripts/consumer-matrix.sh` (`publication/consumers/`, `FAIL_ON_PROJECT_REPOS`).
 5. Generate sources, documentation, POM, signatures, checksums, SBOM, provenance → the publication script plugin
