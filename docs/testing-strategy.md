@@ -141,11 +141,14 @@ host test lane via the `runRealTime` harness (`runTest` + `Dispatchers.Default`,
 replacement for `runBlocking`, which JS lacks), so no target is streaming compile-only where a host runner exists:
 
 - **PR CI:** `jvmTest`, `jsNodeTest`, `jsBrowserTest` (headless Chrome), `testAndroidHostTest`, `linuxX64Test`
-  (ubuntu), `linuxArm64Test` (ubuntu-24.04-arm), `mingwX64Test` (windows), `macosArm64Test` + `iosSimulatorArm64Test`
+  (ubuntu), `mingwX64Test` (windows), `macosArm64Test` + `iosSimulatorArm64Test`
   (macos-15) — each running the common **and** `engineTest` suites.
 - **Nightly:** `macosX64Test` + `iosX64Test` on `macos-15-intel`; the benchmark suite (`perf.yml`).
-- **Not executed (disclosed):** iOS device (`iosArm64`), Android device tests, `wasmJs` (blocked upstream). These are
-  reported as explicit limitations in `target-support.md`, never silently counted as passes.
+- **Not executed (disclosed):** iOS device (`iosArm64`), Android device tests, `wasmJs` (blocked upstream), and
+  `linuxArm64` runtime — Kotlin/Native has no linux-arm64 **host**
+  ([KT-36871](https://youtrack.jetbrains.com/projects/KT/issues/KT-36871)), so `linuxArm64Test` cannot run on any CI
+  host; the target is cross-compiled and ABI-checked from ubuntu x64 instead. These are reported as explicit
+  limitations in `target-support.md`, never silently counted as passes.
 
 ## Live test controls
 

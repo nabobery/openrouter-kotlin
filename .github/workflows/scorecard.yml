@@ -15,6 +15,10 @@ jobs:
     name: Scorecard analysis
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # OSSF Scorecard reads commit history via a GitHub App integration and publishes to the public OpenSSF API;
+    # on a PRIVATE repository both fail ("Resource not accessible by integration"). Skip cleanly while the repo is
+    # private so the push gate stays green, and activate automatically on the first push once it is published.
+    if: github.event.repository.visibility == 'public'
     permissions:
       contents: read # job-level permissions REPLACE the workflow map, so this must be restated (checkout + Scorecard read the repo)
       security-events: write # upload the SARIF result to code scanning

@@ -29,7 +29,6 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 | --- | --- | --- | --- | --- | --- |
 | ci.yml | build-linux | read | - | push,pull_request,workflow_call | yes |
 | ci.yml | build-apple | read | - | push,pull_request,workflow_call | yes |
-| ci.yml | build-linux-arm64 | read | - | push,pull_request,workflow_call | yes |
 | ci.yml | build-windows | read | - | push,pull_request,workflow_call | yes |
 | codeql.yml | analyze | write | - | schedule,workflow_dispatch | no |
 | compat.yml | compat | read | - | pull_request | yes |

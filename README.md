@@ -191,7 +191,7 @@ per-target column) is [`docs/target-support.md`](docs/target-support.md).
 | Tier | Targets | Runtime evidence |
 | --- | --- | --- |
 | 1 | `jvm`, `android`, `macosArm64`, `iosSimulatorArm64`, `iosArm64` | Common + real-engine suites on JVM / android host / macOS / iOS simulator (PR CI); `iosArm64` device and Android device tests not executed (disclosed) |
-| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | Common + real-engine suites on Linux x64/arm64, Windows, Node.js, and headless Chrome (PR CI) |
+| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | Common + real-engine suites on Linux x64, Windows, Node.js, and headless Chrome (PR CI); `linuxArm64` is compile + klib ABI only because no Linux arm64 Kotlin/Native host exists (disclosed) |
 | 2 (deprecated) | `macosX64`, `iosX64` | Compile + klib ABI on PRs; runtime lanes nightly on `macos-15-intel` (deprecated upstream since Kotlin 2.3.20) |
 | 3 | `wasmJs` | Declared, not published — blocked until the kotlin-sdkgen runtime ships a wasmJs variant (`scripts/wasm-probe.sh`) |
 

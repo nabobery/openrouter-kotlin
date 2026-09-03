@@ -1,4 +1,12 @@
-# Binary-compatibility-validator ABI dumps are tool-generated (`./gradlew :sdk:apiDump`) and must be committed
-# byte-for-byte as the tool emits them — including its trailing blank line at EOF. Exempt them from git's whitespace
-# checks so that canonical output is not flagged (hand-"fixing" it would fail `apiCheck`).
+# The sdkgen source digest is computed over spec/** (openapi.yaml + overlays + sdkgen.yaml). Git's autocrlf on
+# Windows would rewrite those bytes to CRLF on checkout, so the digest would no longer match the pinned value
+# (`generateOpenrouterSdk` fails: "Configured source digest does not match the staged local source"). Pin every
+# generation input to LF on all platforms so the digest is reproducible cross-OS.
+spec/** text eol=lf
+
+# Binary-compatibility-validator ABI dumps are tool-generated (`./gradlew :sdk:apiDump`,
+# `:openrouter-kotlin-testing:apiDump`) and must be committed byte-for-byte as the tool emits them — including its
+# trailing blank line at EOF. Exempt them from git's whitespace checks so that canonical output is not flagged
+# (hand-"fixing" it would fail `apiCheck`).
 sdk/api/**/*.api -whitespace
+testing/api/**/*.api -whitespace

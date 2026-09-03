@@ -21,7 +21,7 @@ The streaming lane is no longer compile-only anywhere a host runner exists.
 | `iosSimulatorArm64` | 1 | ✅ | ✅ | ✅ | ✅ | `iosSimulatorArm64Test` (PR, macos-15) | ios (Swift/XCFramework) |
 | `iosArm64` | 1 | ✅ | ✅ | — | — | **device — not executed** | ios (Swift/XCFramework) |
 | `linuxX64` | 2 | ✅ | ✅ | ✅ | ✅ | `linuxX64Test` (PR, ubuntu) | native-desktop (CIO) |
-| `linuxArm64` | 2 | ✅ | ✅ | ✅ | ✅ | `linuxArm64Test` (PR, ubuntu-24.04-arm) | native-desktop (CIO) |
+| `linuxArm64` | 2 | ✅ | ✅ | — | — | compile + ABI only — **no linux-arm64 K/N host** ([KT-36871](https://youtrack.jetbrains.com/projects/KT/issues/KT-36871)); cross-built + ABI-checked on ubuntu x64 | native-desktop (CIO) |
 | `mingwX64` | 2 | ✅ | ✅ | ✅ | ✅ | `mingwX64Test` (PR, windows) | native-desktop (WinHttp) |
 | `js` (Node) | 2 | ✅ | ✅ | ✅ | ✅ | `jsNodeTest` (PR) | js (Js) |
 | `js` (browser) | 2 | ✅ | ✅ | ✅ | ✅ | `jsBrowserTest` (PR, headless Chrome) | browser (Js) |
@@ -35,6 +35,8 @@ The streaming lane is no longer compile-only anywhere a host runner exists.
   evidence.
 - **Android device** tests: no emulator in CI — the JVM-hosted `testAndroidHostTest` lane is the Android runtime
   evidence.
+- **`linuxArm64` runtime**: Kotlin/Native has no Linux arm64 host ([KT-36871](https://youtrack.jetbrains.com/projects/KT/issues/KT-36871));
+  the target is cross-compiled and ABI-checked from Linux x64, but `linuxArm64Test` is not executed.
 - **`wasmJs`**: cannot compile because the kotlin-sdkgen runtime publishes no wasmJs variant.
 - **watchOS / tvOS / `androidNative*` / `linuxArm32Hfp` / wasmWasi**: not declared targets (no runtime artifacts or
   no HTTP-client value).

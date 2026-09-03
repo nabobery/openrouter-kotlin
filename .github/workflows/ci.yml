@@ -136,8 +136,25 @@ jobs:
 
       # iOS Swift consumer: build the sample-owned XCFramework and compile/link the Swift executable against it
       # (no network). This is the Tier 1 iOS "consumer sample" evidence.
+      #
+      # DEVELOPER_DIR pins this step to the known-good Xcode 26.0.1 image (macos-15 also installs the default 16.4).
+      # Kotlin/Native's Apple runtime references macOS-26-SDK libxpc symbols (e.g. xpc_session_set_peer_requirement);
+      # the default 16.4 SDK lacks them, so the final Swift link fails with "symbol(s) not found for architecture
+      # arm64". The explicit path prevents a runner-image update from silently changing the consumer toolchain, and
+      # the existence check fails clearly if the pinned Xcode is removed. This is scoped to this step only, so the
+      # iOS-simulator lanes above stay on the proven Xcode 16.4 ("iPhone 16").
       - name: iOS Swift consumer (XCFramework facade)
-        run: ./scripts/ios-consumer-check.sh
+        run: |
+          XCODE_APP="/Applications/Xcode_26.0.1.app"
+          if [ ! -d "$XCODE_APP/Contents/Developer" ]; then
+            echo "::error::Expected Xcode 26.0.1 at $XCODE_APP"
+            exit 1
+          fi
+          DEVELOPER_DIR="$XCODE_APP/Contents/Developer"
+          export DEVELOPER_DIR
+          echo "Using Xcode at $DEVELOPER_DIR"
+          xcodebuild -version
+          ./scripts/ios-consumer-check.sh
 
       # Artifact-size budget: the macOS job can publish every target (JVM, android, JS, and all native klibs incl.
       # Apple), so it measures and gates the FULL baseline (+10%). Android is forced on (macos-15 ships an Android
@@ -155,23 +172,12 @@ jobs:
           name: artifact-sizes
           path: build/budgets/measured.json
 
-  build-linux-arm64:
-    # Native runtime lane on Linux arm64 (free for public repos). The host-aware gate runs linuxArm64Test here (the
-    # only host that can). The Android target is forced off: the arm64 image may lack an arm aapt2, and the android
-    # host lane is already covered on build-linux.
-    runs-on: ubuntu-24.04-arm
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
-        with:
-          distribution: temurin
-          java-version: "25"
-      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
-
-      - name: Host-aware verification gate + samples (runs linuxArm64Test; links the linuxArm64 sample executable)
-        run: ./gradlew :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
+  # NOTE: there is intentionally no linux-arm64 runtime job. Kotlin/Native does not support linux aarch64 as a HOST
+  # (KT-36871: the kotlin-native-prebuilt-linux-aarch64 toolchain does not exist), so a Gradle build that declares
+  # native targets fails at CONFIGURATION time on an `ubuntu-24.04-arm` runner with "Unknown host target: linux
+  # aarch64" — `linuxArm64Test` cannot be executed on any available CI host. The `linuxArm64` TARGET is still fully
+  # covered: it is cross-compiled and ABI-checked from linux x64 in `build-linux` (verificationCheck's
+  # compileKotlinLinuxArm64 + klib apiCheck). If JetBrains ships a linux-arm64 K/N host, restore a runtime lane here.
 
   build-windows:
     # Native runtime lane on Windows (free for public repos). The host-aware gate runs mingwX64Test here, plus the

@@ -9,16 +9,17 @@ assignments and their promotion/retirement triggers. Evidence for each row lives
 ## Context
 
 Every declared target needs evidence rather than a compile-only claim. kotlin-sdkgen 0.4.0 unblocked the Android
-Tier 1 target, the `runRealTime` harness made the real-Ktor engine lane run on every host (JS included), and native
-runtime lanes now run in CI (Linux arm64 and Windows on PRs; Intel macOS nightly). Every published target must
-satisfy its documented tier, and unavailable host tests must be explicitly disclosed.
+Tier 1 target, the `runRealTime` harness made the real-Ktor engine lane run on every available host (JS included), and
+native runtime lanes run in CI where Kotlin/Native provides a matching host (Linux x64 and Windows on PRs; Intel macOS
+nightly). Linux arm64 remains compile + klib ABI coverage because Kotlin/Native has no Linux arm64 host. Every
+published target must satisfy its documented tier, and unavailable host tests must be explicitly disclosed.
 
 ## Decision
 
 | Tier | Targets | PR evidence | Nightly | Consumer sample | Notes |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `jvm`, `android`, `macosArm64`, `iosSimulatorArm64`, `iosArm64` | compile, JVM + klib ABI, common + real-engine (`engineTest`) suites on the host lanes (`iosArm64` compiles only — device runtime not executed) | — | jvm, android, apple, ios (Swift/XCFramework) | Android **device** tests: explicit limitation (host lane `testAndroidHostTest` only) |
-| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | compile, klib ABI, common + real-engine suites on native hosts / Node / headless Chrome | — | native-desktop (Linux CIO), native-desktop (Windows WinHttp), js (Node), browser (Js) | — |
+| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | compile + klib ABI for all; common + real-engine suites on available native hosts / Node / headless Chrome | — | native-desktop (Linux CIO), native-desktop (Windows WinHttp), js (Node), browser (Js) | Linux arm64 runtime is not executed because no Kotlin/Native Linux arm64 host exists; cross-compiled + ABI-checked on Linux x64 |
 | 2 (deprecated upstream) | `macosX64`, `iosX64` | compile, klib ABI | runtime lanes on `macos-15-intel` | — | Deprecated since Kotlin 2.3.20 (still compile); retire when Kotlin removes them; compatibility-policy "target retirement" applies |
 | 3 (declared, not published) | `wasmJs` | `scripts/wasm-probe.sh` (expected to fail until the runtime ships wasmJs) | — | — | Blocked upstream: the kotlin-sdkgen runtime publishes no wasmJs variant |
 | Not supported | watchOS, tvOS, `androidNative*`, `linuxArm32Hfp`, wasmWasi | — | — | — | No runtime artifacts / no HTTP-client value |
