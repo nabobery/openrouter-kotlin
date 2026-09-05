@@ -1,0 +1,1870 @@
+diff --git a/spec/openapi.yaml b/spec/openapi.yaml
+index 0f6ca6d..534e9b3 100644
+--- a/spec/openapi.yaml
++++ b/spec/openapi.yaml
+@@ -194,6 +194,10 @@ components:
+               - allOf:
+                   - $ref: '#/components/schemas/FunctionTool'
+                   - properties:
++                      async:
++                        description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++                        example: true
++                        type: 'boolean'
+                       defer_loading:
+                         description: 'Withhold this tool from the model until `openrouter:tool_search` finds it. Requires the tool search server tool; at least one tool must remain non-deferred.'
+                         example: true
+@@ -1226,17 +1230,46 @@ components:
+       example:
+         expires_at: '2026-04-08T00:00:00Z'
+         id: 'ctr_01abc'
++        skills: null
+       properties:
+         expires_at:
+           type: 'string'
+         id:
+           type: 'string'
++        skills:
++          default: null
++          items:
++            $ref: '#/components/schemas/AnthropicContainerSkill'
++          type:
++            - 'array'
++            - 'null'
+       required:
+         - 'id'
+         - 'expires_at'
+       type:
+         - 'object'
+         - 'null'
++    AnthropicContainerSkill:
++      example:
++        skill_id: 'pdf'
++        type: 'anthropic'
++        version: 'latest'
++      properties:
++        skill_id:
++          type: 'string'
++        type:
++          enum:
++            - 'anthropic'
++            - 'custom'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
++        version:
++          type: 'string'
++      required:
++        - 'skill_id'
++        - 'type'
++        - 'version'
++      type: 'object'
+     AnthropicContainerUpload:
+       example:
+         file_id: 'file_01abc'
+@@ -1563,6 +1596,27 @@ components:
+         - 'type'
+         - 'value'
+       type: 'object'
++    AnthropicInputTransformation:
++      additionalProperties: {}
++      description: 'A server-side transformation Anthropic applied to the request input'
++      example:
++        path: 'messages.1.content.0'
++        reason: 'prefix_binding_mismatch'
++        type: 'thinking_dropped'
++      properties:
++        path:
++          type:
++            - 'string'
++            - 'null'
++        reason:
++          type:
++            - 'string'
++            - 'null'
++        type:
++          type: 'string'
++      required:
++        - 'type'
++      type: 'object'
+     AnthropicIterationCacheCreation:
+       default: null
+       example:
+@@ -1576,6 +1630,16 @@ components:
+       type:
+         - 'object'
+         - 'null'
++    AnthropicMessageOutputConfig:
++      additionalProperties: false
++      example:
++        effort: 'low'
++      properties:
++        effort:
++          $ref: '#/components/schemas/AnthropicOutputEffort'
++      type:
++        - 'object'
++        - 'null'
+     AnthropicMessagesErrorResponse:
+       description: 'Error response from the Anthropic Messages API'
+       example:
+@@ -1650,6 +1714,19 @@ components:
+         input_tokens: 100
+         output_tokens: 50
+         type: 'message'
++    AnthropicOutputEffort:
++      enum:
++        - 'low'
++        - 'medium'
++        - 'high'
++        - 'xhigh'
++        - 'max'
++        - null
++      example: 'high'
++      type:
++        - 'string'
++        - 'null'
++      x-speakeasy-unknown-values: allow
+     AnthropicOutputTokensDetails:
+       example:
+         thinking_tokens: 0
+@@ -1726,8 +1803,8 @@ components:
+           type: 'string'
+       required:
+         - 'type'
+-        - 'explanation'
+         - 'category'
++        - 'explanation'
+       type:
+         - 'object'
+         - 'null'
+@@ -1810,6 +1887,16 @@ components:
+         - 'string'
+         - 'null'
+       x-speakeasy-unknown-values: allow
++    AnthropicSystemClearAt:
++      enum:
++        - 'next_user_message'
++        - 'never'
++        - null
++      example: 'next_user_message'
++      type:
++        - 'string'
++        - 'null'
++      x-speakeasy-unknown-values: allow
+     AnthropicTextBlock:
+       example:
+         citations: null
+@@ -2084,10 +2171,28 @@ components:
+         - 'thinking'
+         - 'signature'
+       type: 'object'
++    AnthropicThinkingBlockBinding:
++      additionalProperties: false
++      example:
++        prefix_mismatch_behavior: 'drop_block'
++      properties:
++        prefix_mismatch_behavior:
++          enum:
++            - 'error'
++            - 'drop_block'
++            - null
++          type:
++            - 'string'
++            - 'null'
++          x-speakeasy-unknown-values: allow
++      type:
++        - 'object'
++        - 'null'
+     AnthropicThinkingDisplay:
+       enum:
+         - 'summarized'
+         - 'omitted'
++        - 'updates'
+         - null
+       example: 'summarized'
+       type:
+@@ -3538,6 +3643,7 @@ components:
+               - $ref: '#/components/schemas/OpenAIResponseCustomToolCallOutput'
+               - $ref: '#/components/schemas/ApplyPatchCallItem'
+               - $ref: '#/components/schemas/ApplyPatchCallOutputItem'
++              - $ref: '#/components/schemas/ConfigurationUpdateItem'
+           type: 'array'
+         - type: 'null'
+       example:
+@@ -3577,6 +3683,12 @@ components:
+           type: 'array'
+         id:
+           type: 'string'
++        input_transformations:
++          items:
++            $ref: '#/components/schemas/AnthropicInputTransformation'
++          type:
++            - 'array'
++            - 'null'
+         model:
+           type: 'string'
+         role:
+@@ -4045,6 +4157,10 @@ components:
+               - allOf:
+                   - $ref: '#/components/schemas/FunctionTool'
+                   - properties:
++                      async:
++                        description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++                        example: true
++                        type: 'boolean'
+                       defer_loading:
+                         description: 'Withhold this tool from the model until `openrouter:tool_search` finds it. Requires the tool search server tool; at least one tool must remain non-deferred.'
+                         example: true
+@@ -4624,6 +4740,7 @@ components:
+         - 'perplexity'
+         - 'phala'
+         - 'poolside'
++        - 'prime-intellect'
+         - 'quiver'
+         - 'recraft'
+         - 'reka'
+@@ -4645,6 +4762,7 @@ components:
+         - 'together'
+         - 'upstage'
+         - 'venice'
++        - 'voyageai'
+         - 'wafer'
+         - 'wandb'
+         - 'wandb-legacy'
+@@ -4949,6 +5067,14 @@ components:
+       example:
+         url: 'https://example.com/video.mp4'
+       properties:
++        processing:
++          description: 'Video processing mode. `agentic` enables agentic video processing and `static` forces fixed-rate frame sampling on providers that support it (currently Google Gemini).'
++          enum:
++            - 'agentic'
++            - 'static'
++          example: 'agentic'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
+         url:
+           description: 'URL of the video (data: URLs supported)'
+           type: 'string'
+@@ -5930,6 +6056,20 @@ components:
+         name: 'Assistant Config'
+         role: 'system'
+       properties:
++        configuration_update:
++          additionalProperties: false
++          description: 'OpenRouter extension. Changes reasoning effort from this point in the conversation onward without invalidating the prompt cache for the preceding turns. Place it on a content-less system message (`content: ""`) directly before the user message it should apply to, and keep it at that position in later requests. Equivalent to the OpenAI Responses `configuration_update` input item and the Anthropic Messages per-message `output_config.effort`.'
++          example:
++            reasoning:
++              effort: 'low'
++          properties:
++            reasoning:
++              $ref: '#/components/schemas/ConfigurationUpdateReasoning'
++          required:
++            - 'reasoning'
++          type:
++            - 'object'
++            - 'null'
+         content:
+           anyOf:
+             - type: 'string'
+@@ -6592,6 +6732,49 @@ components:
+         - 'display_width'
+         - 'environment'
+       type: 'object'
++    ConfigurationUpdateItem:
++      description: 'Changes reasoning effort from this point in the conversation onward without invalidating the prompt cache for the preceding items. Place it before the user message it should apply to; it stays in effect until another configuration update. Two adjacent configuration updates are rejected. Only supported by models that accept mid-conversation effort changes.'
++      example:
++        reasoning:
++          effort: 'low'
++        type: 'configuration_update'
++      properties:
++        id:
++          type:
++            - 'string'
++            - 'null'
++        reasoning:
++          $ref: '#/components/schemas/ConfigurationUpdateReasoning'
++        type:
++          enum:
++            - 'configuration_update'
++          type: 'string'
++      required:
++        - 'type'
++        - 'reasoning'
++      type: 'object'
++    ConfigurationUpdateReasoning:
++      additionalProperties: false
++      description: 'Reasoning settings applied from this point in the conversation onward'
++      example:
++        effort: 'low'
++      properties:
++        effort:
++          description: 'Reasoning effort to apply from this point in the conversation onward'
++          enum:
++            - 'max'
++            - 'xhigh'
++            - 'high'
++            - 'medium'
++            - 'low'
++            - 'minimal'
++            - 'none'
++          example: 'low'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
++      required:
++        - 'effort'
++      type: 'object'
+     ConflictResponse:
+       description: 'Conflict - Resource conflict or concurrent modification'
+       example:
+@@ -7106,6 +7289,12 @@ components:
+         upstream_inference_cost: null
+         upstream_inference_prompt_cost: 0.0008
+       properties:
++        server_tool_cost:
++          description: 'Metered server-tool execution cost (for example, shell sandbox time) billed for this request, in USD. Matches the billed checkpoint and settlement amounts exactly. 0 when a metered server tool ran but settled at zero dollars; absent when no metered server tool ran.'
++          format: 'double'
++          type:
++            - 'number'
++            - 'null'
+         upstream_inference_completions_cost:
+           format: 'double'
+           type: 'number'
+@@ -7275,6 +7464,16 @@ components:
+         name: 'My New Guardrail'
+         reset_interval: 'monthly'
+       properties:
++        allowed_data_regions:
++          description: 'Data regions through which requests governed by this guardrail must arrive. `global` is https://openrouter.ai, `europe` is https://eu.openrouter.ai, and `us` is https://us.openrouter.ai. Requests arriving through any other region are rejected. `null` leaves the ingress region unrestricted. When several guardrails apply (workspace default, member, API key), the effective regions are the intersection of every non-null value. An empty array is rejected.'
++          example:
++            - 'europe'
++          items:
++            $ref: '#/components/schemas/GuardrailDataRegion'
++          minItems: 1
++          type:
++            - 'array'
++            - 'null'
+         allowed_models:
+           description: 'Array of model identifiers (slug or canonical_slug accepted)'
+           example:
+@@ -7652,6 +7851,13 @@ components:
+       required:
+         - 'data'
+       type: 'object'
++    CreateScimSyncJobResponse:
++      properties:
++        data:
++          $ref: '#/components/schemas/ScimSyncJob'
++      required:
++        - 'data'
++      type: 'object'
+     CreateWorkspaceRequest:
+       example:
+         default_image_model: 'openai/dall-e-3'
+@@ -7762,6 +7968,10 @@ components:
+         name: 'my_tool'
+         type: 'custom'
+       properties:
++        async:
++          description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++          example: true
++          type: 'boolean'
+         description:
+           type: 'string'
+         format:
+@@ -10043,6 +10253,13 @@ components:
+       required:
+         - 'data'
+       type: 'object'
++    GetScimSyncJobResponse:
++      properties:
++        data:
++          $ref: '#/components/schemas/ScimSyncJob'
++      required:
++        - 'data'
++      type: 'object'
+     GetWorkspaceBudgetResponse:
+       example:
+         data:
+@@ -10135,6 +10352,7 @@ components:
+       type: 'object'
+     Guardrail:
+       example:
++        allowed_data_regions: null
+         allowed_models: null
+         allowed_providers:
+           - 'openai'
+@@ -10166,6 +10384,15 @@ components:
+         updated_at: '2025-08-24T15:45:00Z'
+         workspace_id: '0df9e665-d932-5740-b2c7-b52af166bc11'
+       properties:
++        allowed_data_regions:
++          description: 'Data regions through which requests governed by this guardrail must arrive. `global` is https://openrouter.ai, `europe` is https://eu.openrouter.ai, and `us` is https://us.openrouter.ai. Requests arriving through any other region are rejected. `null` leaves the ingress region unrestricted. When several guardrails apply (workspace default, member, API key), the effective regions are the intersection of every non-null value.'
++          example:
++            - 'europe'
++          items:
++            $ref: '#/components/schemas/GuardrailDataRegion'
++          type:
++            - 'array'
++            - 'null'
+         allowed_models:
+           description: 'Array of model canonical_slugs (immutable identifiers)'
+           example:
+@@ -10334,6 +10561,15 @@ components:
+         - 'created_at'
+         - 'workspace_id'
+       type: 'object'
++    GuardrailDataRegion:
++      description: 'An OpenRouter data region: `global` (https://openrouter.ai), `europe` (https://eu.openrouter.ai), or `us` (https://us.openrouter.ai)'
++      enum:
++        - 'global'
++        - 'europe'
++        - 'us'
++      example: 'europe'
++      type: 'string'
++      x-speakeasy-unknown-values: allow
+     GuardrailInterval:
+       description: 'Interval at which the limit resets (daily, weekly, monthly)'
+       enum:
+@@ -11619,6 +11855,7 @@ components:
+               - $ref: '#/components/schemas/ItemReferenceItem'
+               - $ref: '#/components/schemas/AdditionalToolsItem'
+               - $ref: '#/components/schemas/AgentMessageItem'
++              - $ref: '#/components/schemas/ConfigurationUpdateItem'
+           type: 'array'
+       description: 'Input for a response request - can be a string or array of items'
+       example:
+@@ -11648,6 +11885,14 @@ components:
+         type: 'input_video'
+         video_url: 'https://example.com/video.mp4'
+       properties:
++        processing:
++          description: 'Video processing mode. `agentic` enables agentic video processing and `static` forces fixed-rate frame sampling on providers that support it (currently Google Gemini).'
++          enum:
++            - 'agentic'
++            - 'static'
++          example: 'agentic'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
+         type:
+           enum:
+             - 'input_video'
+@@ -11820,6 +12065,14 @@ components:
+       example:
+         url: 'https://example.com/video.mp4'
+       properties:
++        processing:
++          description: 'Video processing mode. `agentic` enables agentic video processing and `static` forces fixed-rate frame sampling on providers that support it (currently Google Gemini).'
++          enum:
++            - 'agentic'
++            - 'static'
++          example: 'agentic'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
+         url:
+           description: 'URL of the video (data: URLs supported)'
+           type: 'string'
+@@ -12453,9 +12706,7 @@ components:
+         arguments:
+           type: 'string'
+         error:
+-          type:
+-            - 'string'
+-            - 'null'
++          $ref: '#/components/schemas/McpToolCallError'
+         id:
+           type: 'string'
+         name:
+@@ -12477,6 +12728,26 @@ components:
+         - 'arguments'
+         - 'server_label'
+       type: 'object'
++    McpHttpError:
++      description: 'The MCP server request failed at the HTTP layer'
++      example:
++        code: 503
++        message: 'Service Unavailable'
++        type: 'http_error'
++      properties:
++        code:
++          type: 'integer'
++        message:
++          type: 'string'
++        type:
++          enum:
++            - 'http_error'
++          type: 'string'
++      required:
++        - 'type'
++        - 'code'
++        - 'message'
++      type: 'object'
+     McpListToolsItem:
+       description: 'List of available MCP tools from a server'
+       example:
+@@ -12528,6 +12799,26 @@ components:
+         - 'server_label'
+         - 'tools'
+       type: 'object'
++    McpProtocolError:
++      description: 'The MCP server returned a protocol-level error'
++      example:
++        code: -32601
++        message: 'Method not found'
++        type: 'mcp_protocol_error'
++      properties:
++        code:
++          type: 'integer'
++        message:
++          type: 'string'
++        type:
++          enum:
++            - 'mcp_protocol_error'
++          type: 'string'
++      required:
++        - 'type'
++        - 'code'
++        - 'message'
++      type: 'object'
+     McpServerTool:
+       description: 'MCP (Model Context Protocol) tool configuration'
+       example:
+@@ -12608,6 +12899,32 @@ components:
+         - 'type'
+         - 'server_label'
+       type: 'object'
++    McpToolCallError:
++      anyOf:
++        - type: 'string'
++        - $ref: '#/components/schemas/McpProtocolError'
++        - $ref: '#/components/schemas/McpToolExecutionError'
++        - $ref: '#/components/schemas/McpHttpError'
++        - type: 'null'
++      description: 'Error from an MCP tool call, either a plain message or a structured error'
++      example:
++        code: 503
++        message: 'Service Unavailable'
++        type: 'http_error'
++    McpToolExecutionError:
++      description: 'The MCP tool ran but reported a failure'
++      example:
++        content: 'Connection refused'
++        type: 'mcp_tool_execution_error'
++      properties:
++        content: {}
++        type:
++          enum:
++            - 'mcp_tool_execution_error'
++          type: 'string'
++      required:
++        - 'type'
++      type: 'object'
+     MemberAssignment:
+       example:
+         assigned_by: 'user_abc123'
+@@ -12974,17 +13291,7 @@ components:
+             output_tokens_details:
+               $ref: '#/components/schemas/AnthropicOutputTokensDetails'
+             server_tool_use:
+-              properties:
+-                web_fetch_requests:
+-                  type: 'integer'
+-                web_search_requests:
+-                  type: 'integer'
+-              required:
+-                - 'web_search_requests'
+-                - 'web_fetch_requests'
+-              type:
+-                - 'object'
+-                - 'null'
++              $ref: '#/components/schemas/ORAnthropicServerToolUsage'
+           required:
+             - 'input_tokens'
+             - 'output_tokens'
+@@ -13046,6 +13353,8 @@ components:
+         content: 'Hello, how are you?'
+         role: 'user'
+       properties:
++        clear_at:
++          $ref: '#/components/schemas/AnthropicSystemClearAt'
+         content:
+           anyOf:
+             - type: 'string'
+@@ -13212,6 +13521,8 @@ components:
+                   - $ref: '#/components/schemas/MessagesShellToolResultBlock'
+                   - $ref: '#/components/schemas/MessagesBashToolResultBlock'
+               type: 'array'
++        output_config:
++          $ref: '#/components/schemas/AnthropicMessageOutputConfig'
+         role:
+           enum:
+             - 'user'
+@@ -13491,6 +13802,8 @@ components:
+         thinking:
+           oneOf:
+             - properties:
++                block_binding:
++                  $ref: '#/components/schemas/AnthropicThinkingBlockBinding'
+                 budget_tokens:
+                   type: 'integer'
+                 display:
+@@ -13512,6 +13825,8 @@ components:
+                 - 'type'
+               type: 'object'
+             - properties:
++                block_binding:
++                  $ref: '#/components/schemas/AnthropicThinkingBlockBinding'
+                 display:
+                   $ref: '#/components/schemas/AnthropicThinkingDisplay'
+                 type:
+@@ -13799,6 +14114,8 @@ components:
+                       items:
+                         $ref: '#/components/schemas/AnthropicUsageIteration'
+                       type: 'array'
++                    server_tool_use:
++                      $ref: '#/components/schemas/ORAnthropicServerToolUsage'
+                     service_tier:
+                       type:
+                         - 'string'
+@@ -13949,6 +14266,12 @@ components:
+               type: 'array'
+             id:
+               type: 'string'
++            input_transformations:
++              items:
++                $ref: '#/components/schemas/AnthropicInputTransformation'
++              type:
++                - 'array'
++                - 'null'
+             model:
+               type: 'string'
+             provider:
+@@ -14056,6 +14379,7 @@ components:
+                 - 'OpenInference'
+                 - 'Parasail'
+                 - 'Poolside'
++                - 'PrimeIntellect'
+                 - 'Perceptron'
+                 - 'Perplexity'
+                 - 'Phala'
+@@ -14831,6 +15155,10 @@ components:
+           type:
+             - 'array'
+             - 'null'
++        async:
++          description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++          example: true
++          type: 'boolean'
+         defer_loading:
+           type: 'boolean'
+         description:
+@@ -14931,6 +15259,83 @@ components:
+         - 'code'
+         - 'message'
+       type: 'object'
++    OAuthErrorResponse:
++      description: 'RFC 6749 §5.2 error response.'
++      example:
++        error: 'invalid_grant'
++        error_description: 'The subject token was not accepted.'
++      properties:
++        error:
++          enum:
++            - 'invalid_request'
++            - 'invalid_grant'
++            - 'unsupported_grant_type'
++            - 'invalid_scope'
++            - 'server_error'
++            - 'temporarily_unavailable'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
++        error_description:
++          type: 'string'
++      required:
++        - 'error'
++        - 'error_description'
++      type: 'object'
++    OAuthJwks:
++      description: 'RFC 7517 JWK Set of the keys OpenRouter signs access tokens with.'
++      example:
++        keys:
++          - alg: 'ES256'
++            crv: 'P-256'
++            kid: 'or-2026-09'
++            kty: 'EC'
++            use: 'sig'
++            x: 'f83OJ3D2xF1Bg8vub9tLe1gHMzV76e8Tus9uPHvRVEU'
++            'y': 'x_FEzRu9m36HLN_tue659LNpXW6pCyStikYjKIWI5a0'
++      properties:
++        keys:
++          items:
++            additionalProperties: false
++            properties:
++              alg:
++                enum:
++                  - 'ES256'
++                type: 'string'
++              crv:
++                enum:
++                  - 'P-256'
++                type: 'string'
++              kid:
++                minLength: 1
++                type: 'string'
++              kty:
++                enum:
++                  - 'EC'
++                type: 'string'
++              use:
++                enum:
++                  - 'sig'
++                type: 'string'
++              x:
++                pattern: '^[A-Za-z0-9_-]+$'
++                type: 'string'
++              'y':
++                pattern: '^[A-Za-z0-9_-]+$'
++                type: 'string'
++            required:
++              - 'kty'
++              - 'crv'
++              - 'kid'
++              - 'x'
++              - 'y'
++              - 'alg'
++              - 'use'
++            type: 'object'
++          minItems: 1
++          type: 'array'
++      required:
++        - 'keys'
++      type: 'object'
+     ObservabilityArizeDestination:
+       example:
+         api_key_hashes: null
+@@ -17299,6 +17704,10 @@ components:
+         name: 'apply_patch'
+         type: 'custom_tool_call'
+       properties:
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -17365,6 +17774,10 @@ components:
+       properties:
+         arguments:
+           type: 'string'
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -18193,6 +18606,7 @@ components:
+               provider: 'OpenAI'
+               selected: true
+           total: 1
++        generation_time: 2016
+         is_byok: false
+         region: 'iad'
+         requested: 'openai/gpt-4o'
+@@ -18207,6 +18621,10 @@ components:
+           type: 'array'
+         endpoints:
+           $ref: '#/components/schemas/EndpointsMetadata'
++        generation_time:
++          description: 'Milliseconds measured for the generation, from dispatching the upstream request until its response body ended. Divide the completion token count by this for throughput. Absent when no upstream request was dispatched.'
++          example: 2016
++          type: 'integer'
+         is_byok:
+           type: 'boolean'
+         params:
+@@ -18360,6 +18778,27 @@ components:
+         - $ref: '#/components/schemas/AnthropicCodeExecution20250825Caller'
+         - $ref: '#/components/schemas/AnthropicCodeExecution20260120Caller'
+         - type: 'null'
++    ORAnthropicServerToolUsage:
++      example:
++        tool_calls_executed: 1
++        tool_calls_requested: 1
++        web_fetch_requests: 0
++        web_search_requests: 0
++      properties:
++        tool_calls_executed:
++          type: 'integer'
++        tool_calls_requested:
++          type: 'integer'
++        web_fetch_requests:
++          type: 'integer'
++        web_search_requests:
++          type: 'integer'
++      required:
++        - 'web_search_requests'
++        - 'web_fetch_requests'
++      type:
++        - 'object'
++        - 'null'
+     ORAnthropicServerToolUseBlock:
+       example:
+         caller:
+@@ -18748,8 +19187,13 @@ components:
+         id: 'ctc-abc123'
+         input: "*** Begin Patch\n*** End Patch"
+         name: 'apply_patch'
++        status: 'completed'
+         type: 'custom_tool_call'
+       properties:
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -18761,6 +19205,13 @@ components:
+         namespace:
+           description: 'Namespace qualifier for tools registered as part of a namespace tool group (e.g. an MCP server)'
+           type: 'string'
++        status:
++          enum:
++            - 'in_progress'
++            - 'completed'
++            - 'incomplete'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
+         type:
+           enum:
+             - 'custom_tool_call'
+@@ -19173,8 +19624,13 @@ components:
+         id: 'ctc-abc123'
+         input: "*** Begin Patch\n*** End Patch"
+         name: 'apply_patch'
++        status: 'completed'
+         type: 'custom_tool_call'
+       properties:
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -19186,6 +19642,13 @@ components:
+         namespace:
+           description: 'Namespace qualifier for tools registered as part of a namespace tool group (e.g. an MCP server)'
+           type: 'string'
++        status:
++          enum:
++            - 'in_progress'
++            - 'completed'
++            - 'incomplete'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
+         type:
+           enum:
+             - 'custom_tool_call'
+@@ -19286,6 +19749,10 @@ components:
+       properties:
+         arguments:
+           type: 'string'
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -20939,6 +21406,7 @@ components:
+         - 'OpenInference'
+         - 'Parasail'
+         - 'Poolside'
++        - 'PrimeIntellect'
+         - 'Perceptron'
+         - 'Perplexity'
+         - 'Phala'
+@@ -21282,6 +21750,9 @@ components:
+         poolside:
+           additionalProperties: {}
+           type: 'object'
++        prime-intellect:
++          additionalProperties: {}
++          type: 'object'
+         quiver:
+           additionalProperties: {}
+           type: 'object'
+@@ -21687,6 +22158,7 @@ components:
+             - 'OpenInference'
+             - 'Parasail'
+             - 'Poolside'
++            - 'PrimeIntellect'
+             - 'Perceptron'
+             - 'Perplexity'
+             - 'Phala'
+@@ -21793,6 +22265,19 @@ components:
+         model_id: 'openai/gpt-4'
+         model_name: 'GPT-4'
+         name: 'OpenAI: GPT-4'
++        perf_last_30m_by_workload:
++          text_generation:
++            latency:
++              p50: 250
++              p75: 350
++              p90: 480
++              p99: 850
++            request_count: 1000
++            throughput:
++              p50: 45.2
++              p75: 38.5
++              p90: 28.3
++              p99: 15.1
+         pricing:
+           completion: '0.00006'
+           image: '0'
+@@ -21843,6 +22328,171 @@ components:
+           type: 'string'
+         name:
+           type: 'string'
++        perf_last_30m_by_workload:
++          additionalProperties: false
++          description: 'Endpoint performance over the last 30 minutes, keyed by the kind of request served (e.g. `text_generation`, `image_generation`). Additive to the legacy singular latency and throughput fields; image and video generation report end-to-end latency. Only visible when authenticated with an API key or cookie.'
++          properties:
++            embeddings:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            image_generation:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            rerank:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            stt:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            text_generation:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            tts:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            unknown:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++            video_generation:
++              properties:
++                latency:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Latency percentiles in milliseconds for this workload. Image and video generation report full end-to-end generation time, because their raw latency only measures request acknowledgement; every other workload reports time to first token or result.'
++                request_count:
++                  description: 'Total requests admitted for this workload in the window.'
++                  type:
++                    - 'integer'
++                    - 'null'
++                throughput:
++                  allOf:
++                    - $ref: '#/components/schemas/PercentileStats'
++                    - description: 'Throughput percentiles in tokens per second. Only meaningful for text generation; null for workloads without token throughput.'
++              required:
++                - 'latency'
++                - 'throughput'
++                - 'request_count'
++              type: 'object'
++          type: 'object'
+         pricing:
+           properties:
+             audio:
+@@ -22686,6 +23336,8 @@ components:
+             - 'failed_to_download_image'
+             - 'image_file_not_found'
+             - 'bio_policy'
++            - 'cyber_policy'
++            - 'misalignment_policy_violation'
+             - 'data_residency_mismatch'
+           type: 'string'
+           x-speakeasy-unknown-values: allow
+@@ -22872,6 +23524,10 @@ components:
+               - allOf:
+                   - $ref: '#/components/schemas/FunctionTool'
+                   - properties:
++                      async:
++                        description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++                        example: true
++                        type: 'boolean'
+                       defer_loading:
+                         description: 'Withhold this tool from the model until `openrouter:tool_search` finds it. Requires the tool search server tool; at least one tool must remain non-deferred.'
+                         example: true
+@@ -23006,8 +23662,8 @@ components:
+       type: 'string'
+       x-speakeasy-unknown-values: allow
+     SandboxSleepAfterSeconds:
+-      description: 'How long (in seconds) the container stays warm after its last command before sleeping, freeing its capacity slot. Idle-based: each command renews the timer. Defaults to 900 (15 minutes); capped at 14400 (4 hours).'
+-      example: 900
++      description: 'How long (in seconds) the container stays warm after its last command before sleeping, freeing its capacity slot. Idle-based: each command renews the timer. Defaults to 300 (5 minutes); capped at 14400 (4 hours).'
++      example: 300
+       type: 'integer'
+     ScimGroup:
+       example:
+@@ -23081,6 +23737,59 @@ components:
+         - 'created_at'
+         - 'updated_at'
+       type: 'object'
++    ScimSyncJob:
++      properties:
++        created_at:
++          description: 'Time when the sync job was created.'
++          type: 'string'
++        deleted_groups:
++          description: 'Number of groups deleted, when the job completed successfully.'
++          type:
++            - 'integer'
++            - 'null'
++        error_message:
++          description: 'Stable error message when the job failed.'
++          type:
++            - 'string'
++            - 'null'
++        finished_at:
++          description: 'Time when synchronization finished.'
++          type:
++            - 'string'
++            - 'null'
++        id:
++          description: 'Unique identifier for the sync job.'
++          format: 'uuid'
++          type: 'string'
++        started_at:
++          description: 'Time when synchronization started.'
++          type:
++            - 'string'
++            - 'null'
++        status:
++          description: 'Current status of the sync job: queued, running, succeeded, or failed.'
++          enum:
++            - 'queued'
++            - 'running'
++            - 'succeeded'
++            - 'failed'
++          type: 'string'
++          x-speakeasy-unknown-values: allow
++        synced_groups:
++          description: 'Number of groups synchronized, when the job completed successfully.'
++          type:
++            - 'integer'
++            - 'null'
++      required:
++        - 'id'
++        - 'status'
++        - 'synced_groups'
++        - 'deleted_groups'
++        - 'error_message'
++        - 'created_at'
++        - 'started_at'
++        - 'finished_at'
++      type: 'object'
+     SearchContextSizeEnum:
+       description: 'Size of the search context for web search tools'
+       enum:
+@@ -24745,6 +25454,92 @@ components:
+       example:
+         format:
+           type: 'text'
++    TokenExchangeRequest:
++      description: 'RFC 8693 token exchange request body (application/x-www-form-urlencoded).'
++      example:
++        federation_policy_id: '4b2f7d1e-8c3a-4e5f-9a6b-1c2d3e4f5a6b'
++        grant_type: 'urn:ietf:params:oauth:grant-type:token-exchange'
++        subject_token: '<jwt from your identity provider>'
++        subject_token_type: 'urn:ietf:params:oauth:token-type:jwt'
++      properties:
++        federation_policy_id:
++          description: 'The federation policy to evaluate, from Settings → Workload identity. Binds the exchange to one organization.'
++          example: '4b2f7d1e-8c3a-4e5f-9a6b-1c2d3e4f5a6b'
++          format: 'uuid'
++          type: 'string'
++        grant_type:
++          description: 'Must be `urn:ietf:params:oauth:grant-type:token-exchange`.'
++          enum:
++            - 'urn:ietf:params:oauth:grant-type:token-exchange'
++          example: 'urn:ietf:params:oauth:grant-type:token-exchange'
++          type: 'string'
++        requested_token_type:
++          description: 'Optional; when present must be `urn:ietf:params:oauth:token-type:access_token`.'
++          enum:
++            - 'urn:ietf:params:oauth:token-type:access_token'
++          example: 'urn:ietf:params:oauth:token-type:access_token'
++          type: 'string'
++        scope:
++          description: 'Optional; only `inference` is available.'
++          enum:
++            - 'inference'
++          example: 'inference'
++          type: 'string'
++        subject_token:
++          description: 'The JWT issued by your identity provider.'
++          example: '<jwt from your identity provider>'
++          maxLength: 16384
++          minLength: 1
++          type: 'string'
++        subject_token_type:
++          description: 'Must be `urn:ietf:params:oauth:token-type:jwt`.'
++          enum:
++            - 'urn:ietf:params:oauth:token-type:jwt'
++          example: 'urn:ietf:params:oauth:token-type:jwt'
++          type: 'string'
++      required:
++        - 'grant_type'
++        - 'subject_token'
++        - 'federation_policy_id'
++        - 'subject_token_type'
++      type: 'object'
++    TokenExchangeResponse:
++      description: 'RFC 8693 token exchange response.'
++      example:
++        access_token: '<short-lived openrouter access token jwt>'
++        expires_in: 900
++        issued_token_type: 'urn:ietf:params:oauth:token-type:access_token'
++        scope: 'inference'
++        token_type: 'Bearer'
++      properties:
++        access_token:
++          description: 'A short-lived JWT to send as `Authorization: Bearer` to the inference API.'
++          example: '<short-lived openrouter access token jwt>'
++          type: 'string'
++        expires_in:
++          description: 'Seconds until the access token expires: at most 15 minutes, and never later than the subject token expires.'
++          example: 900
++          type: 'integer'
++        issued_token_type:
++          enum:
++            - 'urn:ietf:params:oauth:token-type:access_token'
++          example: 'urn:ietf:params:oauth:token-type:access_token'
++          type: 'string'
++        scope:
++          example: 'inference'
++          type: 'string'
++        token_type:
++          enum:
++            - 'Bearer'
++          example: 'Bearer'
++          type: 'string'
++      required:
++        - 'access_token'
++        - 'issued_token_type'
++        - 'token_type'
++        - 'expires_in'
++        - 'scope'
++      type: 'object'
+     ToolCallStatus:
+       enum:
+         - 'in_progress'
+@@ -25567,6 +26362,16 @@ components:
+         name: 'Updated Guardrail Name'
+         reset_interval: 'weekly'
+       properties:
++        allowed_data_regions:
++          description: 'Data regions through which requests governed by this guardrail must arrive. `global` is https://openrouter.ai, `europe` is https://eu.openrouter.ai, and `us` is https://us.openrouter.ai. Requests arriving through any other region are rejected. `null` leaves the ingress region unrestricted. When several guardrails apply (workspace default, member, API key), the effective regions are the intersection of every non-null value. An empty array is rejected.'
++          example:
++            - 'europe'
++          items:
++            $ref: '#/components/schemas/GuardrailDataRegion'
++          minItems: 1
++          type:
++            - 'array'
++            - 'null'
+         allowed_models:
+           description: 'Array of model identifiers (slug or canonical_slug accepted)'
+           example:
+@@ -26030,6 +26835,12 @@ components:
+                     - 'null'
+                 cost_details:
+                   properties:
++                    server_tool_cost:
++                      description: 'Metered server-tool execution cost (for example, shell sandbox time) billed for this request, in USD. Matches the billed checkpoint and settlement amounts exactly. 0 when a metered server tool ran but settled at zero dollars; absent when no metered server tool ran.'
++                      format: 'double'
++                      type:
++                        - 'number'
++                        - 'null'
+                     upstream_inference_cost:
+                       format: 'double'
+                       type:
+@@ -27654,9 +28465,13 @@ paths:
+                 time_range:
+                   properties:
+                     end:
++                      description: 'ISO 8601 UTC timestamp. Must include seconds (YYYY-MM-DDTHH:MM:SSZ; fractional seconds allowed); minute-precision timestamps are rejected.'
++                      example: '2027-12-31T23:59:59Z'
+                       format: 'date-time'
+                       type: 'string'
+                     start:
++                      description: 'ISO 8601 UTC timestamp. Must include seconds (YYYY-MM-DDTHH:MM:SSZ; fractional seconds allowed); minute-precision timestamps are rejected.'
++                      example: '2027-12-31T23:59:59Z'
+                       format: 'date-time'
+                       type: 'string'
+                   required:
+@@ -27832,6 +28647,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/PaymentRequiredResponse'
+           description: 'Payment Required - Insufficient credits or quota to complete request'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -28022,6 +28847,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/PaymentRequiredResponse'
+           description: 'Payment Required - Insufficient credits or quota to complete request'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -28252,7 +29087,7 @@ paths:
+                   type: 'string'
+                   x-speakeasy-unknown-values: allow
+                 expires_at:
+-                  description: 'Optional expiration time for the API key to be created'
++                  description: 'Optional ISO 8601 UTC expiration timestamp. Must include seconds (YYYY-MM-DDTHH:MM:SSZ; fractional seconds allowed); minute-precision timestamps are rejected.'
+                   example: '2027-12-31T23:59:59Z'
+                   format: 'date-time'
+                   type:
+@@ -28709,6 +29544,7 @@ paths:
+               - 'perplexity'
+               - 'phala'
+               - 'poolside'
++              - 'prime-intellect'
+               - 'quiver'
+               - 'recraft'
+               - 'reka'
+@@ -28730,6 +29566,7 @@ paths:
+               - 'together'
+               - 'upstage'
+               - 'venice'
++              - 'voyageai'
+               - 'wafer'
+               - 'wandb'
+               - 'wandb-legacy'
+@@ -30782,6 +31619,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/PaymentRequiredResponse'
+           description: 'Payment Required - Insufficient credits or quota to complete request'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -32243,12 +33090,14 @@ paths:
+           results: '$.data'
+         type: 'offsetLimit'
+     post:
+-      description: 'Create a new guardrail for the authenticated user. A newly created guardrail enforces nothing until it is assigned to API keys or organization members; `workspace_id` places the guardrail in a workspace but does not apply it to that workspace''s traffic. To restrict all traffic in a workspace, update the workspace''s default guardrail instead. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      description: 'Create a new guardrail for the authenticated user. A newly created guardrail enforces nothing until it is assigned to API keys or organization members; `workspace_id` places the guardrail in a workspace but does not apply it to that workspace''s traffic. To restrict all traffic in a workspace, update the workspace''s default guardrail instead. Set `allowed_data_regions` to enforce [In-Region Routing](/docs/guides/features/in-region-routing#enforcing-in-region-routing-with-guardrails): governed requests must arrive through one of the listed OpenRouter domains and are rejected with a 403 otherwise. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+       operationId: 'createGuardrail'
+       requestBody:
+         content:
+           application/json:
+             example:
++              allowed_data_regions:
++                - 'europe'
+               allowed_models: null
+               allowed_providers:
+                 - 'openai'
+@@ -32539,7 +33388,7 @@ paths:
+                   message: 'Invalid request parameters'
+               schema:
+                 $ref: '#/components/schemas/BadRequestResponse'
+-          description: 'Invalid request, or an attempt to change a workspace default guardrail''s name (which is derived from its workspace and not editable).'
++          description: 'Invalid request, or an attempt to change a workspace default guardrail''s name (which is derived from its workspace and not editable; sending the current name unchanged is accepted).'
+         '401':
+           content:
+             application/json:
+@@ -32560,6 +33409,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/NotFoundResponse'
+           description: 'Not Found - Resource does not exist'
++        '409':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 409
++                  message: 'Resource conflict. Please try again later.'
++              schema:
++                $ref: '#/components/schemas/ConflictResponse'
++          description: 'Guardrail name conflict — another guardrail in this workspace already uses the requested name.'
+         '500':
+           content:
+             application/json:
+@@ -34097,7 +34956,7 @@ paths:
+         - 'API Keys'
+       x-speakeasy-name-override: 'list'
+     post:
+-      description: 'Create a new API key for the authenticated user. The plaintext `key` is returned only in this response. Treat it as a write-only, sensitive value; it cannot be retrieved later. Authenticate with a [management key](/docs/guides/overview/auth/management-api-keys), or with a Connect client secret. `external_user` and `external_api_key` are accepted only with a client secret, and `external_user` is required there; supplying either field with a management key is rejected with 403.'
++      description: 'Create a new API key for the authenticated user. The plaintext `key` is returned only in this response. Treat it as a write-only, sensitive value; it cannot be retrieved later. Authenticate with a [management key](/docs/guides/overview/auth/management-api-keys). The optional `external` object associates the key with a partner-defined user and lookup key.'
+       operationId: 'createKeys'
+       requestBody:
+         content:
+@@ -34124,22 +34983,29 @@ paths:
+                     - 'string'
+                     - 'null'
+                 expires_at:
+-                  description: 'Optional ISO 8601 UTC timestamp when the API key should expire. Must be UTC, other timezones will be rejected'
++                  description: 'Optional ISO 8601 UTC expiration timestamp. Must include seconds (YYYY-MM-DDTHH:MM:SSZ; fractional seconds allowed); minute-precision timestamps are rejected.'
+                   example: '2027-12-31T23:59:59Z'
+                   format: 'date-time'
+                   type:
+                     - 'string'
+                     - 'null'
+-                external_api_key:
+-                  description: 'Optional partner-supplied API key. Stored as a SHA-256 hash and never returned. Accepted only when authenticating with a Connect client secret; supplying it with a management key is rejected with 403.'
+-                  maxLength: 512
+-                  minLength: 1
+-                  type: 'string'
+-                external_user:
+-                  description: 'Partner''s end-user identifier for attribution, between 1 and 512 characters. Accepted only when authenticating with a Connect client secret, where it is required; supplying it with a management key is rejected with 403.'
+-                  maxLength: 512
+-                  minLength: 1
+-                  type: 'string'
++                external:
++                  description: 'Optional partner-defined identity associated with the created API key.'
++                  properties:
++                    api_key:
++                      description: 'Optional partner-supplied API key with a minimum length of 32 characters and sufficient entropy. Stored as a SHA-256 hash and never returned.'
++                      maxLength: 512
++                      minLength: 32
++                      type: 'string'
++                    user:
++                      description: 'Partner''s end-user identifier for attribution.'
++                      example: 'partner-user-123'
++                      maxLength: 512
++                      minLength: 1
++                      type: 'string'
++                  required:
++                    - 'user'
++                  type: 'object'
+                 include_byok_in_limit:
+                   description: 'Whether to include BYOK usage in the limit'
+                   example: true
+@@ -34464,7 +35330,7 @@ paths:
+       - $ref: "#/components/parameters/AppCategories"
+   /keys/{hash}:
+     delete:
+-      description: 'Delete an existing API key. Authenticate with a [management key](/docs/guides/overview/auth/management-api-keys), or with a Connect client secret. A client secret reaches only the keys that same client created; any other key responds as if it does not exist.'
++      description: 'Delete an existing API key. Authenticate with a [management key](/docs/guides/overview/auth/management-api-keys).'
+       operationId: 'deleteKeys'
+       parameters:
+         - description: 'The hash identifier of the API key to delete'
+@@ -34814,7 +35680,7 @@ paths:
+         - 'API Keys'
+       x-speakeasy-name-override: 'get'
+     patch:
+-      description: 'Update an existing API key. Authenticate with a [management key](/docs/guides/overview/auth/management-api-keys), or with a Connect client secret. A client secret reaches only the keys that same client created; any other key responds as if it does not exist.'
++      description: 'Update an existing API key. Authenticate with a [management key](/docs/guides/overview/auth/management-api-keys).'
+       operationId: 'updateKeys'
+       parameters:
+         - description: 'The hash identifier of the API key to update'
+@@ -35499,12 +36365,12 @@ paths:
+             description: 'Filter models by supported parameter (comma-separated)'
+             example: 'temperature'
+             type: 'string'
+-        - description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, audio, embeddings) or "all" to include all models. Defaults to "text".'
++        - description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, embeddings, audio, video, rerank, speech, transcription) or "all" to include all models. Defaults to "text".'
+           in: 'query'
+           name: 'output_modalities'
+           required: false
+           schema:
+-            description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, audio, embeddings) or "all" to include all models. Defaults to "text".'
++            description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, embeddings, audio, video, rerank, speech, transcription) or "all" to include all models. Defaults to "text".'
+             example: 'text'
+             type: 'string'
+         - description: 'Sort the returned models server-side. Prefer this over fetching the full list and sorting client-side. Options: pricing-low-to-high, pricing-high-to-low (average prompt/completion price), context-high-to-low (context length), throughput-high-to-low, latency-low-to-high (recent median performance), most-popular, top-weekly (tokens processed in the last week), newest (creation date), intelligence-high-to-low, coding-high-to-low, agentic-high-to-low (Artificial Analysis indices), design-arena-elo-high-to-low (best Design Arena ELO across arenas). Models without a score for the chosen benchmark are placed last. When omitted, the existing default ordering is preserved.'
+@@ -35997,12 +36863,12 @@ paths:
+     get:
+       operationId: 'listModelsCount'
+       parameters:
+-        - description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, audio, embeddings) or "all" to include all models. Defaults to "text".'
++        - description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, embeddings, audio, video, rerank, speech, transcription) or "all" to include all models. Defaults to "text".'
+           in: 'query'
+           name: 'output_modalities'
+           required: false
+           schema:
+-            description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, audio, embeddings) or "all" to include all models. Defaults to "text".'
++            description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, embeddings, audio, video, rerank, speech, transcription) or "all" to include all models. Defaults to "text".'
+             example: 'text'
+             type: 'string'
+       responses:
+@@ -36055,7 +36921,7 @@ paths:
+       - $ref: "#/components/parameters/AppCategories"
+   /models/user:
+     get:
+-      description: 'List models filtered by user provider preferences, [privacy settings](https://openrouter.ai/docs/guides/privacy/provider-logging), and [guardrails](https://openrouter.ai/docs/guides/features/guardrails). Returns text-output models by default; pass `output_modalities` (e.g. `image,audio,embeddings` or `all`) to include other modalities. If requesting through a regional hostname, the results will be filtered to models that satisfy in-region routing for that region.'
++      description: 'List models filtered by user provider preferences, [privacy settings](https://openrouter.ai/docs/guides/privacy/provider-logging), and [guardrails](https://openrouter.ai/docs/guides/features/guardrails). Returns text-output models by default; pass `output_modalities` (a comma-separated list of `text`, `image`, `embeddings`, `audio`, `video`, `rerank`, `speech`, `transcription`, or `all`) to include other modalities. If requesting through a regional hostname, the results will be filtered to models that satisfy in-region routing for that region.'
+       operationId: 'listModelsUser'
+       parameters:
+         - description: 'Number of records to skip for pagination. When both offset and limit are omitted, the full list is returned'
+@@ -36081,12 +36947,12 @@ paths:
+             maximum: 1000
+             minimum: 1
+             type: 'integer'
+-        - description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, audio, embeddings) or "all" to include all models. Defaults to "text".'
++        - description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, embeddings, audio, video, rerank, speech, transcription) or "all" to include all models. Defaults to "text".'
+           in: 'query'
+           name: 'output_modalities'
+           required: false
+           schema:
+-            description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, audio, embeddings) or "all" to include all models. Defaults to "text".'
++            description: 'Filter models by output modality. Accepts a comma-separated list of modalities (text, image, embeddings, audio, video, rerank, speech, transcription) or "all" to include all models. Defaults to "text".'
+             example: 'text'
+             type: 'string'
+       responses:
+@@ -36193,6 +37059,78 @@ paths:
+       - $ref: "#/components/parameters/AppIdentifier"
+       - $ref: "#/components/parameters/AppDisplayName"
+       - $ref: "#/components/parameters/AppCategories"
++  /oauth/jwks:
++    get:
++      description: 'RFC 7517 JWK Set containing the public keys OpenRouter signs access tokens with.'
++      operationId: 'listOauthJwks'
++      responses:
++        '200':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/OAuthJwks'
++          description: 'JWK Set'
++        '500':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/InternalServerResponse'
++          description: 'Signing keys are not configured'
++      summary: 'OpenRouter access token signing keys'
++      tags:
++        - 'OAuth'
++    parameters:
++      - $ref: "#/components/parameters/AppIdentifier"
++      - $ref: "#/components/parameters/AppDisplayName"
++      - $ref: "#/components/parameters/AppCategories"
++  /oauth/token:
++    post:
++      description: 'RFC 8693 token exchange. Presents a JWT from an issuer your organization trusts (Settings → Workload identity) and receives a short-lived OpenRouter access token that acts as the API key the matching federation policy targets.'
++      operationId: 'createOauthToken'
++      requestBody:
++        content:
++          application/x-www-form-urlencoded:
++            schema:
++              $ref: '#/components/schemas/TokenExchangeRequest'
++        required: true
++      responses:
++        '200':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/TokenExchangeResponse'
++          description: 'Access token issued'
++        '400':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/OAuthErrorResponse'
++          description: 'Malformed request, unsupported grant, or the subject token was not accepted'
++        '429':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/OAuthErrorResponse'
++          description: 'Rate limited'
++        '500':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/OAuthErrorResponse'
++          description: 'The token could not be issued'
++        '503':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/OAuthErrorResponse'
++          description: 'The issuer’s discovery document or JWKS could not be fetched'
++      summary: 'Exchange a workload identity token'
++      tags:
++        - 'OAuth'
++    parameters:
++      - $ref: "#/components/parameters/AppIdentifier"
++      - $ref: "#/components/parameters/AppDisplayName"
++      - $ref: "#/components/parameters/AppCategories"
+   /observability/destinations:
+     get:
+       description: 'List the observability destinations configured for the authenticated entity''s default workspace. Use the `workspace_id` query parameter to scope the result to a different workspace. Only destinations with stable release status are surfaced — destinations of other types are excluded. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+@@ -38383,6 +39321,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/PaymentRequiredResponse'
+           description: 'Payment Required - Insufficient credits or quota to complete request'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -38817,7 +39765,7 @@ paths:
+           results: '$.data'
+         type: 'offsetLimit'
+     post:
+-      description: 'Create a SCIM group-to-workspace role mapping. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      description: 'Create a SCIM group-to-workspace role mapping. Creating a mapping that already exists with the same role succeeds and re-applies the mapping to the group members. Requesting a different role for an existing mapping returns 409. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+       operationId: 'createScimGroupMapping'
+       requestBody:
+         content:
+@@ -39172,6 +40120,118 @@ paths:
+       - $ref: "#/components/parameters/AppIdentifier"
+       - $ref: "#/components/parameters/AppDisplayName"
+       - $ref: "#/components/parameters/AppCategories"
++  /scim/sync-jobs:
++    post:
++      description: 'Start a SCIM directory sync. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'createScimSyncJob'
++      responses:
++        '202':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/CreateScimSyncJobResponse'
++          description: 'SCIM directory sync job queued'
++          headers:
++            Location:
++              description: 'Poll URL for the created sync job.'
++              required: true
++              schema:
++                description: 'Poll URL for the created sync job.'
++                type: 'string'
++        '401':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 401
++                  message: 'Missing Authentication header'
++              schema:
++                $ref: '#/components/schemas/UnauthorizedResponse'
++          description: 'Unauthorized - Authentication required or invalid credentials'
++        '404':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 404
++                  message: 'Resource not found'
++              schema:
++                $ref: '#/components/schemas/NotFoundResponse'
++          description: 'Not Found - Resource does not exist'
++        '500':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 500
++                  message: 'Internal Server Error'
++              schema:
++                $ref: '#/components/schemas/InternalServerResponse'
++          description: 'Internal Server Error - Unexpected server error'
++      summary: 'Start a SCIM directory sync'
++      tags:
++        - 'SCIM'
++      x-speakeasy-name-override: 'createSyncJob'
++    parameters:
++      - $ref: "#/components/parameters/AppIdentifier"
++      - $ref: "#/components/parameters/AppDisplayName"
++      - $ref: "#/components/parameters/AppCategories"
++  /scim/sync-jobs/{id}:
++    get:
++      description: 'Get SCIM directory sync status. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'getScimSyncJob'
++      parameters:
++        - in: 'path'
++          name: 'id'
++          required: true
++          schema:
++            format: 'uuid'
++            type: 'string'
++      responses:
++        '200':
++          content:
++            application/json:
++              schema:
++                $ref: '#/components/schemas/GetScimSyncJobResponse'
++          description: 'SCIM directory sync job'
++        '401':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 401
++                  message: 'Missing Authentication header'
++              schema:
++                $ref: '#/components/schemas/UnauthorizedResponse'
++          description: 'Unauthorized - Authentication required or invalid credentials'
++        '404':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 404
++                  message: 'Resource not found'
++              schema:
++                $ref: '#/components/schemas/NotFoundResponse'
++          description: 'Not Found - Resource does not exist'
++        '500':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 500
++                  message: 'Internal Server Error'
++              schema:
++                $ref: '#/components/schemas/InternalServerResponse'
++          description: 'Internal Server Error - Unexpected server error'
++      summary: 'Get SCIM directory sync status'
++      tags:
++        - 'SCIM'
++      x-speakeasy-name-override: 'getSyncJob'
++    parameters:
++      - $ref: "#/components/parameters/AppIdentifier"
++      - $ref: "#/components/parameters/AppDisplayName"
++      - $ref: "#/components/parameters/AppCategories"
+   /videos:
+     post:
+       description: 'Submits a video generation request and returns a polling URL to check status'
+@@ -39230,6 +40290,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/PaymentRequiredResponse'
+           description: 'Payment Required - Insufficient credits or quota to complete request'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -39316,6 +40386,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -39395,6 +40475,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+diff --git a/spec/pin.json b/spec/pin.json
+index af57763..11e0482 100644
+--- a/spec/pin.json
++++ b/spec/pin.json
+@@ -1,9 +1,9 @@
+ {
+   "source": "https://openrouter.ai/openapi.yaml",
+-  "sha256": "e88b0cec03addc6cffca291d8c1bb98d3409ea4cb6a3d6fb41d11439e4242ba4",
+-  "sizeBytes": 1426472,
+-  "retrievedAt": "2026-08-30T14:09:17Z",
+-  "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-08-30 via scripts/drift-refresh.sh (previous pin b2a4948a…).",
++  "sha256": "8c5685d73354d166305b90290958305d5e89a6e650fd3f58eb1895394a0140a2",
++  "sizeBytes": 1471194,
++  "retrievedAt": "2026-09-05T09:21:07Z",
++  "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-09-05 via scripts/drift-refresh.sh (previous pin e88b0cec…).",
+   "generator": "io.github.nabobery.kotlin-sdkgen:0.4.0",
+   "overlays": [
+     { "id": "openrouter-allof-resolution-audit", "file": "overlays/allof-resolution-audit.yaml", "sha256": "550c410a0b696193ac33e46c92e2f0f7110359d793e0444cda1ecdae94fe34d4" },
+diff --git a/spec/sdkgen.yaml b/spec/sdkgen.yaml
+index d46d6c3..50e0073 100644
+--- a/spec/sdkgen.yaml
++++ b/spec/sdkgen.yaml
+@@ -1,7 +1,7 @@
+ version: v1alpha1
+ source:
+   uri: openapi.yaml
+-  sha256: e88b0cec03addc6cffca291d8c1bb98d3409ea4cb6a3d6fb41d11439e4242ba4
++  sha256: 8c5685d73354d166305b90290958305d5e89a6e650fd3f58eb1895394a0140a2
+   acquisition:
+     mode: local
+     offline: true
