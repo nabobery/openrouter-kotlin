@@ -10,7 +10,7 @@ below is **generated** by `scripts/workflow-audit.py report` and CI fails if it 
 
 | Secret | Used by | Readable from | Fork PRs | Rotation owner |
 | --- | --- | --- | --- | --- |
-| `OPENROUTER_API_KEY` | `live.yml/live-smoke` (nightly) | schedule/dispatch only | never | maintainers (least-privileged key with a spend limit) |
+| `OPENROUTER_API_KEY` | `live.yml/live-smoke` (nightly, when configured) | schedule/dispatch only | never | maintainers (least-privileged key with a spend limit) |
 | `DRIFT_APP_PRIVATE_KEY` + var `DRIFT_APP_CLIENT_ID` | `drift.yml/open-pr` (optional) | schedule/dispatch only | never | maintainers (GitHub App; optional — falls back to `GITHUB_TOKEN`) |
 | `GITHUB_TOKEN` | per-job, scoped | every run (auto) | read-only on forks | GitHub-managed |
 | `GPG_SIGNING_KEY`, `MAVEN_CENTRAL_*` | *planned* | future release workflow only | never | maintainers |

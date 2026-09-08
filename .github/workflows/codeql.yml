@@ -16,6 +16,9 @@ jobs:
     name: Analyze (java-kotlin)
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    # CodeQL must observe a real compiler invocation. Do not allow Gradle's shared cache to short-circuit it.
+    env:
+      GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx8g
     permissions:
       contents: read
       security-events: write # upload CodeQL results to code scanning
@@ -31,7 +34,7 @@ jobs:
           languages: java-kotlin
           build-mode: manual
       - name: Build the JVM surface for CodeQL
-        run: ./gradlew :sdk:compileKotlinJvm --console=plain
+        run: ./gradlew --no-build-cache --rerun-tasks -Dkotlin.incremental=false :sdk:compileKotlinJvm --console=plain
       - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
         with:
           category: "/language:java-kotlin"

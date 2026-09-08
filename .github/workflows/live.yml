@@ -29,15 +29,20 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
-      # Fail fast (before spinning up Gradle) if the secret is missing: GitHub resolves an unset secret to the
-      # empty string, so without this a misconfigured runner would otherwise run the test with a blank key.
-      # (The test itself also enforces this, so the live drift signal cannot silently pass.)
-      - name: Preflight — require the live API key
+      # Scheduled live validation is optional until the repository secret is provisioned. Keep the workflow green
+      # and explicit when it is unavailable; once opted in, the tests still fail closed on a blank key.
+      - name: Preflight — detect the live API key
+        id: live-preflight
         run: |
           if [ -z "$OPENROUTER_API_KEY" ]; then
-            echo "::error::OPENROUTER_API_KEY is unset or empty; the live smoke test cannot run." >&2
-            exit 1
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::OPENROUTER_API_KEY is unset or empty; skipping the optional live smoke test."
+            echo "### Live smoke test skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "Configure OPENROUTER_API_KEY as a repository secret to enable this scheduled check." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Live smoke tests (chat + management, budgeted)
+        if: steps.live-preflight.outputs.run == 'true'
         run: ./gradlew :sdk:jvmTest --tests "com.nabobery.openrouter.live.LiveChatSmokeTest" --tests "com.nabobery.openrouter.live.LiveManagementSmokeTest" --console=plain

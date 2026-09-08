@@ -35,9 +35,11 @@ jobs:
           python3 scripts/budgets_test.py
           python3 scripts/bench_to_runtime_test.py
           mkdir -p build/budgets
-          ./gradlew :benchmarks:jvmBenchmarkJar --console=plain
-          java -jar benchmarks/build/benchmarks/jvm/jars/*.jar \
-            -prof gc -f 1 -wi 5 -i 5 -w 1s -r 1s -rf json -rff build/budgets/bench-jvm.json
+          # Run JMH through a Gradle JavaExec task that reuses the benchmark plugin's complete runtime classpath;
+          # the generated JAR is not treated as a fat-JAR contract.
+          ./gradlew :benchmarks:jvmBenchmarkJmh \
+            --args='-prof gc -f 1 -wi 5 -i 5 -w 1s -r 1s -rf json -rff build/budgets/bench-jvm.json' \
+            --console=plain
           python3 scripts/bench-to-runtime.py build/budgets/bench-jvm.json --out build/budgets/runtime.json
           python3 scripts/budgets.py check docs/budgets/runtime.json build/budgets/runtime.json --tolerance 1.0
 
