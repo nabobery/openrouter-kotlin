@@ -78,7 +78,7 @@ These three deferred curated-surface questions received a **final** disposition 
 | Owner | openrouter-kotlin-maintainers |
 | Reason | The 2026-08-29 contract GA'd both Responses and Analytics; the previously beta-tagged `getAnalyticsMeta`/`queryAnalytics` are now on the GA `AnalyticsClient`, and the generator emits **no** beta-tagged resources (no `beta*` package). A generated `client.beta` namespace therefore has no content to wrap. |
 | User impact | No `client.beta.*` resource accessors (there is nothing beta to expose). The former beta operations are reachable at `client.analytics.getAnalyticsMeta` / `client.analytics.queryAnalytics`. |
-| Workaround | Use `client.analytics` for the analytics-meta/query operations. The `@OpenRouterExperimentalApi` opt-in marker still ships and annotates the pre-1.0 curated helpers (byte streams, pagination bounds, files upload/download, STT). |
+| Workaround | Use `client.analytics` for the analytics-meta/query operations. The `@OpenRouterExperimentalApi` opt-in marker annotates the experimental curated helpers (byte streams, pagination bounds, files upload/download, STT). |
 | Expiry | When upstream reintroduces a `beta`-tagged resource. |
 | 1.0 disposition | **Closed — dropped.** The `d49dda78` contract carries no beta-tagged resources, so no `client.beta.*` namespace ships at 1.0. Reintroduced only if a future contract carries beta resources; analytics stays on `client.analytics`. Recorded in ADR 0008. |
 

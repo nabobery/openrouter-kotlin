@@ -10,7 +10,7 @@ new `containers`, `scim`, `datasets.getSessionCost`, and `workspaces.getWorkspac
 operations are covered. See [`docs/coverage/`](docs/coverage/) for the coverage dashboard and
 exception register, and the compile-checked [guides](docs/guides/README.md) (tutorials and how-tos) to get started.
 
-> **Status: release-candidate preparation.** On top of the generated surface, a curated inference facade
+> **Status: stable 1.0 API.** On top of the generated surface, a curated inference facade
 > (chat / responses / messages) plus incremental SSE streaming is now callable end-to-end. It
 > is exercised through a fake transport and the real Ktor `MockEngine` SSE lane on **every host test lane**
 > (`engineTest` via the `runRealTime` harness): JVM, JS (Node + headless Chrome), macOS arm64, and the iOS
@@ -19,7 +19,8 @@ exception register, and the compile-checked [guides](docs/guides/README.md) (tut
 > (`com.android.kotlin.multiplatform.library`) whose common suites run on the JVM-hosted
 > `testAndroidHostTest` lane (its sample builds only when an Android SDK is present). The full generated
 > surface — including the exact `/messages` and `/responses` operations — is present and callable
-> (kotlin-sdkgen 0.4.0). The first release candidate publishes under the coordinates below.
+> (kotlin-sdkgen 0.4.0). Declarations marked `@OpenRouterExperimentalApi` remain opt-in and outside the stable
+> compatibility guarantee.
 
 ## Install
 
@@ -27,8 +28,8 @@ Published to Maven Central under `io.github.nabobery` (the runtime and its compa
 
 ```kotlin
 dependencies {
-    implementation("io.github.nabobery:openrouter-kotlin:<version>")
-    testImplementation("io.github.nabobery:openrouter-kotlin-testing:<version>")
+    implementation("io.github.nabobery:openrouter-kotlin:1.0.0")
+    testImplementation("io.github.nabobery:openrouter-kotlin-testing:1.0.0")
 }
 ```
 
@@ -36,7 +37,8 @@ dependencies {
 
 Kotlin Multiplatform: the root coordinate carries Gradle module metadata, so each target (JVM, Android, Apple,
 Native, JS) selects its own variant — depend on the root artifact, never a `-jvm`/`-js` suffix. **While the version
-is `0.x`, minor releases may break; pin an exact version.** The full API reference is published at
+is `1.x`, stable APIs follow semantic versioning; experimental APIs may change in a minor release with release
+notes.** The full API reference is published at
 [nabobery.github.io/openrouter-kotlin](https://nabobery.github.io/openrouter-kotlin/).
 
 ## How it works

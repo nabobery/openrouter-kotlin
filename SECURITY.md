@@ -2,14 +2,14 @@
 
 ## Supported versions
 
-`openrouter-kotlin` is pre-1.0. Only the **latest published minor** of the `0.x`
-line receives security fixes. Older `0.x` minors are not patched — upgrade to the
-latest minor to receive fixes.
+Only the **latest published minor** of the `1.x` line receives security fixes. Older minors and pre-1.0 builds are
+not patched; upgrade to the latest stable minor to receive fixes.
 
 | Version | Supported |
 | ------- | --------- |
-| latest `0.x` minor | ✅ |
-| any older `0.x` | ❌ |
+| latest `1.x` minor | ✅ |
+| older `1.x` minors | ❌ |
+| pre-1.0 builds | ❌ |
 
 ## Reporting a vulnerability
 

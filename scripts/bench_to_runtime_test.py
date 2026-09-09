@@ -45,6 +45,13 @@ class ConvertTest(unittest.TestCase):
             out,
         )
 
+    def test_allocations_only_omits_host_dependent_timings(self) -> None:
+        out = adapter.convert(
+            [[_entry("chatStreamDecode200Events", 293.76, alloc=40960.0)]],
+            include_timings=False,
+        )
+        self.assertEqual({"chatStreamDecode200Events-allocBytesPerEvent": 204.8}, out)
+
     def test_missing_gc_omits_alloc_key(self) -> None:
         out = adapter.convert([[_entry("bufferedChatDecode", 22.89)]])
         self.assertNotIn("bufferedChatDecode-allocBytesPerOp", out)

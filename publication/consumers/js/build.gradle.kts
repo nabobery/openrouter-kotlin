@@ -11,7 +11,7 @@ kotlin {
         binaries.executable()
     }
     sourceSets {
-        val jsMain by getting {
+        getByName("jsMain") {
             kotlin.srcDir("../shared")
             dependencies {
                 implementation("io.github.nabobery:openrouter-kotlin:$openrouterVersion")

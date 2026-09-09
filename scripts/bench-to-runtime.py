@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Map a kotlinx-benchmark / JMH JSON report onto the runtime-budget schema (docs/budgets/runtime.json).
+"""Map a kotlinx-benchmark / JMH JSON report onto the runtime measurement schema.
 
 The benchmark suite (:benchmarks) is average-time / microseconds-per-op, so each `primaryMetric.score` becomes a
 `<method>-microsPerOp` entry. When the JVM run was taken with the JMH `gc` profiler (`-prof gc`), the
 `gc.alloc.rate.norm` secondary metric becomes an allocation entry. The 200-event stream benchmark is normalized to
-bytes/event; the one-event and buffered benchmarks remain bytes/op. The output is fed to
-`scripts/budgets.py check docs/budgets/runtime.json <out>`.
+bytes/event; the one-event and buffered benchmarks remain bytes/op. `--allocations-only` emits the hardware-stable
+subset used by the CI budget gate; the default output retains timings for trend analysis.
 
 Usage:
-  bench-to-runtime.py <report.json> [<report.json> ...] --out <runtime.json>
+  bench-to-runtime.py <report.json> [<report.json> ...] --out <runtime.json> [--allocations-only]
 
 Each report is the JMH-format array kotlinx-benchmark writes (JVM: build/reports/benchmarks/main/<ts>/jvm.json, or
 the `-rff` file of a `java -jar …-jmh.jar` run). Multiple reports are merged (later files win on key collision).
@@ -38,8 +38,8 @@ def _alloc_metric(secondary: dict) -> float | None:
     return None
 
 
-def convert(reports: list[list[dict]]) -> dict[str, float]:
-    """Fold JMH report arrays into the runtime-budget dict."""
+def convert(reports: list[list[dict]], include_timings: bool = True) -> dict[str, float]:
+    """Fold JMH reports into budget metrics, optionally omitting host-dependent timings."""
     out: dict[str, float] = {}
     for report in reports:
         for entry in report:
@@ -51,7 +51,8 @@ def convert(reports: list[list[dict]]) -> dict[str, float]:
                     f"benchmark '{name}' has scoreUnit '{unit}', expected 'us/op' "
                     f"(annotate @BenchmarkMode(AverageTime) + @OutputTimeUnit(MICROSECONDS))"
                 )
-            out[f"{name}-microsPerOp"] = round(float(primary["score"]), 2)
+            if include_timings:
+                out[f"{name}-microsPerOp"] = round(float(primary["score"]), 2)
             # JMH puts the profiler results in a `secondaryMetrics` map at the entry level (sibling of primaryMetric).
             alloc = _alloc_metric(entry.get("secondaryMetrics", {}))
             if alloc is not None:
@@ -65,10 +66,15 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("reports", nargs="+")
     parser.add_argument("--out", required=True)
+    parser.add_argument(
+        "--allocations-only",
+        action="store_true",
+        help="emit only gc allocation metrics for a hardware-independent CI gate",
+    )
     args = parser.parse_args(argv)
 
     reports = [json.loads(pathlib.Path(p).read_text()) for p in args.reports]
-    measured = convert(reports)
+    measured = convert(reports, include_timings=not args.allocations_only)
     if not measured:
         raise SystemExit("no benchmark entries found in the report(s)")
     pathlib.Path(args.out).parent.mkdir(parents=True, exist_ok=True)

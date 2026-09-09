@@ -428,10 +428,10 @@ produced these deliberate deviations:
 2. **Credential factories are `OpenRouterCredentials.static` / `.dynamic`.** Kotlin cannot add companion members to
    the runtime's `CredentialProvider` fun-interface, so the curated factories live on a dedicated `object`. Both
    return `CredentialProvider`; `dynamic` resolves before every physical attempt (rotating keys).
-3. **`AutoCloseable` on the root is deferred.** The SDK owns no closeable resource today (the consumer owns and closes
+3. **`AutoCloseable` is not implemented on the root.** The SDK owns no closeable resource (the consumer owns and closes
    the Ktor `HttpClient`, per ADR 0003). Adding an interface later is binary-compatible; shipping a no-op `close()`
    now would invite misuse against the ownership rules, so it is omitted.
-4. **`RetryPolicy.replayMode` is deferred.** The runtime's idempotency gating already implements Safe-only semantics:
+4. **`RetryPolicy.replayMode` is not surfaced.** The runtime's idempotency gating already implements Safe-only semantics:
    an ambiguous mid-flight connection failure (the request may have reached the server) is never replayed for a
    non-idempotent POST without an idempotency key, and a stream is never restarted after emitting an event (ADR 0004).
    The curated default status allowlist contains only `429`. Service/provider failures such as `503` and `529` are
@@ -507,7 +507,7 @@ list above:
     codec fixes part name/content-type (no curated `filename` param).
 15. **STT:** curated `SttClient.transcribe(audio, model) { … }` over the multipart op.
 16. **`client.beta` is not present** — the 2026-08-29 contract GA'd Responses and Analytics, so no beta resources are
-    generated. `@OpenRouterExperimentalApi` (WARNING-level opt-in) guards the pre-1.0 byte-stream/pagination/media
+    generated. `@OpenRouterExperimentalApi` (WARNING-level opt-in) guards the experimental byte-stream/pagination/media
     helpers instead. `client.betaResponses` → `client.responses`; `betaAnalytics` removed.
 17. **Exception register** (`docs/coverage/exception-register.md`) records every omission/degradation; the coverage
     dashboard (`docs/coverage/operation-coverage.md`) is generated and CI-gated.

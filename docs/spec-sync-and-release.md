@@ -161,7 +161,9 @@ Implemented as the privilege-split `.github/workflows/release.yml`; the full ope
 8. Publish through an explicitly approved protected environment → the `maven-central` environment (required
    reviewers); `publish=true` or a manual Portal click.
 9. Verify Central resolution and samples → the consumer matrix re-run against the validated deployment.
-10. Publish GitHub release notes → the `github-release` job (`gh release create`, bundle + inventory + SBOM attached).
+10. Publish GitHub release notes → the `github-release` job creates a prerelease with the bundle, inventory, and SBOM;
+    an automatically published stable version is promoted immediately, while a parked stable version is promoted by
+    the operator only after Central reports `PUBLISHED`.
 
 ### Operator setup (one-time; not created by automation)
 
