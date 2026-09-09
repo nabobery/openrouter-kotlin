@@ -13,7 +13,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | --- | --- |
 | Owner | openrouter-kotlin-maintainers |
 | Reason | kotlin-sdkgen 0.3.0 cannot represent the non-scalar query parameter `keep_members` (schema is an `anyOf` of a string enum and a boolean). Accepted waiver `openrouter-scim-group-mappings-delete-keep-members` in `spec/sdkgen.yaml` (`disposition: omit`). |
-| User impact | Cannot delete a SCIM group-to-workspace mapping through the generated SDK (`OpenRouter.scim` has no `deleteScimGroupMapping`). 100 of 101 operations remain callable. |
+| User impact | Cannot delete a SCIM group-to-workspace mapping through the generated SDK (`OpenRouter.scim` has no `deleteScimGroupMapping`). 104 of 105 operations remain callable. |
 | Workaround | Issue the raw call directly: `DELETE /scim/group-mappings/{id}?keep_members={true\|false}` with the management-key `Authorization` header, via a hand-built Ktor/HTTP request. `keep_members` is required (omitting it returns `400`). |
 | Expiry | Next kotlin-sdkgen release that represents object/union-typed parameters. |
 | 1.0 disposition | Upstream generator support for object/union-typed form/query parameters, or an upstream spec correction narrowing `keep_members` to a scalar boolean. |

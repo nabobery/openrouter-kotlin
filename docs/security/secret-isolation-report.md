@@ -13,7 +13,7 @@ below is **generated** by `scripts/workflow-audit.py report` and CI fails if it 
 | `OPENROUTER_API_KEY` | `live.yml/live-smoke` (nightly, when configured) | schedule/dispatch only | never | maintainers (least-privileged key with a spend limit) |
 | `DRIFT_APP_PRIVATE_KEY` + var `DRIFT_APP_CLIENT_ID` | `drift.yml/open-pr` (optional) | schedule/dispatch only | never | maintainers (GitHub App; optional — falls back to `GITHUB_TOKEN`) |
 | `GITHUB_TOKEN` | per-job, scoped | every run (auto) | read-only on forks | GitHub-managed |
-| `GPG_SIGNING_KEY`, `MAVEN_CENTRAL_*` | `release.yml/stage-and-publish` | approved `v*` release runs only | never | maintainers |
+| `GPG_SIGNING_KEY`, `GPG_SIGNING_PASSPHRASE`, `MAVEN_CENTRAL_*` | `release.yml/stage-and-publish` | approved `v*` release runs only | never | maintainers |
 
 Fork pull requests run with a read-only `GITHUB_TOKEN` and **no** repository secrets (GitHub's default), so none
 of the above is exposed to fork PR code. Secrets are referenced only through `secrets.*` in the jobs the policy

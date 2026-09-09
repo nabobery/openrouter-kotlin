@@ -20,7 +20,7 @@ coverage dashboard. The checker and its tests are `scripts/budgets.py` / `script
 > faster local macOS host and was not portable to the Linux CI runner. Two clean Linux measurements were 230,340 ms
 > and 254,852 ms; the baseline uses the slower observed value as the initial Linux calibration. The existing +50%
 > tolerance remains in place to catch substantial regressions without treating runner noise as a failure.
-
+>
 > **2026-09-09 — made absolute runtime timings trend-only on hosted runners.** Identical code on the same JDK produced
 > roughly 2× timing differences on consecutive `ubuntu-latest` allocations while normalized allocation changed by
 > less than 0.1%. The nightly gate therefore enforces the host-stable allocation metrics at +10% and retains raw JMH
