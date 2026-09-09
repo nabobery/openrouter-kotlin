@@ -66,6 +66,19 @@ credential-free with `bash scripts/release-rehearsal.sh`, set the version with
 `python3 scripts/release-version.py set <version>`, tag `v<version>` on the merged commit, and dispatch the
 protected **Release** workflow. Maven Central is immutable — a bad release is superseded by a patch, never edited.
 
+## Dependency verification
+
+Dependencies will be pinned by sha256 in `gradle/verification-metadata.xml`. **The control is not yet active** —
+the file does not exist until the bootstrap has been run and its output committed (see
+[`docs/security-and-privacy.md`](docs/security-and-privacy.md)). To activate it, or once active to refresh it for a
+PR that changes/adds a dependency: dispatch the **Dependency verification bootstrap** workflow (cold cache on all
+four hosts), download the four host artifacts, merge them with
+`python3 scripts/merge-verification-metadata.py --output gradle/verification-metadata.xml <the four files>`, review
+the diff (the review is the trust decision), and include the file in the PR. Never add `<ignored-keys>` or run
+Gradle with `--dependency-verification lenient` to get past a failure — bootstrap the missing host instead. A PGP
+trusted-keys layer (`--write-verification-metadata sha256,pgp`, 40-char fingerprints from `keyserver.ubuntu.com` /
+`keys.openpgp.org`) is a planned follow-up.
+
 ## Security
 
 Do not file public issues for vulnerabilities — see [SECURITY.md](SECURITY.md) for private

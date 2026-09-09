@@ -57,13 +57,13 @@ the implementation is incremental.
 
 The inference and streaming surface realizes the matrix above as these suites. The common suites run on every host
 lane and `engineTest` (the shared real-Ktor source set) runs on every lane too via the `runRealTime`
-harness (see the target matrix below). Full-suite counts: JVM 188 and macosArm64 181 — all passing (per-lane counts
+harness (see the target matrix below). Full-suite counts: JVM 215 and macosArm64 208 — all passing (per-lane counts
 in [`target-support.md`](target-support.md)).
 
 | Suite | Lane | Contracts covered |
 | --- | --- | --- |
 | `StreamingWireTruthTest` | commonTest (JVM + macOS) | 4 wire-truth decode tests — chat / responses / messages / images payloads decode (RED before the SSE payload overlay, GREEN after) |
-| `ChatStreamingFramingTest` | commonTest (JVM + macOS) | 14 framing rows — one-event-per-chunk & many-in-one, delimiter split across chunks, UTF-8 codepoint split, CRLF, comments/retry/id/blank ignored, multiline `data` joined, metadata-only skipped, `[DONE]` ends without emission, EOF completes, usage-only final chunk, non-success → typed `ApiException`, malformed → bounded `SdkSerializationException`, event over byte budget → `SdkStreamingException`, unknown finish reason preserved |
+| `ChatStreamingFramingTest` | commonTest (JVM + macOS) | 16 framing rows — one-event-per-chunk & many-in-one, delimiter split across chunks, UTF-8 codepoint split, CRLF, comments/retry/id/blank ignored, multiline `data` joined, metadata-only skipped, `[DONE]` ends without emission, EOF completes, usage-only final chunk, non-success → typed `ApiException`, malformed → bounded `SdkSerializationException`, event over byte budget → `SdkStreamingException`, unknown finish reason preserved, mid-stream 429 in-band `error_type` value, repeated wire finish_reason preserved unchanged (no dedup — wire-fidelity contract) |
 | `ChatStreamingLifecycleTest` | commonTest (all lanes) | 14 lifecycle rows — first event before response completes, cancellation before headers, cancellation after first event closes body with `CancellationException`, `take(1)` closes upstream, downstream failure closes upstream with same cause, backpressure, stream-idle deadline (STREAM_IDLE phase), **stream-idle deadline applies with no `options()`** (client deadline inherited through `SdkClientConfig`), **streaming never retried even pre-first-byte**, no retry after emission, two collections start two requests, attribution + options headers reach stream requests, secret never leaks in failures, large (10k-event) stream decodes incrementally to completion |
 | `KtorStreamingEngineTest` | engineTest (JVM + macOS, real Ktor MockEngine) | 5 rows — multiple events + `[DONE]` decode, cancellation closes the engine response, mid-stream error as value, comments + `[DONE]`, stream-idle deadline fires |
 | `InferenceStreamingContractTest` | commonTest (JVM + macOS) | Responses & Messages golden payload identity, typed events + text deltas, messages typed error-as-value with `errorType`, idle deadline, cancellation |

@@ -21,6 +21,26 @@ try {
 
 The API key never appears in an exception's message, `toString()`, or the request diagnostics reachable from it.
 
+## Canonical `error_type`
+
+OpenRouter tags its error envelopes with a stable `error_type` so you can branch on one vocabulary regardless of
+which skin you called. `Throwable.openRouterErrorType()` reads it uniformly off a caught chat, Anthropic-messages, or
+responses exception, returning an open [`ApiErrorType`](../../api/) enum — or `null` when the value is absent,
+unreadable, or the throwable is not one of the three inference exceptions. Unknown wire values are preserved as
+`ApiErrorType.SdkUnknown`, so switch on `.value`:
+
+<!-- snippet: samples/docs/src/main/kotlin/guides/HandleErrors.kt#error-type -->
+```kotlin
+// `openRouterErrorType()` reads OpenRouter's stable `error_type` off any caught inference
+// exception (chat, Anthropic-messages, or responses), or null when it is absent or unreadable.
+when (e.openRouterErrorType()?.value) {
+    "rate_limit_exceeded" -> System.err.println("slow down and retry with backoff")
+    "provider_overloaded" -> System.err.println("fail over to another provider")
+    else -> throw e
+}
+```
+<!-- /snippet -->
+
 ## Response metadata
 
 When you need the status, headers, or request id, use the `*WithResponse` variants — they return the full

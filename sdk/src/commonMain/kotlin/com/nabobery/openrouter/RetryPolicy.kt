@@ -85,5 +85,20 @@ public class RetryPolicy(
 
         /** A policy that never retries (a single attempt). */
         public val None: RetryPolicy = RetryPolicy(maxAttempts = 1)
+
+        /**
+         * The retryable status allowlist for the [Resilient] preset: `408`, `409`, `429`, and the `5xx`
+         * gateway/availability codes (`500`, `502`, `503`, `504`).
+         */
+        public val RESILIENT_RETRYABLE_STATUS_CODES: Set<Int> = setOf(408, 409, 429, 500, 502, 503, 504)
+
+        /**
+         * An opt-in preset that also retries transient server-side failures (408/409/429 + 5xx) on top of safe
+         * connection failures. It is **not** the default on purpose: a non-2xx from OpenRouter may mean a provider
+         * was already attempted (so a naive retry can duplicate work), and BYOK spend sits outside credit
+         * insurance — so blanket 5xx retries can double-bill. Opt in with `RetryPolicy.Resilient` when your calls
+         * are idempotent and you accept that trade-off. Rationale recorded in ADR 0008.
+         */
+        public val Resilient: RetryPolicy = RetryPolicy(retryableStatusCodes = RESILIENT_RETRYABLE_STATUS_CODES)
     }
 }

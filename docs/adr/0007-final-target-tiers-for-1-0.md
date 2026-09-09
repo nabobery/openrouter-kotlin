@@ -41,3 +41,15 @@ published target must satisfy its documented tier, and unavailable host tests mu
 The published tier of every target is now backed by a CI lane or an explicit "not executed" disclosure, not by
 wording. The nightly Intel-macOS and performance lanes keep the deprecated and expensive targets covered without
 paying for them on every PR. `docs/target-support.md` mirrors this table with the per-target evidence column.
+
+## Tier truthfulness amendment (2026-09-09): `mingwX64` and `linuxArm64`
+
+The 1.0 review aligns this SDK's Tier 2 wording with **JetBrains' own Kotlin/Native support tiers**: Apple Silicon
+is JetBrains Tier 1; `linuxX64` is Tier 2; **`mingwX64` is JetBrains Tier 3** (JetBrains makes no CI or
+binary-compatibility promise for it); and **`linuxArm64` has no Kotlin/Native host at all**
+([KT-36871](https://youtrack.jetbrains.com/projects/KT/issues/KT-36871)). No target is added or removed. Both
+`mingwX64` and `linuxArm64` **remain Tier 2 for this SDK**, but are relabelled **"compile-verified every CI run;
+runtime best-effort"** — `mingwX64` runs its runtime lane on Windows CI (above JetBrains' Tier 3 baseline) but
+carries no upstream binary-compat guarantee, and `linuxArm64` is compile + klib-ABI only (cross-compiled from
+Linux x64). The `mingwX64` → Tier 1 promotion trigger above is unchanged. `wasmJs` stays declared-not-published.
+Mirrored in `docs/target-support.md` and the README targets table.

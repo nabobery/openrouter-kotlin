@@ -37,12 +37,24 @@ The streaming lane is no longer compile-only anywhere a host runner exists.
   evidence.
 - **`linuxArm64` runtime**: Kotlin/Native has no Linux arm64 host ([KT-36871](https://youtrack.jetbrains.com/projects/KT/issues/KT-36871));
   the target is cross-compiled and ABI-checked from Linux x64, but `linuxArm64Test` is not executed.
+- **JetBrains tiers (`mingwX64` / `linuxArm64`)**: per JetBrains' own Kotlin/Native support tiers, `mingwX64` is
+  upstream **Tier 3** (no JetBrains CI or binary-compat promise) and `linuxArm64` has no host (above). Both stay
+  **Tier 2 for this SDK** but are **compile-verified every CI run with runtime best-effort** — `mingwX64` runs
+  `mingwX64Test` on Windows CI (above JetBrains' Tier 3 baseline) yet carries no upstream binary-compat guarantee.
+  See the tier truthfulness amendment in [ADR 0007](adr/0007-final-target-tiers-for-1-0.md).
 - **`wasmJs`**: cannot compile because the kotlin-sdkgen runtime publishes no wasmJs variant.
 - **watchOS / tvOS / `androidNative*` / `linuxArm32Hfp` / wasmWasi**: not declared targets (no runtime artifacts or
   no HTTP-client value).
 
 `macosX64` and `iosX64` are deprecated upstream since Kotlin 2.3.20 (they still compile); they run compile + klib ABI
 on PRs and their runtime lanes nightly on `macos-15-intel`, and retire when Kotlin removes them.
+
+**Toolchain (Kotlin 2.3.20 / AGP 9.2.1).** 1.0 builds on Kotlin 2.3.20 — the toolchain of its generated runtime
+(kotlin-sdkgen 0.4.0). Kotlin 2.3.20's Kotlin Gradle Plugin declares support for AGP ≤ 9.0.0, so **AGP 9.2.1 is
+outside JetBrains' declared KGP↔AGP range; it compiles and is CI-verified on every lane.** A bounded Kotlin 2.4.20
+spike (2026-09-09) confirmed 2.4.20 clears the earlier SSE codegen regression and brings AGP 9.2.1 into range, but
+was declined for 1.0 because it moves the curated JVM ABI (adds public no-arg constructors to `PaginationLimits`,
+`RequestDeadlines`, `RetryPolicy`) and 2.4.20 was two days old at the freeze; it is tracked as a post-1.0 upgrade.
 
 Engine choices per target are documented in [`samples/README.md`](../samples/README.md) (the one-sample-per-engine
 table); the policy below links to it rather than duplicating it.

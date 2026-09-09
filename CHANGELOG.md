@@ -7,6 +7,47 @@ any release; each is called out under **Breaking** and described in [`docs/migra
 
 ## [Unreleased]
 
+### Added
+
+- **`RetryPolicy.Resilient`** — an opt-in preset that retries `408`/`409`/`429` and the `5xx` gateway codes
+  (`500`/`502`/`503`/`504`) on top of safe connection failures, for idempotent workloads. The default stays
+  `429`-only (billing-safety; see ADR 0008); `Resilient` is one line to opt into aggressive retries.
+- **`SdkResponseResult.generationId()`** — reads OpenRouter's `X-Generation-Id` header (case-insensitive) from any
+  `…WithResponse` result, or `null` if absent.
+- **`Throwable.openRouterErrorType()`** — reads OpenRouter's stable `error_type` off a caught inference exception,
+  uniformly across the chat, Anthropic-messages, and responses skins, returning the open `ApiErrorType` enum (or
+  `null` when the value is absent or unreadable, or the throwable is not one of the three inference exceptions).
+  Unknown wire values are preserved as `ApiErrorType.SdkUnknown`; the reader never throws and uses no reflection.
+
+### Changed
+
+- **Contract re-pinned to the current OpenRouter OpenAPI (`d49dda78…`, 105 operations)**, up from `e88b0cec…`
+  (101). Four operations now generate: OAuth JWKS retrieval (`listOauthJwks`, `GET /oauth/jwks`) and token
+  exchange (`createOauthToken`, `POST /oauth/token`), and SCIM sync jobs (`createScimSyncJob`,
+  `POST /scim/sync-jobs`; `getScimSyncJob`, `GET /scim/sync-jobs/{id}`). Coverage stays 104 generated + 1 owned
+  waiver (`deleteScimGroupMapping`) = 105. The re-pin also carries upstream's additive schema growth (new
+  Anthropic message features and per-workload endpoint-performance statistics). The re-pin required no generator
+  change and no new waiver — only an audited refresh of the `allOf`-resolution overlay digests.
+
+### Breaking
+
+The `d49dda78` re-pin is classified **breaking** by the layered compatibility report
+([`docs/compat/2026-09-09-e88b0cec-to-d49dda78.md`](docs/compat/2026-09-09-e88b0cec-to-d49dda78.md)). The removed
+JVM/klib ABI lines are of two kinds: a handful of **source-visible type changes** (below) and a large number of
+**mechanical generated all-args constructor moves** — additive upstream fields reshaped many generated models'
+primary constructors. Builder-based construction (`xxx { … }`) and deserialization remain additive and unaffected;
+only direct callers of a changed generated all-args constructor must supply the new argument. Migration guidance
+for the source-visible changes is in [`docs/migration/0.x-generated-renames.md`](docs/migration/0.x-generated-renames.md).
+
+- **`usage.serverToolUse` changed type to the OpenRouter-specific `OrAnthropicServerToolUsage`** on the Anthropic
+  messages result (`MessagesResult`) and the streaming message-delta events, replacing the generic
+  `AnthropicServerToolUsage`. The new type carries `webFetchRequests`, `webSearchRequests`, `toolCallsExecuted`,
+  and `toolCallsRequested`. Upstream added a refined `server_tool_use` branch to the Anthropic `usage` schema;
+  an audited **nested** `allOf`-resolution overlay elects it (the OpenRouter intent).
+- **`McpCallItem.error` / `McpCallItemView.error` changed type from `String?` to the structured `McpToolCallError?`**
+  — upstream promoted the MCP tool-call error from a bare string to a typed object. Consumers reading `.error` on
+  an MCP call item must adapt to the new type.
+
 ## [0.1.0-rc.1] - 2026-09-02
 
 ### Added

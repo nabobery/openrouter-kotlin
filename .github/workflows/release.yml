@@ -138,4 +138,4 @@ jobs:
           name: release-${{ inputs.version }}
           path: release
       - name: Create the (pre)release with bundle, inventory, and SBOM
-        run: gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "$RELEASE_TAG" --notes-file release/release-notes.md release/central-bundle.zip release/publication-inventory.json release/bom.json
+        run: gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "$RELEASE_TAG" --notes-file release/release-notes.md release/central-bundle.zip release/publication-inventory.json release/sbom/bom.json

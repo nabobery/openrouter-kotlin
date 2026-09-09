@@ -27,6 +27,10 @@ internal object SseWireFixtures {
         "{\"code\":502,\"message\":\"Provider disconnected unexpectedly\"," +
             "\"metadata\":{\"error_type\":\"provider_unavailable\"}}"
 
+    const val RATE_LIMIT_ERROR_JSON: String =
+        "{\"code\":429,\"message\":\"Rate limit exceeded\"," +
+            "\"metadata\":{\"error_type\":\"rate_limit_exceeded\"}}"
+
     /** The top-level chat chunk JSON (no envelope), matching OpenRouter's documented shape. */
     fun chatChunkJson(
         id: String = "gen-1",

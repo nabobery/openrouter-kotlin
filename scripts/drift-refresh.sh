@@ -48,12 +48,17 @@ python3 scripts/spec-pin.py update-source --sha "$new" --size "$size" --retrieve
 if ! ./gradlew :sdk:generateOpenrouterSdk --rerun-tasks --console=plain > "$OUT/generate-1.log" 2>&1; then
   echo "BLOCKED: generation failed after re-pin — see $OUT/generate-1.log and build/reports/problems/problems-report.html"
   cp build/reports/problems/problems-report.html "$OUT/" 2>/dev/null || true
+  # Surface the generator diagnostics (they live in the Problems report, not the console log) so a blocked
+  # drift PR body shows *why* generation failed — the stale-digest / unrepresentable-schema lines a reviewer
+  # needs. This stdout flows into refresh.log → report.md (drift.yml).
+  echo; python3 scripts/extract-generator-diagnostics.py build/reports/problems/problems-report.html || true
   exit 20
 fi
 addr1="$(readlink sdk/build/generated/sdkgen/openrouter/sources | sed 's#.*/##')"
 if ! ./gradlew :sdk:generateOpenrouterSdk --rerun-tasks --console=plain > "$OUT/generate-2.log" 2>&1; then
   echo "BLOCKED: second generation failed — see $OUT/generate-2.log and build/reports/problems/problems-report.html"
   cp build/reports/problems/problems-report.html "$OUT/" 2>/dev/null || true
+  echo; python3 scripts/extract-generator-diagnostics.py build/reports/problems/problems-report.html || true
   exit 20
 fi
 addr2="$(readlink sdk/build/generated/sdkgen/openrouter/sources | sed 's#.*/##')"

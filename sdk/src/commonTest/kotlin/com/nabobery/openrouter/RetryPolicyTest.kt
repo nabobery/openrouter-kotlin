@@ -31,6 +31,17 @@ class RetryPolicyTest {
     }
 
     @Test
+    fun resilientPresetRetriesTransientStatusesAndConnectionFailures() {
+        assertEquals(
+            setOf(408, 409, 429, 500, 502, 503, 504),
+            RetryPolicy.Resilient.retryableStatusCodes,
+        )
+        assertTrue(RetryPolicy.Resilient.retryConnectionFailures)
+        // The default must NOT be widened — the Resilient preset is strictly opt-in (ADR 0008).
+        assertEquals(setOf(429), RetryPolicy.Default.retryableStatusCodes)
+    }
+
+    @Test
     fun customStatusesAndDelaysMapThrough() {
         val override =
             RetryPolicy(

@@ -17,6 +17,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | Workaround | Issue the raw call directly: `DELETE /scim/group-mappings/{id}?keep_members={true\|false}` with the management-key `Authorization` header, via a hand-built Ktor/HTTP request. `keep_members` is required (omitting it returns `400`). |
 | Expiry | Next kotlin-sdkgen release that represents object/union-typed parameters. |
 | 1.0 disposition | Upstream generator support for object/union-typed form/query parameters, or an upstream spec correction narrowing `keep_members` to a scalar boolean. |
+| Status at 1.0 | **Carried, owned.** The documented raw-`DELETE` workaround is the supported path at 1.0; the accepted waiver keeps generated + waived = 105. Closes when a kotlin-sdkgen release represents object/union-typed form/query parameters. |
 
 ## Degraded capabilities
 
@@ -30,6 +31,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | Workaround | **Shipped:** the curated `FilesClient.listAllFiles(...)` bounded cursor walk (`@OpenRouterExperimentalApi`) follows the provider-specific continuation (`cursor` for OpenRouter; `after`/`after_id` = `last_id` for OpenAI/Anthropic), honours every `PaginationLimits` field, and fails closed with `SdkPaginationException` on a repeated continuation token. Proven by the `FilesContractTest.listAllFiles*` matrix. `fromRaw(JsonElement)` remains available for callers who issue the request themselves. |
 | Expiry | Next kotlin-sdkgen release that paginates over discriminated response envelopes (the curated walk can then defer to the generated flow). |
 | 1.0 disposition | Upstream generator support for pagination over discriminated (`oneOf`) response envelopes; the curated helper stays as the ergonomic surface. |
+| Status at 1.0 | **Carried, owned.** `listAllFiles(...)` is the supported multi-page surface and stays `@OpenRouterExperimentalApi` (ADR 0008) until a kotlin-sdkgen release paginates over discriminated envelopes, at which point the curated walk defers to the generated flow. |
 
 ### Unknown union discriminators throw at decode (forward-compat gap)
 
@@ -41,6 +43,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | Workaround | Issue the request through a lower-level HTTP client and pass the retained `JsonElement` to the union's `fromRaw(JsonElement)` escape hatch (US-009). The generated `NoMatchException` does not retain the rejected payload. |
 | Expiry | kotlin-sdkgen release adding a raw-preserving unknown branch for discriminated unions. |
 | 1.0 disposition | Upstream generator support for a raw-preserving `SdkUnknown` branch for discriminated unions. |
+| Status at 1.0 | **Carried, owned.** The 1.0 stability policy (ADR 0008) states that a new upstream discriminated-union variant surfaces as the generated `NoMatchException` until the SDK is regenerated; `fromRaw(JsonElement)` is the escape hatch. Open enums are unaffected. |
 
 ### Multipart uploads cannot set filename or content-type
 
@@ -52,6 +55,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | Workaround | None at the SDK layer; the server accepts the octet-stream part. |
 | Expiry | kotlin-sdkgen release that derives multipart part filename/content-type from the schema. |
 | 1.0 disposition | Upstream: multipart codec support for per-part filename and content type. |
+| Status at 1.0 | **Carried, owned.** Documented in `docs/guides/how-to/files-upload-and-download.md`; the server accepts the octet-stream part. Closes when a kotlin-sdkgen release derives per-part filename/content-type from the schema. |
 
 > **Fixed in kotlin-sdkgen 0.4.0 (2026-08-30):** two rows previously listed here were closed by the 0.4.0 emitter
 > and removed:
@@ -62,7 +66,10 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 >   documented wire `value` (`/budgets/daily`, not `/budgets/Daily`). Proven by
 >   `ResourceConformanceTest.getWorkspaceBudgetShouldEncodeLowercaseWireValue`.
 
-## Deferred curated surface
+## Closed at 1.0
+
+These three deferred curated-surface questions received a **final** disposition at the 1.0 API review
+(ADR 0008). None is an open waiver.
 
 ### `client.beta` namespace — no beta resources in the current contract
 
@@ -73,7 +80,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | User impact | No `client.beta.*` resource accessors (there is nothing beta to expose). The former beta operations are reachable at `client.analytics.getAnalyticsMeta` / `client.analytics.queryAnalytics`. |
 | Workaround | Use `client.analytics` for the analytics-meta/query operations. The `@OpenRouterExperimentalApi` opt-in marker still ships and annotates the pre-1.0 curated helpers (byte streams, pagination bounds, files upload/download, STT). |
 | Expiry | When upstream reintroduces a `beta`-tagged resource. |
-| 1.0 disposition | Reintroduce `client.beta.*` accessors if/when the contract carries beta resources again; otherwise drop the namespace at 1.0. |
+| 1.0 disposition | **Closed — dropped.** The `d49dda78` contract carries no beta-tagged resources, so no `client.beta.*` namespace ships at 1.0. Reintroduced only if a future contract carries beta resources; analytics stays on `client.analytics`. Recorded in ADR 0008. |
 
 ### `AutoCloseable` root — deferred
 
@@ -84,7 +91,7 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | User impact | No `use { }` block over the root; callers close their own Ktor engine/transport. |
 | Workaround | Manage the injected transport/engine lifecycle directly. |
 | Expiry | Pre-1.0 lifecycle review. |
-| 1.0 disposition | Decide root-owned vs. caller-owned transport lifecycle at the 1.0 API review. |
+| 1.0 disposition | **Closed — not added.** The SDK never owns, mutates, or closes the consumer-supplied transport/`HttpClient` (ADR 0003 §17–18); a no-op `close()` would invite misuse. Recorded in ADR 0008. |
 
 ### `RetryPolicy.replayMode` — deferred
 
@@ -95,4 +102,4 @@ Regenerate the companion coverage dashboard with `python3 scripts/coverage-dashb
 | User impact | Retry uses the runtime default replay behaviour; no curated knob to change it. |
 | Workaround | None needed for the default allowlist (`{429}` + connection failures); advanced replay control is unavailable. |
 | Expiry | Pre-1.0 retry review. |
-| 1.0 disposition | Surface `replayMode` on `RetryPolicy` if a concrete need appears; otherwise keep the runtime default. |
+| 1.0 disposition | **Closed — not surfaced.** Runtime idempotency gating suffices for the default allowlist (`{429}` + connection failures) and the `Resilient` preset; no curated `replayMode` knob ships at 1.0. Recorded in ADR 0008. |

@@ -388,6 +388,28 @@ numbers make retries clear.
 - Does Java exposure remain reasonable?
 - Does the signature compile for every published target?
 
+## 1.0 API review
+
+The one-time 1.0 review froze the curated surface and gave every exception-register row a final disposition.
+The decisions live in [ADR 0008](adr/0008-1-0-api-freeze-and-stability-guarantees.md); this section is the
+navigational summary.
+
+- **Stability tiers.** *Stable* = the curated surface not marked `@OpenRouterExperimentalApi` plus the generated
+  operation signatures for the pinned contract; *best-effort* = the klib ABI and Tier 2/3 targets; *experimental* =
+  the `@OpenRouterExperimentalApi` transfers-&-pagination cluster (`PaginationLimits`/`listAllFiles`,
+  `upload`/`transcribe`, byte-stream + transfer-observer helpers), which stays opt-in because its shape is still
+  upstream-dependent. Nothing graduated at 1.0 (graduation is additive and safe in any `1.x` minor).
+- **Enforced invariants.** `scripts/api-surface-audit.py --check` (a CI gate) reads the BCV dumps and curated
+  source and fails on any curated `data class` or any `@PublishedApi` symbol outside ADR 0008's (empty) allowlist;
+  explicit public return types are enforced by the strict `explicitApi()` compiler gate, and BCV `apiCheck`
+  enforces the JVM + klib ABI baselines.
+- **Register dispositions.** All seven [exception-register](coverage/exception-register.md) rows carry a final
+  disposition: four **carried, owned** (SCIM group-mapping delete, `listFiles` union pagination, unknown-union
+  decode, multipart filename/content-type — each with a shipped workaround and an upstream trigger) and three
+  **closed** (`client.beta` dropped, no `AutoCloseable` root, `replayMode` not surfaced). No row is an unowned waiver.
+- **Change rules.** Published functions never gain parameters (add overloads); the retry default stays `{429}` with
+  `RetryPolicy.Resilient` as the one-line opt-in; the deprecation ladder is WARNING (≥ one minor / six months) →
+  ERROR → removal only at a major.
 
 ## Implementation notes
 

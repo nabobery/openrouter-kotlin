@@ -7,12 +7,14 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
 
 
 SCRIPT = pathlib.Path(__file__).with_name("drift-refresh.sh")
+EXTRACTOR = pathlib.Path(__file__).with_name("extract-generator-diagnostics.py")
 
 
 class DriftRefreshTest(unittest.TestCase):
@@ -25,6 +27,7 @@ class DriftRefreshTest(unittest.TestCase):
         (self.root / "sdk" / "api").mkdir(parents=True)
         self.bin.mkdir()
         shutil.copy2(SCRIPT, self.root / "scripts" / SCRIPT.name)
+        shutil.copy2(EXTRACTOR, self.root / "scripts" / EXTRACTOR.name)
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -127,6 +130,57 @@ class DriftRefreshTest(unittest.TestCase):
 
         self.assertEqual(20, result.returncode, result.stdout + result.stderr)
         self.assertIn("generation failed", result.stdout)
+
+    def test_blocked_generation_surfaces_generator_diagnostics(self) -> None:
+        """A blocked first generation echoes the SDKGen diagnostics (parsed from the
+        Problems report, where they actually live) into stdout, so refresh.log →
+        report.md carries them into the drift PR body."""
+        old_sha = "a" * 64
+        new_sha = "b" * 64
+        (self.root / "spec" / "openapi.yaml").write_text("openapi: 3.1.0\n")
+        # python3 dispatch: real interpreter for the extractor, stubbed otherwise.
+        self._executable(
+            self.bin / "python3",
+            f"""\
+            #!/bin/sh
+            case "$*" in
+              *read-source*) printf '%s\\n' 'sha256={old_sha}'; exit 0 ;;
+              *extract-generator-diagnostics*) exec {sys.executable} "$@" ;;
+              *) exit 0 ;;
+            esac
+            """,
+        )
+        self._executable(
+            self.bin / "bash",
+            f"""\
+            #!/bin/sh
+            if [ "$1" = scripts/fetch-upstream-spec.sh ]; then
+              printf '%s\\n' 'openapi: 3.1.0' > "$2"
+              printf '%s\\n' 'sha256={new_sha}' 'sizeBytes=16' 'operations=1' 'retrievedAt=2026-08-31T00:00:00Z'
+              exit 0
+            fi
+            exit 0
+            """,
+        )
+        # gradlew writes a fake Problems report carrying one SDKGen diagnostic, then fails.
+        self._executable(
+            self.root / "gradlew",
+            """\
+            #!/bin/sh
+            mkdir -p build/reports/problems
+            cat > build/reports/problems/problems-report.html <<'HTML'
+            <html><script>x({"problemId":[{"name":"com.nabobery.sdkgen","displayName":"SDKGen"},{"name":"sdkgen-invalid-canonical-extension","displayName":"SDKGEN-INVALID-CANONICAL-EXTENSION"}],"severity":"WARNING","contextualLabel":"sdkgen://source/openapi.yaml","problemDetails":"FAKE conflicting allOf property matched 0 (inlineSchemaSha256=deadbeef)","locations":[],"solutions":[]})</script></html>
+            HTML
+            exit 1
+            """,
+        )
+
+        result = self._run()
+
+        self.assertEqual(20, result.returncode, result.stdout + result.stderr)
+        self.assertIn("## Generator diagnostics", result.stdout)
+        self.assertIn("SDKGEN-INVALID-CANONICAL-EXTENSION", result.stdout)
+        self.assertIn("FAKE conflicting allOf property", result.stdout)
 
 
 if __name__ == "__main__":

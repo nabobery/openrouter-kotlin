@@ -86,6 +86,14 @@ jobs:
           python3 scripts/kdoc_audit_test.py
           python3 scripts/kdoc-audit.py check
 
+      # Public-surface audit (offline): reads the committed BCV ABI dumps + curated sources and gates the 1.0
+      # curated API — no curated data classes and every curated @PublishedApi symbol is allowlisted (ADR 0008).
+      # Lists the @OpenRouterExperimentalApi surface; strict explicitApi() separately enforces public return types.
+      - name: Public surface audit gate (offline)
+        run: |
+          python3 scripts/api_surface_audit_test.py
+          python3 scripts/api-surface-audit.py --check
+
       # The host-aware verification gate on ubuntu x64: compiles JVM/JS/all-three-native/android, runs the runtime
       # lanes this host can execute (jvmTest, jsNodeTest, linuxX64Test, testAndroidHostTest — each common +
       # real-engine `engineTest`), and checks the public API baseline (JVM ABI; android enabled so it validates the

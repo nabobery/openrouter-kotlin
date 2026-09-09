@@ -2,7 +2,7 @@
 
 A Kotlin Multiplatform SDK for the [OpenRouter](https://openrouter.ai) API.
 
-The client surface (100 of 101 operations of the 2026-08-30 contract; one accepted waiver) is
+The client surface (104 of 105 operations of the 2026-09-08 contract; one accepted waiver) is
 **generated** by the [`kotlin-sdkgen`](https://github.com/nabobery/kotlin-sdkgen) `0.4.0` Gradle
 plugin from the OpenAPI spec pinned in [`spec/`](spec/) — it is not hand-written. Generation is
 deterministic and reproducible from a clean clone. Responses are GA (`client.responses`); the
@@ -191,7 +191,7 @@ per-target column) is [`docs/target-support.md`](docs/target-support.md).
 | Tier | Targets | Runtime evidence |
 | --- | --- | --- |
 | 1 | `jvm`, `android`, `macosArm64`, `iosSimulatorArm64`, `iosArm64` | Common + real-engine suites on JVM / android host / macOS / iOS simulator (PR CI); `iosArm64` device and Android device tests not executed (disclosed) |
-| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | Common + real-engine suites on Linux x64, Windows, Node.js, and headless Chrome (PR CI); `linuxArm64` is compile + klib ABI only because no Linux arm64 Kotlin/Native host exists (disclosed) |
+| 2 | `linuxX64`, `linuxArm64`, `mingwX64`, `js` (Node + browser) | Common + real-engine suites on Linux x64, Windows, Node.js, and headless Chrome (PR CI). Per JetBrains' Kotlin/Native tiers, `mingwX64` is upstream **Tier 3** and `linuxArm64` has no native host ([KT-36871](https://youtrack.jetbrains.com/projects/KT/issues/KT-36871)); both stay Tier 2 for this SDK, **compile-verified every CI run with runtime best-effort** — `linuxArm64` is compile + klib ABI only (disclosed) |
 | 2 (deprecated) | `macosX64`, `iosX64` | Compile + klib ABI on PRs; runtime lanes nightly on `macos-15-intel` (deprecated upstream since Kotlin 2.3.20) |
 | 3 | `wasmJs` | Declared, not published — blocked until the kotlin-sdkgen runtime ships a wasmJs variant (`scripts/wasm-probe.sh`) |
 

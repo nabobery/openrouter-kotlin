@@ -15,7 +15,7 @@
   "writeCapableJobs": ["drift.yml/open-pr", "docs.yml/deploy", "scorecard.yml/analysis", "codeql.yml/analyze", "release.yml/github-release"],
   "writeJobAllowedCommands": {
     "release.yml/github-release": [
-      "gh release create \"$RELEASE_TAG\" --verify-tag --prerelease --title \"$RELEASE_TAG\" --notes-file release/release-notes.md release/central-bundle.zip release/publication-inventory.json release/bom.json"
+      "gh release create \"$RELEASE_TAG\" --verify-tag --prerelease --title \"$RELEASE_TAG\" --notes-file release/release-notes.md release/central-bundle.zip release/publication-inventory.json release/sbom/bom.json"
     ],
     "drift.yml/open-pr": [
       "python3 scripts/validate-drift-patch.py drift/drift.patch",

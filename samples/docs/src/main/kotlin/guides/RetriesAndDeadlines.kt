@@ -28,11 +28,14 @@ fun retriesAndDeadlines(apiKey: String, http: HttpClient) {
     // endregion
 
     // region retry-opt-in
-    // Opt into extra idempotent-safe statuses explicitly when your workload tolerates the replay risk.
-    val withServerErrors = OpenRouter(
+    // `RetryPolicy.Resilient` is a one-line opt-in that also retries 408/409/429 and the 5xx gateway codes on top
+    // of safe connection failures. It is not the default on purpose: a non-2xx may mean a provider was already
+    // attempted, and BYOK spend sits outside credit insurance, so blanket 5xx retries can double-bill (ADR 0008).
+    // Use it when your calls are idempotent and you accept that trade-off.
+    val resilient = OpenRouter(
         credential = OpenRouterCredentials.static(apiKey),
         httpClient = http,
-        retryPolicy = RetryPolicy(retryableStatusCodes = setOf(429, 503, 529)),
+        retryPolicy = RetryPolicy.Resilient,
     )
     // endregion
 
@@ -45,5 +48,5 @@ fun retriesAndDeadlines(apiKey: String, http: HttpClient) {
         deadlines = RequestDeadlines(attempt = 30.seconds, total = 2.minutes),
     )
     // endregion
-    println(listOf(client, withServerErrors, bounded))
+    println(listOf(client, resilient, bounded))
 }

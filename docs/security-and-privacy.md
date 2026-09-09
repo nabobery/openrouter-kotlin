@@ -101,7 +101,7 @@ prompt or response by default. Cancellation immediately stops further consumptio
 | --- | --- | --- |
 | Spec pinned by SHA-256; generator/plugin versions pinned | implemented | `spec/pin.json`, `spec/sdkgen.yaml`, `gradle/libs.versions.toml` |
 | Overlays digest-pinned; generated diff reviewed via the drift PR | implemented | `spec/sdkgen.yaml`, `.github/workflows/drift.yml` |
-| Gradle dependency verification (PGP trusted keys; checksum fallback for unsigned artifacts) | planned | not yet configured |
+| Gradle dependency verification — sha256 checksums (PGP trusted keys planned as a follow-up) | tooling ready — activate via the bootstrap | `.github/workflows/verification-bootstrap.yml`, `scripts/merge-verification-metadata.py`, then commit `gradle/verification-metadata.xml` |
 | npm/yarn lock for the JS target | implemented | `kotlin-js-store/yarn.lock` |
 | Secret scanning (gitleaks: PR/push + weekly history) | implemented | `.github/workflows/gitleaks.yml`, `.gitleaks.toml` |
 | Dependency vulnerability review on PRs (fail on high) | implemented | `.github/workflows/dependency-review.yml` |

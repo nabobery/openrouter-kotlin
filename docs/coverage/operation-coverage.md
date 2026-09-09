@@ -6,14 +6,14 @@ exits non-zero when a hard invariant is violated, and CI additionally diffs this
 
 ## Invariants (enforced)
 
-- PASS: generated (100) and waived (1) exactly partition spec (101) — no operation is silently dropped.
+- PASS: generated (104) and waived (1) exactly partition spec (105) — no operation is silently dropped.
 
 ## Totals
 
-- Spec operations (`operationId:` in `spec/openapi.yaml`): **101**
-- Generated operations: **100**
+- Spec operations (`operationId:` in `spec/openapi.yaml`): **105**
+- Generated operations: **104**
 - Omitted (accepted waivers): **1** — deleteScimGroupMapping
-- Generated operations with an evidence file (curated/test/sample reference): **21**
+- Generated operations with an evidence file (curated/test/sample reference): **25**
 
 The *evidence* column names the first non-generated file (a test where one exists) whose
 comment-stripped source references the operation. A reference points to where coverage lives; it is
@@ -83,7 +83,9 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | models | listModelsCount | GET | `/models/count` | none | no | no | — |
 | models | listModelsUser | GET | `/models/user` | none | yes | no | — |
 | oauth | createAuthKeysCode | POST | `/auth/keys/code` | json | no | no | — |
+| oauth | createOauthToken | POST | `/oauth/token` | json | no | no | OauthContractTest.kt |
 | oauth | exchangeAuthCodeForAPIKey | POST | `/auth/keys` | json | no | no | — |
+| oauth | listOauthJwks | GET | `/oauth/jwks` | none | no | no | OauthContractTest.kt |
 | observability | createObservabilityDestination | POST | `/observability/destinations` | json | no | no | — |
 | observability | deleteObservabilityDestination | DELETE | `/observability/destinations/{id}` | none | no | no | — |
 | observability | getObservabilityDestination | GET | `/observability/destinations/{id}` | none | no | no | — |
@@ -101,7 +103,9 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | rerank | createRerank | POST | `/rerank` | json | no | no | — |
 | responses | createResponses | POST | `/responses` | json | no | yes | InferenceStreamingContractTest.kt |
 | scim | createScimGroupMapping | POST | `/scim/group-mappings` | json | no | no | ResourceConformanceTest.kt |
+| scim | createScimSyncJob | POST | `/scim/sync-jobs` | none | no | no | ScimSyncJobsContractTest.kt |
 | scim | getScimGroupMapping | GET | `/scim/group-mappings/{id}` | none | no | no | ResourceConformanceTest.kt |
+| scim | getScimSyncJob | GET | `/scim/sync-jobs/{id}` | none | no | no | ScimSyncJobsContractTest.kt |
 | scim | listScimGroupMappings | GET | `/scim/group-mappings` | none | no | no | ResourceConformanceTest.kt |
 | scim | listScimGroups | GET | `/scim/groups` | none | no | no | ResourceConformanceTest.kt |
 | scim | updateScimGroupMapping | PATCH | `/scim/group-mappings/{id}` | json | no | no | ResourceConformanceTest.kt |

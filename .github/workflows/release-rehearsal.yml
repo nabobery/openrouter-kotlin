@@ -51,3 +51,22 @@ jobs:
             build/consumer-matrix.log
           retention-days: 14
           if-no-files-found: warn
+
+      # github-release dry run: download the just-uploaded artifact into `release/` — exactly as
+      # `release.yml/github-release` does — and assert the three asset paths that step consumes. upload-artifact
+      # roots a multi-path upload at the least common ancestor (`build/`), so `build/sbom/bom.json` lands at
+      # `release/sbom/bom.json`; this proves that layout before the next tag. It is the one release.yml step the
+      # rehearsal otherwise never exercises.
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: release-rehearsal
+          path: release
+      - name: Assert github-release asset layout
+        shell: bash
+        run: |
+          rc=0
+          for asset in central-bundle.zip publication-inventory.json sbom/bom.json; do
+            if [ ! -f "release/$asset" ]; then echo "::error::release asset missing at release/$asset"; rc=1; fi
+          done
+          [ "$rc" -eq 0 ] && echo "github-release asset layout OK: central-bundle.zip, publication-inventory.json, sbom/bom.json"
+          exit "$rc"

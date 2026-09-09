@@ -164,6 +164,54 @@ class ChatStreamingFramingTest {
     }
 
     @Test
+    fun midStreamRateLimitErrorIsAnInBandValueCarryingErrorType() = runTest {
+        val body =
+            bytes(
+                SseWireFixtures.chatChunk(content = "partial"),
+                SseWireFixtures.chatChunk(
+                    content = null,
+                    finishReason = "error",
+                    error = SseWireFixtures.RATE_LIMIT_ERROR_JSON,
+                ),
+                SseWireFixtures.DONE,
+            )
+        val (client, _) = client(body)
+        // HTTP was 200, so a mid-stream 429 is reported in-band as a value — never thrown (ADR 0004). The stream
+        // completes normally after it, and the stable `error_type` is readable from the event.
+        val events = client.chat.stream(SseWireFixtures.userChatRequest()).toList()
+        val error = assertIs<ChatStreamEvent.Error>(events.last())
+        assertEquals(429, error.error.code)
+        assertEquals("rate_limit_exceeded", error.error.metadata?.errorType?.value)
+        assertEquals(listOf("partial"), deltas(events))
+    }
+
+    @Test
+    fun curatedChunksPreserveRepeatedWireFinishReasonsWithoutDeduplication() = runTest {
+        val body =
+            bytes(
+                SseWireFixtures.chatChunk(content = "done", finishReason = "stop"),
+                // A trailing usage frame whose choice repeats the finish_reason, as the wire may.
+                SseWireFixtures.chatChunk(
+                    content = null,
+                    usage = SseWireFixtures.USAGE_JSON,
+                    choices = "[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\"}]",
+                ),
+                SseWireFixtures.DONE,
+            )
+        val (client, _) = client(body)
+        val events = client.chat.stream(SseWireFixtures.userChatRequest()).toList()
+        // A curated `Chunk` carries the wire chunk unchanged (the `ChatStreamEvent` contract), so the SDK does NOT
+        // deduplicate a finish_reason the wire repeated — BOTH are observable. This pins that behaviour exactly
+        // (an accidental dedup or drop would fail the list assertion). A consumer that wants a single logical
+        // terminal finish folds the flow itself, e.g. takes the last non-null finish_reason.
+        val finishReasons = events.flatMap { it.chunk.choices }.mapNotNull { it.finishReason?.value }
+        assertEquals(listOf("stop", "stop"), finishReasons)
+        assertEquals("stop", finishReasons.last())
+        // …and the trailing usage frame is still delivered.
+        assertEquals(12, assertIs<ChatStreamEvent.Chunk>(events.last()).chunk.usage?.totalTokens)
+    }
+
+    @Test
     fun nonSuccessBeforeStreamIsTypedApiException() = runTest {
         val errorBody =
             FakeByteStream(
