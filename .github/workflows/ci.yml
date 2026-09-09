@@ -123,7 +123,7 @@ jobs:
           python3 scripts/budgets.py check docs/budgets/compile-times.json build/budgets/compile-times.json --tolerance 0.5
           python3 scripts/budgets.py check docs/budgets/warnings.json build/budgets/warnings.json --tolerance 0
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
+        if: always() && hashFiles('build/budgets/**') != ''
         with:
           name: compile-budget
           path: build/budgets/

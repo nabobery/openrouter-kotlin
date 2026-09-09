@@ -27,7 +27,7 @@ internal class GatedSseStream(
     private val failureAfterChunk: Int?,
     private val failure: Throwable?,
 ) : SdkByteStream {
-    private val chunks: MutableList<ByteArray> = chunks.map(ByteArray::copyOf).toMutableList()
+    private val chunks: List<ByteArray> = chunks.map(ByteArray::copyOf)
     private var completedChunks: Int = 0
     private var currentOffset: Int = 0
 
@@ -48,12 +48,11 @@ internal class GatedSseStream(
             if (chunks.isNotEmpty()) gate?.markProduced(completedChunks)
         }
         if (failureAfterChunk == completedChunks && currentOffset == 0) throw requireNotNull(failure)
-        val chunk = chunks.firstOrNull() ?: return null
+        val chunk = chunks.getOrNull(completedChunks) ?: return null
         val end = minOf(currentOffset + maxBytes, chunk.size)
         val result = chunk.copyOfRange(currentOffset, end)
         currentOffset = end
         if (currentOffset == chunk.size) {
-            chunks.removeAt(0)
             gate?.markProduced(completedChunks)
             completedChunks += 1
             currentOffset = 0

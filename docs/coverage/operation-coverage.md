@@ -26,7 +26,7 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | analytics | getAnalyticsMeta | GET | `/analytics/meta` | none | no | no | — |
 | analytics | getUserActivity | GET | `/activity` | none | no | no | — |
 | analytics | queryAnalytics | POST | `/analytics/query` | json | no | no | — |
-| anthropicmessages | createMessages | POST | `/messages` | json | no | yes | InferenceStreamingContractTest.kt |
+| anthropicmessages | createMessages | POST | `/messages` | json | no | yes | ErrorTypesTest.kt |
 | apikeys | createKeys | POST | `/keys` | json | no | no | — |
 | apikeys | deleteKeys | DELETE | `/keys/{hash}` | none | no | no | — |
 | apikeys | getCurrentKey | GET | `/key` | none | no | no | — |
@@ -101,7 +101,7 @@ See `docs/coverage/exception-register.md` for every omitted or degraded capabili
 | presets | listPresets | GET | `/presets` | none | yes | no | — |
 | providers | listProviders | GET | `/providers` | none | no | no | — |
 | rerank | createRerank | POST | `/rerank` | json | no | no | — |
-| responses | createResponses | POST | `/responses` | json | no | yes | InferenceStreamingContractTest.kt |
+| responses | createResponses | POST | `/responses` | json | no | yes | ErrorTypesTest.kt |
 | scim | createScimGroupMapping | POST | `/scim/group-mappings` | json | no | no | ResourceConformanceTest.kt |
 | scim | createScimSyncJob | POST | `/scim/sync-jobs` | none | no | no | ScimSyncJobsContractTest.kt |
 | scim | getScimGroupMapping | GET | `/scim/group-mappings/{id}` | none | no | no | ResourceConformanceTest.kt |

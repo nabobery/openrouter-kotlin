@@ -49,6 +49,7 @@ fork PR (a job is fork-unsafe if it is write-capable or references a secret).
 | release.yml | stage-and-publish | write | GPG_SIGNING_KEY,GPG_SIGNING_PASSPHRASE,MAVEN_CENTRAL_PASSWORD,MAVEN_CENTRAL_USERNAME | workflow_dispatch | no |
 | release.yml | github-release | write | GITHUB_TOKEN | workflow_dispatch | no |
 | scorecard.yml | analysis | write | - | schedule,push,workflow_dispatch | no |
+| verification-bootstrap.yml | bootstrap | read | - | workflow_dispatch | yes |
 <!-- workflow-audit:end -->
 
 ## Controls (enforced by `scripts/workflow-audit.py check`, CI-gated)
