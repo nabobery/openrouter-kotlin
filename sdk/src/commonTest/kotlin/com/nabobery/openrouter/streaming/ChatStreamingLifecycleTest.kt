@@ -321,8 +321,8 @@ class ChatStreamingLifecycleTest {
     @Test
     fun largeEventStreamDecodesIncrementallyToCompletion() = runTest {
         val server = SseFakeServer()
-        val chunks = Array(10_000) { SseWireFixtures.chatChunk(content = "t$it ") } + SseWireFixtures.DONE
-        server.sse(*chunks)
+        val chunks = List(10_000) { SseWireFixtures.chatChunk(content = "t$it ") } + SseWireFixtures.DONE
+        server.sse(chunks)
         val client = openRouterOver(server)
 
         val decoded = client.chat.stream(SseWireFixtures.userChatRequest()).count()

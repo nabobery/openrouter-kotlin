@@ -74,7 +74,7 @@ internal class SseFakeServer(capabilities: TransportCapabilities = TransportCapa
 
     /** Scripts one 200 SSE exchange, returning the response stream so the test can assert its close cause. */
     fun sse(
-        vararg chunks: String,
+        chunks: List<String>,
         gate: ChunkGate? = null,
         failureAfterChunk: Int? = null,
         failure: Throwable? = null,
@@ -83,6 +83,13 @@ internal class SseFakeServer(capabilities: TransportCapabilities = TransportCapa
         transport.enqueueExchange { SdkResponse(200, sseHeaders, stream) }
         return stream
     }
+
+    fun sse(
+        vararg chunks: String,
+        gate: ChunkGate? = null,
+        failureAfterChunk: Int? = null,
+        failure: Throwable? = null,
+    ): GatedSseStream = sse(chunks.asList(), gate, failureAfterChunk, failure)
 
     /** Scripts one pre-stream JSON status exchange (e.g. a retryable 429). */
     fun status(status: Int, bodyJson: String) {

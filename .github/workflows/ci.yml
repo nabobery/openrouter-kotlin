@@ -213,3 +213,15 @@ jobs:
       - name: Host-aware verification gate + samples (runs mingwX64Test; links the WinHttp sample executable)
         shell: bash
         run: ./gradlew :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck samplesCheck -Popenrouter.androidTarget=false --console=plain
+
+      - name: Upload Windows JS Node test reports
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-js-node-test-reports
+          path: |
+            sdk/build/reports/tests/jsNodeTest/
+            sdk/build/test-results/jsNodeTest/
+            build/reports/problems/
+          if-no-files-found: warn
+          retention-days: 7
