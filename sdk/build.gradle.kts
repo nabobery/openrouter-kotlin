@@ -61,7 +61,14 @@ kotlin {
         }
     }
     js {
-        nodejs()
+        nodejs {
+            testTask {
+                useMocha {
+                    // The common streaming stress test can exceed Mocha's 2s default on hosted Windows runners.
+                    timeout = "10s"
+                }
+            }
+        }
         browser {
             testTask {
                 useKarma {
