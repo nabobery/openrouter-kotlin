@@ -13,12 +13,18 @@ coverage dashboard. The checker and its tests are `scripts/budgets.py` / `script
 | `artifact-sizes.json` | Per-target published artifact sizes (jar / klib / aar / metadata), version-stripped | +10% | `scripts/measure-artifacts.sh` (publishToMavenLocal into a throwaway repo) | **gated** on `build-apple` (full set, Android forced on) |
 | `compile-times.json` | JVM Kotlin compile-task duration (ms) | +50% (noisy) | `scripts/measure-compile.sh` (Kotlin build reports) | **gated** on `build-linux`; re-record from CI when its hardware baseline is established |
 | `warnings.json` | Kotlin compiler-warning count (JVM generated compile) | 0 (may only shrink) | `scripts/measure-compile.sh` | **gated** on `build-linux` (the hard Task-13 gate) |
-| `runtime.json` | First-event latency, 200-event decode time, stream allocation/event, other allocation/op | +100% (noisy hosts; allocation is host-stable) | `benchmarks/` (kotlinx-benchmark) + JMH `-prof gc`, folded via `scripts/bench-to-runtime.py` | **gated** on `perf.yml` (nightly) |
+| `runtime.json` | First-event latency, 200-event decode time, and allocation measurements | trend only | `benchmarks/` (kotlinx-benchmark) + JMH `-prof gc`, folded via `scripts/bench-to-runtime.py` | retained as a `perf.yml` artifact |
+| `runtime-allocations.json` | Stream allocation/event and other allocation/op | +10% | the allocation-only view from `scripts/bench-to-runtime.py` | **gated** on `perf.yml` (nightly) |
 
 > **2026-09-03 — calibrated `compile-times.json` on `ubuntu-latest`.** The former 92,047 ms value came from a
 > faster local macOS host and was not portable to the Linux CI runner. Two clean Linux measurements were 230,340 ms
 > and 254,852 ms; the baseline uses the slower observed value as the initial Linux calibration. The existing +50%
 > tolerance remains in place to catch substantial regressions without treating runner noise as a failure.
+>
+> **2026-09-09 — made absolute runtime timings trend-only on hosted runners.** Identical code on the same JDK produced
+> roughly 2× timing differences on consecutive `ubuntu-latest` allocations while normalized allocation changed by
+> less than 0.1%. The nightly gate therefore enforces the host-stable allocation metrics at +10% and retains raw JMH
+> timings as artifacts for trend analysis; an absolute latency gate requires fixed-performance hardware.
 
 ## Artifact sizes
 

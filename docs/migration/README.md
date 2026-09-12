@@ -1,13 +1,14 @@
 # Migration notes
 
-Policy: **one migration note per breaking release**. While the version is `0.x`, breaking changes may land in any
-release (see [compatibility policy](../compatibility-policy.md)); each is listed under **Breaking** in the
-[CHANGELOG](../../CHANGELOG.md) and detailed in a note here. At `1.0` these `0.x` notes are consolidated into a
-single `0.x → 1.0` migration guide.
+Policy: **one migration note per breaking release**. Breaking changes are listed under **Breaking** in the
+[CHANGELOG](../../CHANGELOG.md) and detailed here. The 1.0 guide consolidates all pre-1.0 changes; future stable
+breaks follow the deprecation and major-version rules in the [compatibility policy](../compatibility-policy.md).
 
 ## Notes
 
-- [`0.x-generated-renames.md`](0.x-generated-renames.md) — the pre-1.0 symbol renames (generated root, trusted-origin
-  builder method, Responses/Analytics GA renames) and the `options()` behaviour change, with before/after guidance.
+- [`0.x-to-1.0.md`](0.x-to-1.0.md) — the complete consumer migration from development and release-candidate builds
+  to the stable 1.0 API.
+- [`0.x-generated-renames.md`](0.x-generated-renames.md) — the original pre-1.0 change record, retained for
+  historical detail.
 
 Each note cites versions, dates, contract digests, ADRs, and public documents only.

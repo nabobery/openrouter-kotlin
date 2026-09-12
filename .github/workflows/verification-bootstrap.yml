@@ -1,7 +1,7 @@
 name: Dependency verification bootstrap
 
 # Dispatch-only. Regenerates the per-host sha256 dependency-verification metadata on a COLD cache on every
-# supported CI host, then uploads each host's dry-run file as an artifact. A maintainer downloads the four
+# supported CI host, then uploads each host's metadata file as an artifact. A maintainer downloads the four
 # artifacts, merges them with `scripts/merge-verification-metadata.py` into `gradle/verification-metadata.xml`,
 # reviews the diff (the review IS the trust decision — the bootstrap trusts whatever resolves from the declared
 # repositories), and commits the merged file. See docs/security-and-privacy.md and CONTRIBUTING.md.
@@ -34,23 +34,22 @@ jobs:
         with:
           # A COLD cache is essential: a warm cache omits already-downloaded artifacts from the metadata (gradle#19228).
           cache-disabled: true
-      # Write sha256 checksums for the host-aware dependency set. --dry-run keeps it read-only (the task graph is
-      # calculated — resolving the configurations — but no task executes and nothing is published), and in that
-      # mode Gradle writes `gradle/verification-metadata.dryrun.xml`. NOTE: dry-run captures configuration-resolved
-      # dependencies; Gradle documents that it does NOT capture dependencies resolved only during task *execution*.
-      # The maintainer reviews the merged diff and, if an execution-only dependency is missing on some host,
-      # supplements it with an executing pass (drop `--dry-run`) on that host. See CONTRIBUTING.md.
-      - name: Write sha256 verification metadata (cold cache, dry run)
+      # Execute the host-aware verification and isolated-publication graph so Gradle records dependencies that
+      # resolve during task execution as well as configuration. Publications stay inside the runner workspace.
+      - name: Write sha256 verification metadata (cold cache)
         shell: bash
         env:
           MATRIX_OS: ${{ matrix.os }}
         run: |
           ./gradlew \
             :sdk:verificationCheck :openrouter-kotlin-testing:verificationCheck samplesCheck \
-            publishAllPublicationsToStagingRepository \
-            --write-verification-metadata sha256 --dry-run --stacktrace
-          # Rename the per-host dry-run file so the four host artifacts never collide on merge.
-          mv gradle/verification-metadata.dryrun.xml "gradle/verification-metadata.${MATRIX_OS}.xml"
+            publishAllPublicationsToIsolatedRepository \
+            --init-script publication/isolated-repository.init.gradle.kts \
+            -PpublicationRepository=build/verification-repository \
+            -Popenrouter.androidTarget=true \
+            --write-verification-metadata sha256 --stacktrace
+          # Rename the per-host file so the four host artifacts never collide on merge.
+          mv gradle/verification-metadata.xml "gradle/verification-metadata.${MATRIX_OS}.xml"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: verification-metadata-${{ matrix.os }}

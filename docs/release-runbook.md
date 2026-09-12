@@ -26,6 +26,8 @@ bash scripts/release-rehearsal.sh          # stage -> inventory -> consumer matr
 
 On a memory-constrained host add `GRADLE_PUBLISH_ARGS="--max-workers=1"` to serialize the native compiles. Then:
 
+- Confirm the release commit has a successful **Performance** workflow run; dispatch it manually if the latest
+  scheduled run does not cover that commit.
 - Review `build/publication-inventory.json` — the exact coordinates, per-artifact sizes, and the bundle file/byte
   count that would be uploaded.
 - Confirm the consumer matrix resolved the published coordinates on every host lane (`build/consumer-matrix.log`
@@ -35,8 +37,14 @@ On a memory-constrained host add `GRADLE_PUBLISH_ARGS="--max-workers=1"` to seri
 
 ## Cutting a release
 
+Dependency verification is not an active release gate yet: `gradle/verification-metadata.xml` is intentionally absent,
+as documented in [`CONTRIBUTING.md`](../CONTRIBUTING.md#dependency-verification) and
+[`docs/security-and-privacy.md`](security-and-privacy.md). Do not generate or commit a partial host-local file for this
+release. Activating the control is a separate hardening task: run the four-host **Dependency verification bootstrap**,
+merge and review its artifacts, commit the complete metadata, and then make it a release prerequisite.
+
 1. `python3 scripts/release-version.py set <version>` — rewrites `gradle.properties` **and** the `SDK_VERSION`
-   constant in lockstep (RC grammar: `MAJOR.MINOR.PATCH[-rc.N]`; the first candidate is `0.1.0-rc.1`).
+   constant in lockstep (`MAJOR.MINOR.PATCH[-rc.N]`; snapshots use `MAJOR.MINOR.PATCH-SNAPSHOT`).
 2. Add a `## [<version>] - <date>` section to `CHANGELOG.md` (move everything from `[Unreleased]`); add a migration
    note under `docs/migration/` if anything is **Breaking**.
 3. Open a PR, get it reviewed, merge to `main`.
@@ -45,7 +53,9 @@ On a memory-constrained host add `GRADLE_PUBLISH_ARGS="--max-workers=1"` to seri
 5. Dispatch the **Release** workflow with `version=<version>` and `publish=false` (park the deployment).
 6. Approve the `maven-central` environment when the `stage-and-publish` job requests it.
 7. The job signs, stages, inventories, runs the consumer matrix, builds the SBOM and bundle, attests, uploads
-   `USER_MANAGED`, waits for `VALIDATED`, and **re-runs the consumer matrix against the validated deployment**.
+   `USER_MANAGED`, waits for `VALIDATED`, and **re-runs the consumer matrix against the validated deployment**. It
+   also creates a GitHub prerelease so the assets and release notes are available without marking a parked version
+   as stable.
 8. Inspect the validated deployment in the Portal (Deployments tab) and confirm the consumer-matrix-against-validated
    step passed. Then **click Publish in the Portal** to release the exact deployment you reviewed.
 
@@ -54,9 +64,15 @@ On a memory-constrained host add `GRADLE_PUBLISH_ARGS="--max-workers=1"` to seri
    > `gh release create` for the already-created `v<version>` tag, which fails. To publish automatically instead of
    > parking, choose `publish=true` on the **single** initial dispatch — that path publishes the same deployment it
    > just validated.
+9. For a stable version, promote the GitHub prerelease only after Central reports `PUBLISHED`:
+   ```bash
+   gh release edit "v<version>" --prerelease=false --latest
+   ```
+   The workflow performs this promotion automatically when its one initial dispatch uses `publish=true`. RC versions
+   remain prereleases.
 
-The RC's recommended disposition is to **publish it for real** so that post-publish resolution is rehearsed before
-1.0 — an RC coordinate is harmless, and Central is immutable either way.
+Before the first stable release, the recommended disposition for a validated RC is to **publish it for real** so that
+post-publish resolution is rehearsed. An RC coordinate is harmless, and Central is immutable either way.
 
 ## Post-publish verification
 
@@ -90,7 +106,7 @@ Nothing published can be deleted. If a release is bad:
 
 Maven Central meters each namespace against ~1,167 files / 78 MB / 7 releases per 3-month average (soft since
 2026-06-16, rate-limited since 2026-08-11). This SDK is a generated multi-target SDK — the named high-volume pattern —
-so a single release is large: **396 upload files, approximately 234 MiB** across both modules' 24 publications (the SDK's
+so a single release is large: **396 upload files, approximately 241 MiB** across both modules' 24 publications (the SDK's
 generated surface makes the per-target artifacts large; the `-javadoc.jars` are deliberately lightweight, with the
 full Dokka site on GitHub Pages instead). Consequences:
 

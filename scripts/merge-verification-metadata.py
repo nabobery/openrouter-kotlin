@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Merge per-host Gradle dependency-verification metadata into one sha256 union.
 
-Each CI host (ubuntu / macos / windows / macos-intel) produces a cold-cache
-`--write-verification-metadata sha256 --dry-run` dump that only lists the
-dependencies that host actually resolved. This unions them into a single
+Each CI host (ubuntu / macos / windows / macos-intel) executes the cold-cache
+verification and isolated-publication task graph with
+`--write-verification-metadata sha256`. This unions the resolved dependencies
+into a single
 `gradle/verification-metadata.xml`: every `<artifact>`/`<sha256>` is kept once,
 sorted deterministically, and a **conflicting** checksum for the same artifact
 (the same coordinate resolving to two different bytes) is a hard error — that is

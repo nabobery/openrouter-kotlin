@@ -1,9 +1,9 @@
 name: Performance
 
-# Runtime budgets (first-event latency, 200-event decode time, and allocation/event via the JMH gc profiler) from
-# the kotlinx-benchmark suite in :benchmarks, over the deterministic fake transport. Nightly and on demand only —
-# never on PRs (benchmarks are slow and hosted-runner numbers are noisy). The JVM job GATES against
-# docs/budgets/runtime.json (+100%); the adapter is scripts/bench-to-runtime.py.
+# Runtime measurements (first-event latency, 200-event decode time, and allocation/event via the JMH gc profiler)
+# from the kotlinx-benchmark suite in :benchmarks, over the deterministic fake transport. Nightly and on demand only
+# — never on PRs (benchmarks are slow). Absolute timings are retained as trend data because hosted-runner CPU speed
+# varies materially; the JVM job gates the hardware-stable allocation metrics at +10%.
 
 on:
   schedule:
@@ -26,11 +26,10 @@ jobs:
           java-version: "25"
       - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
 
-      # JVM runtime + allocation gate. Build the JMH jar and run it with the `gc` profiler so the report carries
-      # `gc.alloc.rate.norm` (allocation/event); the adapter folds the report into runtime.json's schema and the
-      # budget checker gates it (+100% — latency is host-noisy; allocation is host-stable, so the ceiling still
-      # catches real regressions). budgets_test.py + bench_to_runtime_test.py guard the tooling first.
-      - name: JVM runtime + allocation budget (kotlinx-benchmark + JMH gc profiler)
+      # JVM runtime measurement + allocation gate. Build the JMH jar and run it with the `gc` profiler so the report
+      # carries `gc.alloc.rate.norm` (allocation/event). Keep absolute timings in runtime.json for trend analysis, but
+      # gate the hardware-stable allocation view at +10%. budgets_test.py + bench_to_runtime_test.py guard the tooling.
+      - name: JVM runtime measurements + allocation budget (kotlinx-benchmark + JMH gc profiler)
         run: |
           python3 scripts/budgets_test.py
           python3 scripts/bench_to_runtime_test.py
@@ -41,10 +40,11 @@ jobs:
             --args='-prof gc -f 1 -wi 5 -i 5 -w 1s -r 1s -rf json -rff build/budgets/bench-jvm.json' \
             --console=plain
           python3 scripts/bench-to-runtime.py build/budgets/bench-jvm.json --out build/budgets/runtime.json
-          python3 scripts/budgets.py check docs/budgets/runtime.json build/budgets/runtime.json --tolerance 1.0
+          python3 scripts/bench-to-runtime.py build/budgets/bench-jvm.json --out build/budgets/runtime-allocations.json --allocations-only
+          python3 scripts/budgets.py check docs/budgets/runtime-allocations.json build/budgets/runtime-allocations.json --tolerance 0.10
 
       # Native benchmarks are trend-watched (no gc profiler on Native; hosted-runner native numbers are noisy), so
-      # they are run and uploaded but not gated. runtime.json is the JVM budget.
+      # they are run and uploaded but not gated. runtime.json is the JVM timing/allocation trend report.
       - name: Native benchmarks (linuxX64, trend only)
         run: ./gradlew :benchmarks:linuxX64Benchmark --console=plain
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -55,6 +55,7 @@ jobs:
             benchmarks/build/reports/benchmarks/**/*.json
             build/budgets/bench-jvm.json
             build/budgets/runtime.json
+            build/budgets/runtime-allocations.json
 
   bench-macos:
     runs-on: macos-15

@@ -161,7 +161,7 @@ replacement for `runBlocking`, which JS lacks), so no target is streaming compil
 
 ## Release evidence
 
-A release candidate stores:
+A release stores:
 
 - Pinned inputs and digests.
 - Generator and dependency versions.
@@ -187,7 +187,7 @@ script with a `_test.py` companion, run on `build-linux`):
 | Compiled-guide snippets | `docs-snippets.py` | every guide example matches its compiled `:samples:docs` region |
 | Docs-vs-code consistency | `docs-consistency.py` | targets, default constants, spec pins, and coverage totals agree |
 | KDoc completeness | `kdoc-audit.py` | every public curated symbol has KDoc |
-| Budgets | `budgets.py` | artifact size, compile time, warning count (0), runtime latency/throughput |
+| Budgets | `budgets.py` | artifact size, compile time, warning count (0), runtime allocation; latency is trend-watched |
 
 ## Acceptance gates
 

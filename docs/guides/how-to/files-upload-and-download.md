@@ -41,4 +41,5 @@ client.files
 ```
 <!-- /snippet -->
 
-`upload`, `downloadBytes`, and `listAllFiles` are `@OpenRouterExperimentalApi` (opt-in) pre-1.0.
+`upload`, `downloadBytes`, and `listAllFiles` are `@OpenRouterExperimentalApi` opt-in APIs. They remain available in
+1.0 but may change incompatibly in a future minor release with release notes.

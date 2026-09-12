@@ -2,7 +2,7 @@
 
 A STRIDE threat model for the openrouter-kotlin SDK and its build/CI supply chain. Each threat names the actor,
 the vector, the current control, the evidence, the residual risk, and a disposition
-(`implemented | planned | gap`). Future publication controls are listed as **planned**.
+(`implemented | planned | gap`).
 
 ## System summary
 
@@ -18,7 +18,7 @@ through a privilege split.
 - The consumer's **OpenRouter API key** (and any per-request credential override).
 - **Request integrity** (base URL, headers, host trust) and **response integrity** (typed decoding, bounded
   buffers).
-- The **pinned contract** (`spec/`), the **generated surface**, and the **published artifacts** (planned).
+- The **pinned contract** (`spec/`), the **generated surface**, and the **published artifacts**.
 - **CI credentials** (`OPENROUTER_API_KEY`, optional drift App key, `GITHUB_TOKEN`).
 
 ## Trust boundaries
@@ -125,7 +125,8 @@ through a privilege split.
   `github-release`), secret-isolated from the drift/PR jobs: `GPG_SIGNING_KEY` / `GPG_SIGNING_PASSPHRASE` /
   `MAVEN_CENTRAL_*` are readable only by `stage-and-publish` (gated behind the `maven-central` environment with
   required reviewers), which holds no `contents: write`; the `github-release` job holds `contents: write` but runs
-  only a single verbatim-allowlisted `gh release create` (enforced by `scripts/workflow-audit.py`, rule e). Upload is
+  only the verbatim-allowlisted `gh release create` and stable-release promotion commands (enforced by
+  `scripts/workflow-audit.py`, rule e). Upload is
   `USER_MANAGED` — a human validates and publishes. Provenance is verified with
   `gh attestation verify central-bundle.zip --repo nabobery/openrouter-kotlin`. **Status: implemented.**
 

@@ -2,10 +2,41 @@
 
 All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project aims to follow
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). While the version is `0.x`, breaking changes may land in
-any release; each is called out under **Breaking** and described in [`docs/migration/`](docs/migration/README.md).
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Changes made before 1.0 are documented under
+**Breaking** and consolidated in the [`0.x → 1.0` migration guide](docs/migration/0.x-to-1.0.md).
 
 ## [Unreleased]
+
+## [1.0.0] - 2026-09-12
+
+The first stable release of OpenRouter Kotlin. Version 1.0 freezes the curated public API and the generated operation
+signatures for the pinned OpenRouter contract, except for declarations explicitly marked
+`@OpenRouterExperimentalApi`.
+
+### Install
+
+```kotlin
+dependencies {
+    implementation("io.github.nabobery:openrouter-kotlin:1.0.0")
+    testImplementation("io.github.nabobery:openrouter-kotlin-testing:1.0.0")
+}
+```
+
+### Highlights
+
+- **Broad OpenRouter API coverage.** The generated client exposes 104 of 105 operations from the pinned 2026-09-08
+  contract. The sole omission, `deleteScimGroupMapping`, is documented with a raw-transport workaround.
+- **Idiomatic inference APIs.** The curated facade provides chat, Responses, and Anthropic Messages helpers,
+  incremental SSE streams as cold `Flow`s, message builders, typed errors, response metadata, retries, deadlines,
+  attribution, pagination bounds, bounded downloads, and transfer observation.
+- **Kotlin Multiplatform delivery.** The root coordinate selects JVM, Android, JavaScript, Apple, Linux, or Windows
+  variants through Gradle module metadata. The companion `openrouter-kotlin-testing` artifact provides a deterministic
+  fake transport and contract fixtures.
+- **Stable compatibility policy.** Curated declarations not marked experimental and generated operation signatures are
+  covered by the 1.x source, binary, and behavioural compatibility policy. JVM ABI is enforced; klib ABI is checked
+  best-effort while the underlying tooling remains experimental.
+- **Auditable releases.** Publications are signed, inventoried, resolved by isolated consumers, accompanied by a
+  CycloneDX SBOM and GitHub attestations, and parked for review before Maven Central publication.
 
 ### Added
 
@@ -18,6 +49,8 @@ any release; each is called out under **Breaking** and described in [`docs/migra
   uniformly across the chat, Anthropic-messages, and responses skins, returning the open `ApiErrorType` enum (or
   `null` when the value is absent or unreadable, or the throwable is not one of the three inference exceptions).
   Unknown wire values are preserved as `ApiErrorType.SdkUnknown`; the reader never throws and uses no reflection.
+- **OAuth and SCIM sync operations** — OAuth JWKS retrieval and token exchange, plus SCIM sync-job creation and
+  lookup, are generated from the pinned contract without a new waiver.
 
 ### Changed
 
@@ -29,15 +62,15 @@ any release; each is called out under **Breaking** and described in [`docs/migra
   Anthropic message features and per-workload endpoint-performance statistics). The re-pin required no generator
   change and no new waiver — only an audited refresh of the `allOf`-resolution overlay digests.
 
-### Breaking
+### Breaking changes since `0.1.0-rc.1`
 
 The `d49dda78` re-pin is classified **breaking** by the layered compatibility report
 ([`docs/compat/2026-09-09-e88b0cec-to-d49dda78.md`](docs/compat/2026-09-09-e88b0cec-to-d49dda78.md)). The removed
 JVM/klib ABI lines are of two kinds: a handful of **source-visible type changes** (below) and a large number of
 **mechanical generated all-args constructor moves** — additive upstream fields reshaped many generated models'
 primary constructors. Builder-based construction (`xxx { … }`) and deserialization remain additive and unaffected;
-only direct callers of a changed generated all-args constructor must supply the new argument. Migration guidance
-for the source-visible changes is in [`docs/migration/0.x-generated-renames.md`](docs/migration/0.x-generated-renames.md).
+only direct callers of a changed generated all-args constructor must supply the new argument. Migration guidance is
+in the [`0.x → 1.0` guide](docs/migration/0.x-to-1.0.md).
 
 - **`usage.serverToolUse` changed type to the OpenRouter-specific `OrAnthropicServerToolUsage`** on the Anthropic
   messages result (`MessagesResult`) and the streaming message-delta events, replacing the generic
@@ -47,6 +80,14 @@ for the source-visible changes is in [`docs/migration/0.x-generated-renames.md`]
 - **`McpCallItem.error` / `McpCallItemView.error` changed type from `String?` to the structured `McpToolCallError?`**
   — upstream promoted the MCP tool-call error from a bare string to a typed object. Consumers reading `.error` on
   an MCP call item must adapt to the new type.
+
+### Known limitations
+
+- File upload/download helpers, STT upload, byte streams, transfer observers, and bounded automatic file pagination
+  remain opt-in experimental APIs. Their shapes may change incompatibly in a future 1.x minor release with release
+  notes; the stable core is unaffected.
+- Generated pagination for the discriminated file-list union and generated SCIM group-mapping deletion remain
+  unavailable. Both have documented workarounds in the exception register.
 
 ## [0.1.0-rc.1] - 2026-09-02
 
@@ -104,5 +145,6 @@ for the source-visible changes is in [`docs/migration/0.x-generated-renames.md`]
 See [`docs/migration/0.x-generated-renames.md`](docs/migration/0.x-generated-renames.md) for the before/after symbol
 table.
 
-[Unreleased]: https://github.com/nabobery/openrouter-kotlin/compare/v0.1.0-rc.1...HEAD
+[Unreleased]: https://github.com/nabobery/openrouter-kotlin/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/nabobery/openrouter-kotlin/compare/v0.1.0-rc.1...v1.0.0
 [0.1.0-rc.1]: https://github.com/nabobery/openrouter-kotlin/releases/tag/v0.1.0-rc.1
