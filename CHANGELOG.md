@@ -7,7 +7,7 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-09-10
+## [1.0.0] - 2026-09-12
 
 The first stable release of OpenRouter Kotlin. Version 1.0 freezes the curated public API and the generated operation
 signatures for the pinned OpenRouter contract, except for declarations explicitly marked

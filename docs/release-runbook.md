@@ -37,9 +37,11 @@ On a memory-constrained host add `GRADLE_PUBLISH_ARGS="--max-workers=1"` to seri
 
 ## Cutting a release
 
-Before tagging, confirm `gradle/verification-metadata.xml` exists and is current. If it is absent or dependencies
-changed, run the four-host **Dependency verification bootstrap**, merge and review its artifacts as described in
-[`CONTRIBUTING.md`](../CONTRIBUTING.md#dependency-verification), and commit the reviewed metadata in the release PR.
+Dependency verification is not an active release gate yet: `gradle/verification-metadata.xml` is intentionally absent,
+as documented in [`CONTRIBUTING.md`](../CONTRIBUTING.md#dependency-verification) and
+[`docs/security-and-privacy.md`](security-and-privacy.md). Do not generate or commit a partial host-local file for this
+release. Activating the control is a separate hardening task: run the four-host **Dependency verification bootstrap**,
+merge and review its artifacts, commit the complete metadata, and then make it a release prerequisite.
 
 1. `python3 scripts/release-version.py set <version>` — rewrites `gradle.properties` **and** the `SDK_VERSION`
    constant in lockstep (`MAJOR.MINOR.PATCH[-rc.N]`; snapshots use `MAJOR.MINOR.PATCH-SNAPSHOT`).
