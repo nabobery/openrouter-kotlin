@@ -1,0 +1,1353 @@
+diff --git a/spec/openapi.yaml b/spec/openapi.yaml
+index bfc8c69..8e9d2d0 100644
+--- a/spec/openapi.yaml
++++ b/spec/openapi.yaml
+@@ -194,6 +194,10 @@ components:
+               - allOf:
+                   - $ref: '#/components/schemas/FunctionTool'
+                   - properties:
++                      async:
++                        description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++                        example: true
++                        type: 'boolean'
+                       defer_loading:
+                         description: 'Withhold this tool from the model until `openrouter:tool_search` finds it. Requires the tool search server tool; at least one tool must remain non-deferred.'
+                         example: true
+@@ -236,6 +240,7 @@ components:
+               - $ref: '#/components/schemas/SubagentServerTool_OpenRouter'
+               - $ref: '#/components/schemas/DatetimeServerTool'
+               - $ref: '#/components/schemas/FilesServerTool'
++              - $ref: '#/components/schemas/MemoryServerTool'
+               - $ref: '#/components/schemas/FusionServerTool_OpenRouter'
+               - $ref: '#/components/schemas/ImageGenerationServerTool_OpenRouter'
+               - $ref: '#/components/schemas/SearchModelsServerTool_OpenRouter'
+@@ -2172,6 +2177,17 @@ components:
+       example:
+         prefix_mismatch_behavior: 'drop_block'
+       properties:
++        mismatch_behavior:
++          deprecated: true
++          description: 'Deprecated: legacy alias of prefix_mismatch_behavior. Send only one of the two.'
++          enum:
++            - 'error'
++            - 'drop_block'
++            - null
++          type:
++            - 'string'
++            - 'null'
++          x-speakeasy-unknown-values: allow
+         prefix_mismatch_behavior:
+           enum:
+             - 'error'
+@@ -4153,6 +4169,10 @@ components:
+               - allOf:
+                   - $ref: '#/components/schemas/FunctionTool'
+                   - properties:
++                      async:
++                        description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++                        example: true
++                        type: 'boolean'
+                       defer_loading:
+                         description: 'Withhold this tool from the model until `openrouter:tool_search` finds it. Requires the tool search server tool; at least one tool must remain non-deferred.'
+                         example: true
+@@ -4332,8 +4352,6 @@ components:
+           $ref: '#/components/schemas/BashServerToolEngine'
+         environment:
+           $ref: '#/components/schemas/BashServerToolEnvironment'
+-        sleep_after_seconds:
+-          $ref: '#/components/schemas/SandboxSleepAfterSeconds'
+       type: 'object'
+     BashServerToolEngine:
+       description: 'Which bash engine to use. "openrouter" runs commands server-side in the OpenRouter sandbox. "auto" (default) and "native" use native passthrough, returning the tool call to your application to run client-side; OpenRouter does not execute the commands.'
+@@ -4564,7 +4582,9 @@ components:
+         created_at: '2025-08-24T10:30:00Z'
+         disabled: false
+         id: '11111111-2222-3333-4444-555555555555'
++        is_byok_only: false
+         is_fallback: false
++        is_required: false
+         label: 'sk-...AbCd'
+         name: 'Production OpenAI Key'
+         provider: 'openai'
+@@ -4612,8 +4632,16 @@ components:
+           example: '11111111-2222-3333-4444-555555555555'
+           format: 'uuid'
+           type: 'string'
++        is_byok_only:
++          description: 'Whether OpenRouter''s shared endpoints on this provider are removed for every model, including models outside `allowed_models` and after all of your keys for the provider fail. The provider is skipped instead of spending OpenRouter credits. Only valid on non-fallback credentials.'
++          example: false
++          type: 'boolean'
+         is_fallback:
+-          description: 'Whether this credential is treated as a fallback — used only after non-fallback keys for the same provider have been tried.'
++          description: 'Whether this credential is treated as a fallback — used only after non-fallback keys for the same provider have been tried. Cannot be combined with `is_byok_only`.'
++          example: false
++          type: 'boolean'
++        is_required:
++          description: 'Whether OpenRouter''s shared endpoints on this provider are removed for the models this credential applies to (its `allowed_models`, or every model when `null`). Requests for those models run only on your keys; models outside the allowlist may still fall back to shared capacity on this provider.'
+           example: false
+           type: 'boolean'
+         label:
+@@ -4646,6 +4674,8 @@ components:
+         - 'label'
+         - 'disabled'
+         - 'is_fallback'
++        - 'is_required'
++        - 'is_byok_only'
+         - 'allowed_models'
+         - 'allowed_api_key_hashes'
+         - 'allowed_user_ids'
+@@ -4660,9 +4690,11 @@ components:
+         - 'akashml'
+         - 'alibaba'
+         - 'amazon-bedrock'
++        - 'amazon-bedrock/claude-on-aws'
+         - 'amazon-nova'
+         - 'ambient'
+         - 'anthropic'
++        - 'anthropic/2'
+         - 'arcee-ai'
+         - 'atlas-cloud'
+         - 'avian'
+@@ -4675,6 +4707,7 @@ components:
+         - 'chutes'
+         - 'cirrascale'
+         - 'clarifai'
++        - 'claude-on-aws'
+         - 'cloudflare'
+         - 'cohere'
+         - 'coreweave'
+@@ -4718,7 +4751,7 @@ components:
+         - 'modular'
+         - 'moonshotai'
+         - 'morph'
+-        - 'ncompass'
++        - 'near-ai'
+         - 'nebius'
+         - 'nex-agi'
+         - 'nextbit'
+@@ -4732,7 +4765,7 @@ components:
+         - 'perplexity'
+         - 'phala'
+         - 'poolside'
+-        - 'prime-intellect'
++        - 'primeintellect'
+         - 'quiver'
+         - 'recraft'
+         - 'reka'
+@@ -5089,6 +5122,20 @@ components:
+         content: 'This is a message from the developer.'
+         role: 'developer'
+       properties:
++        configuration_update:
++          additionalProperties: false
++          description: 'OpenRouter extension. Same as the system message `configuration_update`: changes reasoning effort from this point in the conversation onward without invalidating the prompt cache for the preceding turns.'
++          example:
++            reasoning:
++              effort: 'low'
++          properties:
++            reasoning:
++              $ref: '#/components/schemas/ConfigurationUpdateReasoning'
++          required:
++            - 'reasoning'
++          type:
++            - 'object'
++            - 'null'
+         content:
+           anyOf:
+             - type: 'string'
+@@ -5263,6 +5310,7 @@ components:
+         - $ref: '#/components/schemas/FilesServerTool'
+         - $ref: '#/components/schemas/FusionServerTool_OpenRouter'
+         - $ref: '#/components/schemas/ImageGenerationServerTool_OpenRouter'
++        - $ref: '#/components/schemas/MemoryServerTool'
+         - $ref: '#/components/schemas/ChatSearchModelsServerTool'
+         - $ref: '#/components/schemas/SubagentServerTool_OpenRouter'
+         - $ref: '#/components/schemas/WebFetchServerTool'
+@@ -7344,8 +7392,16 @@ components:
+           description: 'Whether this credential should be created in a disabled state.'
+           example: false
+           type: 'boolean'
++        is_byok_only:
++          description: 'Whether OpenRouter''s shared endpoints on this provider are removed for every model, including models outside `allowed_models` and after all of your keys for the provider fail. The provider is skipped instead of spending OpenRouter credits. Only valid on non-fallback credentials. Defaults to `false`.'
++          example: false
++          type: 'boolean'
+         is_fallback:
+-          description: 'Whether this credential is treated as a fallback — used only after non-fallback keys for the same provider have been tried.'
++          description: 'Whether this credential is treated as a fallback — used only after non-fallback keys for the same provider have been tried. Cannot be combined with `is_byok_only`.'
++          example: false
++          type: 'boolean'
++        is_required:
++          description: 'Whether OpenRouter''s shared endpoints on this provider are removed for the models this credential applies to (its `allowed_models`, or every model when `null`). Requests for those models run only on your keys; models outside the allowlist may still fall back to shared capacity on this provider. Defaults to `false`.'
+           example: false
+           type: 'boolean'
+         key:
+@@ -7380,7 +7436,9 @@ components:
+           created_at: '2025-08-24T10:30:00Z'
+           disabled: false
+           id: '11111111-2222-3333-4444-555555555555'
++          is_byok_only: false
+           is_fallback: false
++          is_required: false
+           label: 'sk-...AbCd'
+           name: 'Production OpenAI Key'
+           provider: 'openai'
+@@ -7972,6 +8030,10 @@ components:
+         name: 'my_tool'
+         type: 'custom'
+       properties:
++        async:
++          description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++          example: true
++          type: 'boolean'
+         description:
+           type: 'string'
+         format:
+@@ -9360,17 +9422,17 @@ components:
+       example:
+         analysis_models:
+           - '~anthropic/claude-opus-latest'
+-          - '~openai/gpt-latest'
++          - '~openai/gpt-sol-latest'
+           - '~google/gemini-pro-latest'
+         enabled: true
+         id: 'fusion'
+         model: '~anthropic/claude-opus-latest'
+       properties:
+         analysis_models:
+-          description: 'For a Fusion run started by the `openrouter/fusion` model slug or `openrouter:fusion` server tool, slugs of models to run in parallel as the "expert panel" the analyst analyzes. Each model receives the same user prompt with web_search + web_fetch enabled. Capped at 8 models to bound cost amplification. When omitted, defaults to the Quality preset from the /labs/fusion UI (~anthropic/claude-opus-latest, ~openai/gpt-latest, ~google/gemini-pro-latest).'
++          description: 'For a Fusion run started by the `openrouter/fusion` model slug or `openrouter:fusion` server tool, slugs of models to run in parallel as the "expert panel" the analyst analyzes. Each model receives the same user prompt with web_search + web_fetch enabled. Capped at 8 models to bound cost amplification. When omitted, defaults to the Quality preset from the /labs/fusion UI (~anthropic/claude-opus-latest, ~openai/gpt-sol-latest, ~google/gemini-pro-latest).'
+           example:
+             - '~anthropic/claude-opus-latest'
+-            - '~openai/gpt-latest'
++            - '~openai/gpt-sol-latest'
+             - '~google/gemini-pro-latest'
+           items:
+             type: 'string'
+@@ -9459,7 +9521,7 @@ components:
+         parameters:
+           analysis_models:
+             - '~anthropic/claude-opus-latest'
+-            - '~openai/gpt-latest'
++            - '~openai/gpt-sol-latest'
+         type: 'openrouter:fusion'
+       properties:
+         parameters:
+@@ -9476,14 +9538,14 @@ components:
+       example:
+         analysis_models:
+           - '~anthropic/claude-opus-latest'
+-          - '~openai/gpt-latest'
++          - '~openai/gpt-sol-latest'
+           - '~google/gemini-pro-latest'
+       properties:
+         analysis_models:
+           description: 'Slugs of models to run in parallel as the analysis panel. Each model receives the user prompt with openrouter:web_search and openrouter:web_fetch enabled, then an analyst model summarizes the collective output into structured analysis JSON. Capped at 8 models to bound cost amplification. Defaults to the Quality preset from /labs/fusion.'
+           example:
+             - '~anthropic/claude-opus-latest'
+-            - '~openai/gpt-latest'
++            - '~openai/gpt-sol-latest'
+             - '~google/gemini-pro-latest'
+           items:
+             type: 'string'
+@@ -10110,7 +10172,9 @@ components:
+           created_at: '2025-08-24T10:30:00Z'
+           disabled: false
+           id: '11111111-2222-3333-4444-555555555555'
++          is_byok_only: false
+           is_fallback: false
++          is_required: false
+           label: 'sk-...AbCd'
+           name: 'Production OpenAI Key'
+           provider: 'openai'
+@@ -10893,6 +10957,8 @@ components:
+             - 'low'
+             - 'medium'
+             - 'high'
++            - 'xhigh'
++            - 'max'
+           example: 'high'
+           type: 'string'
+           x-speakeasy-unknown-values: allow
+@@ -12124,7 +12190,9 @@ components:
+             created_at: '2025-08-24T10:30:00Z'
+             disabled: false
+             id: '11111111-2222-3333-4444-555555555555'
++            is_byok_only: false
+             is_fallback: false
++            is_required: false
+             label: 'sk-...AbCd'
+             name: 'Production OpenAI Key'
+             provider: 'openai'
+@@ -12974,6 +13042,37 @@ components:
+         - 'assigned_by'
+         - 'created_at'
+       type: 'object'
++    MemoryServerTool:
++      description: 'OpenRouter built-in server tool: persistent, namespace-scoped memory the model can write, read, list, and delete. The caller fixes the namespace in `parameters`; the model cannot choose or change it. Memories are stored via the Files API in the API key''s workspace and persist across requests.'
++      example:
++        parameters:
++          namespace: 'user_42'
++        type: 'openrouter:memory'
++      properties:
++        parameters:
++          $ref: '#/components/schemas/MemoryServerToolConfig'
++        type:
++          enum:
++            - 'openrouter:memory'
++          type: 'string'
++      required:
++        - 'type'
++        - 'parameters'
++      type: 'object'
++    MemoryServerToolConfig:
++      description: 'Configuration for the openrouter:memory server tool'
++      example:
++        namespace: 'user_42'
++      properties:
++        namespace:
++          description: 'The memory bank every call in this request operates on. Memories in different namespaces are fully isolated. Up to 64 characters: letters, digits, "_", "-", and single "." or ":" separators. Set by the caller, never by the model.'
++          example: 'user_42'
++          maxLength: 64
++          minLength: 1
++          type: 'string'
++      required:
++        - 'namespace'
++      type: 'object'
+     MessagesAdvisorToolResultBlock:
+       description: 'Advisor tool result from a prior assistant turn, replayed back to the model on the next turn. Mirrors the block Anthropic returns in assistant content when the `advisor_20260301` tool runs.'
+       example:
+@@ -14060,6 +14159,7 @@ components:
+               - $ref: '#/components/schemas/AnthropicToolSearchToolRegex'
+               - $ref: '#/components/schemas/ShellServerTool_OpenRouter'
+               - $ref: '#/components/schemas/ToolSearchServerTool'
++              - $ref: '#/components/schemas/MemoryServerTool'
+           type: 'array'
+         top_k:
+           type: 'integer'
+@@ -14297,6 +14397,7 @@ components:
+                 - 'Lynn'
+                 - 'Mancer'
+                 - 'Modal'
++                - 'NCompass'
+                 - 'Nineteen'
+                 - 'OctoAI'
+                 - 'Recursal'
+@@ -14372,7 +14473,7 @@ components:
+                 - 'Moonshot AI'
+                 - 'Morph'
+                 - 'VoyageAI by MongoDB'
+-                - 'NCompass'
++                - 'Near AI'
+                 - 'Nebius'
+                 - 'Nex AGI'
+                 - 'NextBit'
+@@ -15159,6 +15260,10 @@ components:
+           type:
+             - 'array'
+             - 'null'
++        async:
++          description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++          example: true
++          type: 'boolean'
+         defer_loading:
+           type: 'boolean'
+         description:
+@@ -17911,6 +18016,10 @@ components:
+         name: 'apply_patch'
+         type: 'custom_tool_call'
+       properties:
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -17977,6 +18086,10 @@ components:
+       properties:
+         arguments:
+           type: 'string'
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -19389,6 +19502,10 @@ components:
+         status: 'completed'
+         type: 'custom_tool_call'
+       properties:
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -19822,6 +19939,10 @@ components:
+         status: 'completed'
+         type: 'custom_tool_call'
+       properties:
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -19940,6 +20061,10 @@ components:
+       properties:
+         arguments:
+           type: 'string'
++        async:
++          description: 'True when the model called a tool declared with `async: true` and may continue its turn before the output is returned. Return the result in a later request as a `function_call_output` with this `call_id`.'
++          example: true
++          type: 'boolean'
+         call_id:
+           type: 'string'
+         id:
+@@ -20211,22 +20336,36 @@ components:
+     OutputMemoryServerToolItem:
+       description: 'An openrouter:memory server tool output item'
+       example:
+-        action: 'read'
+         id: 'mem_tmp_abc123'
+-        key: 'user_preference'
++        operation: 'read'
++        path: 'preferences/tone'
++        result: '{"path":"preferences/tone","content":"Prefers concise answers","sizeBytes":24}'
+         status: 'completed'
+         type: 'openrouter:memory'
+       properties:
+-        action:
+-          enum:
+-            - 'read'
+-            - 'write'
+-            - 'delete'
++        arguments:
++          description: 'The raw tool-call arguments string as emitted by the model.'
++          type:
++            - 'string'
++            - 'null'
++        call_id:
++          description: 'The model-generated tool call id from the originating turn.'
++          type:
++            - 'string'
++            - 'null'
++        error:
++          description: 'Error message when the memory operation failed.'
+           type: 'string'
+-          x-speakeasy-unknown-values: allow
+         id:
+           type: 'string'
+-        key:
++        operation:
++          description: 'The memory operation performed (write, read, list, or delete).'
++          type: 'string'
++        path:
++          description: 'The memory path supplied in the tool-call arguments. For list, the folder that was listed; absent for the namespace root. The namespace is not echoed: it is fixed by the request-level tool configuration, not by the model.'
++          type: 'string'
++        result:
++          description: 'JSON-serialized result of the memory operation.'
+           type: 'string'
+         status:
+           $ref: '#/components/schemas/ToolCallStatus'
+@@ -20234,7 +20373,6 @@ components:
+           enum:
+             - 'openrouter:memory'
+           type: 'string'
+-        value: {}
+       required:
+         - 'status'
+         - 'type'
+@@ -21582,7 +21720,7 @@ components:
+         - 'Moonshot AI'
+         - 'Morph'
+         - 'VoyageAI by MongoDB'
+-        - 'NCompass'
++        - 'Near AI'
+         - 'Nebius'
+         - 'Nex AGI'
+         - 'NextBit'
+@@ -21892,6 +22030,9 @@ components:
+         ncompass:
+           additionalProperties: {}
+           type: 'object'
++        near-ai:
++          additionalProperties: {}
++          type: 'object'
+         nebius:
+           additionalProperties: {}
+           type: 'object'
+@@ -21937,7 +22078,7 @@ components:
+         poolside:
+           additionalProperties: {}
+           type: 'object'
+-        prime-intellect:
++        primeintellect:
+           additionalProperties: {}
+           type: 'object'
+         quiver:
+@@ -22259,6 +22400,7 @@ components:
+             - 'Lynn'
+             - 'Mancer'
+             - 'Modal'
++            - 'NCompass'
+             - 'Nineteen'
+             - 'OctoAI'
+             - 'Recursal'
+@@ -22334,7 +22476,7 @@ components:
+             - 'Moonshot AI'
+             - 'Morph'
+             - 'VoyageAI by MongoDB'
+-            - 'NCompass'
++            - 'Near AI'
+             - 'Nebius'
+             - 'Nex AGI'
+             - 'NextBit'
+@@ -23711,6 +23853,10 @@ components:
+               - allOf:
+                   - $ref: '#/components/schemas/FunctionTool'
+                   - properties:
++                      async:
++                        description: 'Lets the model keep working after calling this tool instead of waiting for its output. The tool is still executed by the client; return the result in a later request as a `function_call_output` with the original `call_id`. Only honored by providers whose Responses API supports async tools; ignored elsewhere.'
++                        example: true
++                        type: 'boolean'
+                       defer_loading:
+                         description: 'Withhold this tool from the model until `openrouter:tool_search` finds it. Requires the tool search server tool; at least one tool must remain non-deferred.'
+                         example: true
+@@ -23753,6 +23899,7 @@ components:
+               - $ref: '#/components/schemas/SubagentServerTool_OpenRouter'
+               - $ref: '#/components/schemas/DatetimeServerTool'
+               - $ref: '#/components/schemas/FilesServerTool'
++              - $ref: '#/components/schemas/MemoryServerTool'
+               - $ref: '#/components/schemas/FusionServerTool_OpenRouter'
+               - $ref: '#/components/schemas/ImageGenerationServerTool_OpenRouter'
+               - $ref: '#/components/schemas/SearchModelsServerTool_OpenRouter'
+@@ -23844,10 +23991,6 @@ components:
+       example: 'direct'
+       type: 'string'
+       x-speakeasy-unknown-values: allow
+-    SandboxSleepAfterSeconds:
+-      description: 'How long (in seconds) the container stays warm after its last command before sleeping, freeing its capacity slot. Idle-based: each command renews the timer. Defaults to 300 (5 minutes); capped at 14400 (4 hours).'
+-      example: 300
+-      type: 'integer'
+     ScimGroup:
+       example:
+         created_at: '2025-08-24T10:30:00.000Z'
+@@ -24388,8 +24531,6 @@ components:
+           $ref: '#/components/schemas/ShellServerToolEngine'
+         environment:
+           $ref: '#/components/schemas/ShellServerToolEnvironment'
+-        sleep_after_seconds:
+-          $ref: '#/components/schemas/SandboxSleepAfterSeconds'
+       type: 'object'
+     ShellServerToolEngine:
+       description: 'Which shell engine to use. "openrouter" runs commands server-side in the OpenRouter sandbox. "auto" (default) keeps the provider''s native hosted shell when available (OpenAI); on other providers the call is routed to the OpenRouter sandbox.'
+@@ -26499,8 +26640,16 @@ components:
+           description: 'Whether this credential is disabled.'
+           example: false
+           type: 'boolean'
++        is_byok_only:
++          description: 'Whether OpenRouter''s shared endpoints on this provider are removed for every model, including models outside `allowed_models` and after all of your keys for the provider fail. The provider is skipped instead of spending OpenRouter credits. Only valid on non-fallback credentials. Omit to leave the stored value unchanged.'
++          example: false
++          type: 'boolean'
+         is_fallback:
+-          description: 'Whether this credential is treated as a fallback — used only after non-fallback keys for the same provider have been tried.'
++          description: 'Whether this credential is treated as a fallback — used only after non-fallback keys for the same provider have been tried. Cannot be combined with `is_byok_only`. Omit to leave the stored value unchanged.'
++          example: false
++          type: 'boolean'
++        is_required:
++          description: 'Whether OpenRouter''s shared endpoints on this provider are removed for the models this credential applies to (its `allowed_models`, or every model when `null`). Requests for those models run only on your keys; models outside the allowlist may still fall back to shared capacity on this provider. Omit to leave the stored value unchanged.'
+           example: false
+           type: 'boolean'
+         key:
+@@ -26525,7 +26674,9 @@ components:
+           created_at: '2025-08-24T10:30:00Z'
+           disabled: false
+           id: '11111111-2222-3333-4444-555555555555'
++          is_byok_only: false
+           is_fallback: false
++          is_required: false
+           label: 'sk-...AbCd'
+           name: 'Updated OpenAI Key'
+           provider: 'openai'
+@@ -29666,9 +29817,11 @@ paths:
+               - 'akashml'
+               - 'alibaba'
+               - 'amazon-bedrock'
++              - 'amazon-bedrock/claude-on-aws'
+               - 'amazon-nova'
+               - 'ambient'
+               - 'anthropic'
++              - 'anthropic/2'
+               - 'arcee-ai'
+               - 'atlas-cloud'
+               - 'avian'
+@@ -29681,6 +29834,7 @@ paths:
+               - 'chutes'
+               - 'cirrascale'
+               - 'clarifai'
++              - 'claude-on-aws'
+               - 'cloudflare'
+               - 'cohere'
+               - 'coreweave'
+@@ -29724,7 +29878,7 @@ paths:
+               - 'modular'
+               - 'moonshotai'
+               - 'morph'
+-              - 'ncompass'
++              - 'near-ai'
+               - 'nebius'
+               - 'nex-agi'
+               - 'nextbit'
+@@ -29738,7 +29892,7 @@ paths:
+               - 'perplexity'
+               - 'phala'
+               - 'poolside'
+-              - 'prime-intellect'
++              - 'primeintellect'
+               - 'quiver'
+               - 'recraft'
+               - 'reka'
+@@ -29782,7 +29936,9 @@ paths:
+                     created_at: '2025-08-24T10:30:00Z'
+                     disabled: false
+                     id: '11111111-2222-3333-4444-555555555555'
++                    is_byok_only: false
+                     is_fallback: false
++                    is_required: false
+                     label: 'sk-...AbCd'
+                     name: 'Production OpenAI Key'
+                     provider: 'openai'
+@@ -29862,7 +30018,9 @@ paths:
+                   created_at: '2025-08-24T10:30:00Z'
+                   disabled: false
+                   id: '11111111-2222-3333-4444-555555555555'
++                  is_byok_only: false
+                   is_fallback: false
++                  is_required: false
+                   label: 'sk-...AbCd'
+                   name: 'Production OpenAI Key'
+                   provider: 'openai'
+@@ -30001,7 +30159,9 @@ paths:
+                   created_at: '2025-08-24T10:30:00Z'
+                   disabled: false
+                   id: '11111111-2222-3333-4444-555555555555'
++                  is_byok_only: false
+                   is_fallback: false
++                  is_required: false
+                   label: 'sk-...AbCd'
+                   name: 'Production OpenAI Key'
+                   provider: 'openai'
+@@ -30078,7 +30238,9 @@ paths:
+                   created_at: '2025-08-24T10:30:00Z'
+                   disabled: false
+                   id: '11111111-2222-3333-4444-555555555555'
++                  is_byok_only: false
+                   is_fallback: false
++                  is_required: false
+                   label: 'sk-...AbCd'
+                   name: 'Updated OpenAI Key'
+                   provider: 'openai'
+@@ -41235,10 +41397,10 @@ paths:
+       - $ref: "#/components/parameters/AppIdentifier"
+       - $ref: "#/components/parameters/AppDisplayName"
+       - $ref: "#/components/parameters/AppCategories"
+-  /workspaces/{id}/budgets:
++  /workspaces/{id}/members:
+     get:
+-      description: 'List all budgets configured for a workspace. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'listWorkspaceBudgets'
++      description: 'List all members of a workspace. Returns paginated results. For the default workspace, returns all organization members (implicit membership). [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'listWorkspaceMembers'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+@@ -41249,6 +41411,29 @@ paths:
+             example: 'production'
+             minLength: 1
+             type: 'string'
++        - description: 'Number of records to skip for pagination'
++          in: 'query'
++          name: 'offset'
++          required: false
++          schema:
++            default: 0
++            description: 'Number of records to skip for pagination'
++            example: 0
++            minimum: 0
++            type:
++              - 'integer'
++              - 'null'
++        - description: 'Maximum number of records to return (max 100)'
++          in: 'query'
++          name: 'limit'
++          required: false
++          schema:
++            default: 50
++            description: 'Maximum number of records to return (max 100)'
++            example: 50
++            maximum: 100
++            minimum: 1
++            type: 'integer'
+       responses:
+         '200':
+           content:
+@@ -41256,15 +41441,14 @@ paths:
+               example:
+                 data:
+                   - created_at: '2025-08-24T10:30:00Z'
+-                    id: '770e8400-e29b-41d4-a716-446655440000'
+-                    limit_usd: 100
+-                    reset_interval: 'monthly'
+-                    updated_at: '2025-08-24T15:45:00Z'
++                    id: '660e8400-e29b-41d4-a716-446655440000'
++                    role: 'member'
++                    user_id: 'user_abc123'
+                     workspace_id: '550e8400-e29b-41d4-a716-446655440000'
+-                include_byok_in_budgets: false
++                total_count: 1
+               schema:
+-                $ref: '#/components/schemas/ListWorkspaceBudgetsResponse'
+-          description: 'Budgets retrieved successfully'
++                $ref: '#/components/schemas/ListWorkspaceMembersResponse'
++          description: 'List of workspace members'
+         '401':
+           content:
+             application/json:
+@@ -41275,6 +41459,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -41295,18 +41489,29 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'List workspace budgets'
++      summary: 'List workspace members'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'listBudgets'
++      x-speakeasy-name-override: 'listMembers'
++      x-speakeasy-pagination:
++        inputs:
++          - in: 'parameters'
++            name: 'offset'
++            type: 'offset'
++          - in: 'parameters'
++            name: 'limit'
++            type: 'limit'
++        outputs:
++          results: '$.data'
++        type: 'offsetLimit'
+     parameters:
+       - $ref: "#/components/parameters/AppIdentifier"
+       - $ref: "#/components/parameters/AppDisplayName"
+       - $ref: "#/components/parameters/AppCategories"
+-  /workspaces/{id}/budgets/{interval}:
+-    delete:
+-      description: 'Remove the budget for a given interval. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'deleteWorkspaceBudget'
++  /workspaces/{id}/members/add:
++    post:
++      description: 'Add multiple organization members to a workspace. Members are assigned the same role they hold in the organization. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'bulkAddWorkspaceMembers'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+@@ -41317,22 +41522,31 @@ paths:
+             example: 'production'
+             minLength: 1
+             type: 'string'
+-        - description: 'Budget reset interval. Use "lifetime" for a one-time budget that never resets.'
+-          example: 'monthly'
+-          in: 'path'
+-          name: 'interval'
+-          required: true
+-          schema:
+-            $ref: '#/components/schemas/WorkspaceBudgetInterval'
++      requestBody:
++        content:
++          application/json:
++            example:
++              user_ids:
++                - 'user_abc123'
++                - 'user_def456'
++            schema:
++              $ref: '#/components/schemas/BulkAddWorkspaceMembersRequest'
++        required: true
+       responses:
+         '200':
+           content:
+             application/json:
+               example:
+-                deleted: true
++                added_count: 1
++                data:
++                  - created_at: '2025-08-24T10:30:00Z'
++                    id: '660e8400-e29b-41d4-a716-446655440000'
++                    role: 'member'
++                    user_id: 'user_abc123'
++                    workspace_id: '550e8400-e29b-41d4-a716-446655440000'
+               schema:
+-                $ref: '#/components/schemas/DeleteWorkspaceBudgetResponse'
+-          description: 'Budget deleted successfully'
++                $ref: '#/components/schemas/BulkAddWorkspaceMembersResponse'
++          description: 'Members added successfully'
+         '400':
+           content:
+             application/json:
+@@ -41353,6 +41567,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -41373,13 +41597,18 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'Delete a workspace budget'
++      summary: 'Bulk add members to a workspace'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'deleteBudget'
+-    get:
+-      description: 'Retrieve the budget for a given interval. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'getWorkspaceBudget'
++      x-speakeasy-name-override: 'bulkAddMembers'
++    parameters:
++      - $ref: "#/components/parameters/AppIdentifier"
++      - $ref: "#/components/parameters/AppDisplayName"
++      - $ref: "#/components/parameters/AppCategories"
++  /workspaces/{id}/members/remove:
++    post:
++      description: 'Remove multiple members from a workspace. Members with active API keys in the workspace cannot be removed. SCIM-managed members cannot be removed; changes must be made in your identity provider. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'bulkRemoveWorkspaceMembers'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+@@ -41390,29 +41619,25 @@ paths:
+             example: 'production'
+             minLength: 1
+             type: 'string'
+-        - description: 'Budget reset interval. Use "lifetime" for a one-time budget that never resets.'
+-          example: 'monthly'
+-          in: 'path'
+-          name: 'interval'
+-          required: true
+-          schema:
+-            $ref: '#/components/schemas/WorkspaceBudgetInterval'
++      requestBody:
++        content:
++          application/json:
++            example:
++              user_ids:
++                - 'user_abc123'
++                - 'user_def456'
++            schema:
++              $ref: '#/components/schemas/BulkRemoveWorkspaceMembersRequest'
++        required: true
+       responses:
+         '200':
+           content:
+             application/json:
+               example:
+-                data:
+-                  created_at: '2025-08-24T10:30:00Z'
+-                  id: '770e8400-e29b-41d4-a716-446655440000'
+-                  limit_usd: 100
+-                  reset_interval: 'monthly'
+-                  updated_at: '2025-08-24T15:45:00Z'
+-                  workspace_id: '550e8400-e29b-41d4-a716-446655440000'
+-                include_byok_in_budgets: true
++                removed_count: 2
+               schema:
+-                $ref: '#/components/schemas/GetWorkspaceBudgetResponse'
+-          description: 'Budget retrieved successfully'
++                $ref: '#/components/schemas/BulkRemoveWorkspaceMembersResponse'
++          description: 'Members removed successfully'
+         '400':
+           content:
+             application/json:
+@@ -41433,6 +41658,16 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
++        '403':
++          content:
++            application/json:
++              example:
++                error:
++                  code: 403
++                  message: 'Only management keys can perform this operation'
++              schema:
++                $ref: '#/components/schemas/ForbiddenResponse'
++          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -41453,65 +41688,44 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'Get a workspace budget'
++      summary: 'Bulk remove members from a workspace'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'getBudget'
+-    put:
+-      description: 'Create or update the budget for a given interval. Budget limits must strictly decrease as the interval narrows (lifetime > monthly > weekly > daily). The optional `include_byok_in_budgets` flag is a workspace-wide setting: when provided it applies to every budget interval for the workspace, not just the interval in this request. Note that a change made here is applied to budget enforcement immediately, but an already-open workspace settings page in the web dashboard may keep showing the previous value until it is reloaded. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'upsertWorkspaceBudget'
++      x-speakeasy-name-override: 'bulkRemoveMembers'
++    parameters:
++      - $ref: "#/components/parameters/AppIdentifier"
++      - $ref: "#/components/parameters/AppDisplayName"
++      - $ref: "#/components/parameters/AppCategories"
++  /workspaces/{workspace_ref}/budgets:
++    get:
++      description: 'List all budgets configured for a workspace. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'listWorkspaceBudgets'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+-          name: 'id'
++          name: 'workspace_ref'
+           required: true
+           schema:
+             description: 'The workspace ID (UUID) or slug'
+             example: 'production'
+             minLength: 1
+             type: 'string'
+-        - description: 'Budget reset interval. Use "lifetime" for a one-time budget that never resets.'
+-          example: 'monthly'
+-          in: 'path'
+-          name: 'interval'
+-          required: true
+-          schema:
+-            $ref: '#/components/schemas/WorkspaceBudgetInterval'
+-      requestBody:
+-        content:
+-          application/json:
+-            example:
+-              include_byok_in_budgets: true
+-              limit_usd: 100
+-            schema:
+-              $ref: '#/components/schemas/UpsertWorkspaceBudgetRequest'
+-        required: true
+       responses:
+         '200':
+           content:
+             application/json:
+               example:
+                 data:
+-                  created_at: '2025-08-24T10:30:00Z'
+-                  id: '770e8400-e29b-41d4-a716-446655440000'
+-                  limit_usd: 100
+-                  reset_interval: 'monthly'
+-                  updated_at: '2025-08-24T15:45:00Z'
+-                  workspace_id: '550e8400-e29b-41d4-a716-446655440000'
+-                include_byok_in_budgets: true
+-              schema:
+-                $ref: '#/components/schemas/UpsertWorkspaceBudgetResponse'
+-          description: 'Budget created or updated successfully'
+-        '400':
+-          content:
+-            application/json:
+-              example:
+-                error:
+-                  code: 400
+-                  message: 'Invalid request parameters'
++                  - created_at: '2025-08-24T10:30:00Z'
++                    id: '770e8400-e29b-41d4-a716-446655440000'
++                    limit_usd: 100
++                    reset_interval: 'monthly'
++                    updated_at: '2025-08-24T15:45:00Z'
++                    workspace_id: '550e8400-e29b-41d4-a716-446655440000'
++                include_byok_in_budgets: false
+               schema:
+-                $ref: '#/components/schemas/BadRequestResponse'
+-          description: 'Bad Request - Invalid request parameters or malformed input'
++                $ref: '#/components/schemas/ListWorkspaceBudgetsResponse'
++          description: 'Budgets retrieved successfully'
+         '401':
+           content:
+             application/json:
+@@ -41542,86 +41756,64 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'Create or update a workspace budget'
++      summary: 'List workspace budgets'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'setBudget'
++      x-speakeasy-name-override: 'listBudgets'
+     parameters:
+       - $ref: "#/components/parameters/AppIdentifier"
+       - $ref: "#/components/parameters/AppDisplayName"
+       - $ref: "#/components/parameters/AppCategories"
+-  /workspaces/{id}/members:
+-    get:
+-      description: 'List all members of a workspace. Returns paginated results. For the default workspace, returns all organization members (implicit membership). [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'listWorkspaceMembers'
++  /workspaces/{workspace_ref}/budgets/{interval}:
++    delete:
++      description: 'Remove the budget for a given interval. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'deleteWorkspaceBudget'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+-          name: 'id'
++          name: 'workspace_ref'
+           required: true
+           schema:
+             description: 'The workspace ID (UUID) or slug'
+             example: 'production'
+             minLength: 1
+             type: 'string'
+-        - description: 'Number of records to skip for pagination'
+-          in: 'query'
+-          name: 'offset'
+-          required: false
+-          schema:
+-            default: 0
+-            description: 'Number of records to skip for pagination'
+-            example: 0
+-            minimum: 0
+-            type:
+-              - 'integer'
+-              - 'null'
+-        - description: 'Maximum number of records to return (max 100)'
+-          in: 'query'
+-          name: 'limit'
+-          required: false
++        - description: 'Budget reset interval. Use "lifetime" for a one-time budget that never resets.'
++          example: 'monthly'
++          in: 'path'
++          name: 'interval'
++          required: true
+           schema:
+-            default: 50
+-            description: 'Maximum number of records to return (max 100)'
+-            example: 50
+-            maximum: 100
+-            minimum: 1
+-            type: 'integer'
++            $ref: '#/components/schemas/WorkspaceBudgetInterval'
+       responses:
+         '200':
+           content:
+             application/json:
+               example:
+-                data:
+-                  - created_at: '2025-08-24T10:30:00Z'
+-                    id: '660e8400-e29b-41d4-a716-446655440000'
+-                    role: 'member'
+-                    user_id: 'user_abc123'
+-                    workspace_id: '550e8400-e29b-41d4-a716-446655440000'
+-                total_count: 1
++                deleted: true
+               schema:
+-                $ref: '#/components/schemas/ListWorkspaceMembersResponse'
+-          description: 'List of workspace members'
+-        '401':
++                $ref: '#/components/schemas/DeleteWorkspaceBudgetResponse'
++          description: 'Budget deleted successfully'
++        '400':
+           content:
+             application/json:
+               example:
+                 error:
+-                  code: 401
+-                  message: 'Missing Authentication header'
++                  code: 400
++                  message: 'Invalid request parameters'
+               schema:
+-                $ref: '#/components/schemas/UnauthorizedResponse'
+-          description: 'Unauthorized - Authentication required or invalid credentials'
+-        '403':
++                $ref: '#/components/schemas/BadRequestResponse'
++          description: 'Bad Request - Invalid request parameters or malformed input'
++        '401':
+           content:
+             application/json:
+               example:
+                 error:
+-                  code: 403
+-                  message: 'Only management keys can perform this operation'
++                  code: 401
++                  message: 'Missing Authentication header'
+               schema:
+-                $ref: '#/components/schemas/ForbiddenResponse'
+-          description: 'Forbidden - Authentication successful but insufficient permissions'
++                $ref: '#/components/schemas/UnauthorizedResponse'
++          description: 'Unauthorized - Authentication required or invalid credentials'
+         '404':
+           content:
+             application/json:
+@@ -41642,64 +41834,46 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'List workspace members'
++      summary: 'Delete a workspace budget'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'listMembers'
+-      x-speakeasy-pagination:
+-        inputs:
+-          - in: 'parameters'
+-            name: 'offset'
+-            type: 'offset'
+-          - in: 'parameters'
+-            name: 'limit'
+-            type: 'limit'
+-        outputs:
+-          results: '$.data'
+-        type: 'offsetLimit'
+-    parameters:
+-      - $ref: "#/components/parameters/AppIdentifier"
+-      - $ref: "#/components/parameters/AppDisplayName"
+-      - $ref: "#/components/parameters/AppCategories"
+-  /workspaces/{id}/members/add:
+-    post:
+-      description: 'Add multiple organization members to a workspace. Members are assigned the same role they hold in the organization. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'bulkAddWorkspaceMembers'
++      x-speakeasy-name-override: 'deleteBudget'
++    get:
++      description: 'Retrieve the budget for a given interval. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'getWorkspaceBudget'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+-          name: 'id'
++          name: 'workspace_ref'
+           required: true
+           schema:
+             description: 'The workspace ID (UUID) or slug'
+             example: 'production'
+             minLength: 1
+             type: 'string'
+-      requestBody:
+-        content:
+-          application/json:
+-            example:
+-              user_ids:
+-                - 'user_abc123'
+-                - 'user_def456'
+-            schema:
+-              $ref: '#/components/schemas/BulkAddWorkspaceMembersRequest'
+-        required: true
++        - description: 'Budget reset interval. Use "lifetime" for a one-time budget that never resets.'
++          example: 'monthly'
++          in: 'path'
++          name: 'interval'
++          required: true
++          schema:
++            $ref: '#/components/schemas/WorkspaceBudgetInterval'
+       responses:
+         '200':
+           content:
+             application/json:
+               example:
+-                added_count: 1
+                 data:
+-                  - created_at: '2025-08-24T10:30:00Z'
+-                    id: '660e8400-e29b-41d4-a716-446655440000'
+-                    role: 'member'
+-                    user_id: 'user_abc123'
+-                    workspace_id: '550e8400-e29b-41d4-a716-446655440000'
++                  created_at: '2025-08-24T10:30:00Z'
++                  id: '770e8400-e29b-41d4-a716-446655440000'
++                  limit_usd: 100
++                  reset_interval: 'monthly'
++                  updated_at: '2025-08-24T15:45:00Z'
++                  workspace_id: '550e8400-e29b-41d4-a716-446655440000'
++                include_byok_in_budgets: true
+               schema:
+-                $ref: '#/components/schemas/BulkAddWorkspaceMembersResponse'
+-          description: 'Members added successfully'
++                $ref: '#/components/schemas/GetWorkspaceBudgetResponse'
++          description: 'Budget retrieved successfully'
+         '400':
+           content:
+             application/json:
+@@ -41720,16 +41894,6 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
+-        '403':
+-          content:
+-            application/json:
+-              example:
+-                error:
+-                  code: 403
+-                  message: 'Only management keys can perform this operation'
+-              schema:
+-                $ref: '#/components/schemas/ForbiddenResponse'
+-          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -41750,47 +41914,55 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'Bulk add members to a workspace'
++      summary: 'Get a workspace budget'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'bulkAddMembers'
+-    parameters:
+-      - $ref: "#/components/parameters/AppIdentifier"
+-      - $ref: "#/components/parameters/AppDisplayName"
+-      - $ref: "#/components/parameters/AppCategories"
+-  /workspaces/{id}/members/remove:
+-    post:
+-      description: 'Remove multiple members from a workspace. Members with active API keys in the workspace cannot be removed. SCIM-managed members cannot be removed; changes must be made in your identity provider. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
+-      operationId: 'bulkRemoveWorkspaceMembers'
++      x-speakeasy-name-override: 'getBudget'
++    put:
++      description: 'Create or update the budget for a given interval. Budget limits must strictly decrease as the interval narrows (lifetime > monthly > weekly > daily). The optional `include_byok_in_budgets` flag is a workspace-wide setting: when provided it applies to every budget interval for the workspace, not just the interval in this request. Note that a change made here is applied to budget enforcement immediately, but an already-open workspace settings page in the web dashboard may keep showing the previous value until it is reloaded. [Management key](/docs/guides/overview/auth/management-api-keys) required.'
++      operationId: 'upsertWorkspaceBudget'
+       parameters:
+         - description: 'The workspace ID (UUID) or slug'
+           in: 'path'
+-          name: 'id'
++          name: 'workspace_ref'
+           required: true
+           schema:
+             description: 'The workspace ID (UUID) or slug'
+             example: 'production'
+             minLength: 1
+             type: 'string'
++        - description: 'Budget reset interval. Use "lifetime" for a one-time budget that never resets.'
++          example: 'monthly'
++          in: 'path'
++          name: 'interval'
++          required: true
++          schema:
++            $ref: '#/components/schemas/WorkspaceBudgetInterval'
+       requestBody:
+         content:
+           application/json:
+             example:
+-              user_ids:
+-                - 'user_abc123'
+-                - 'user_def456'
++              include_byok_in_budgets: true
++              limit_usd: 100
+             schema:
+-              $ref: '#/components/schemas/BulkRemoveWorkspaceMembersRequest'
++              $ref: '#/components/schemas/UpsertWorkspaceBudgetRequest'
+         required: true
+       responses:
+         '200':
+           content:
+             application/json:
+               example:
+-                removed_count: 2
++                data:
++                  created_at: '2025-08-24T10:30:00Z'
++                  id: '770e8400-e29b-41d4-a716-446655440000'
++                  limit_usd: 100
++                  reset_interval: 'monthly'
++                  updated_at: '2025-08-24T15:45:00Z'
++                  workspace_id: '550e8400-e29b-41d4-a716-446655440000'
++                include_byok_in_budgets: true
+               schema:
+-                $ref: '#/components/schemas/BulkRemoveWorkspaceMembersResponse'
+-          description: 'Members removed successfully'
++                $ref: '#/components/schemas/UpsertWorkspaceBudgetResponse'
++          description: 'Budget created or updated successfully'
+         '400':
+           content:
+             application/json:
+@@ -41811,16 +41983,6 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/UnauthorizedResponse'
+           description: 'Unauthorized - Authentication required or invalid credentials'
+-        '403':
+-          content:
+-            application/json:
+-              example:
+-                error:
+-                  code: 403
+-                  message: 'Only management keys can perform this operation'
+-              schema:
+-                $ref: '#/components/schemas/ForbiddenResponse'
+-          description: 'Forbidden - Authentication successful but insufficient permissions'
+         '404':
+           content:
+             application/json:
+@@ -41841,10 +42003,10 @@ paths:
+               schema:
+                 $ref: '#/components/schemas/InternalServerResponse'
+           description: 'Internal Server Error - Unexpected server error'
+-      summary: 'Bulk remove members from a workspace'
++      summary: 'Create or update a workspace budget'
+       tags:
+         - 'Workspaces'
+-      x-speakeasy-name-override: 'bulkRemoveMembers'
++      x-speakeasy-name-override: 'setBudget'
+     parameters:
+       - $ref: "#/components/parameters/AppIdentifier"
+       - $ref: "#/components/parameters/AppDisplayName"
+diff --git a/spec/pin.json b/spec/pin.json
+index 7c5de6b..84d53f9 100644
+--- a/spec/pin.json
++++ b/spec/pin.json
+@@ -1,9 +1,9 @@
+ {
+   "source": "https://openrouter.ai/openapi.yaml",
+-  "sha256": "d49dda786def31a8aa03b1fbc3de244459b35ee7aa4c859976d8a7d01bbc8f5d",
+-  "sizeBytes": 1476079,
+-  "retrievedAt": "2026-09-08T16:52:35Z",
+-  "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-09-08 via scripts/drift-refresh.sh (previous pin e88b0cec…).",
++  "sha256": "acfc35c92363d5aa89286a61406a6bf9ec3626bd19b08d8874105c77aa77d49a",
++  "sizeBytes": 1486271,
++  "retrievedAt": "2026-09-12T09:35:03Z",
++  "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-09-12 via scripts/drift-refresh.sh (previous pin d49dda78…).",
+   "generator": "io.github.nabobery.kotlin-sdkgen:0.4.0",
+   "overlays": [
+     { "id": "openrouter-allof-resolution-audit", "file": "overlays/allof-resolution-audit.yaml", "sha256": "ba61d7b66bf3cb2df5826dc4d62b6a62751538424b1c670fa76b5aa501b15b7d" },
+diff --git a/spec/sdkgen.yaml b/spec/sdkgen.yaml
+index 9b8f2ce..e9114e4 100644
+--- a/spec/sdkgen.yaml
++++ b/spec/sdkgen.yaml
+@@ -1,7 +1,7 @@
+ version: v1alpha1
+ source:
+   uri: openapi.yaml
+-  sha256: d49dda786def31a8aa03b1fbc3de244459b35ee7aa4c859976d8a7d01bbc8f5d
++  sha256: acfc35c92363d5aa89286a61406a6bf9ec3626bd19b08d8874105c77aa77d49a
+   acquisition:
+     mode: local
+     offline: true
