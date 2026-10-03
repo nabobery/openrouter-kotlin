@@ -1,9 +1,9 @@
 {
   "source": "https://openrouter.ai/openapi.yaml",
-  "sha256": "d49dda786def31a8aa03b1fbc3de244459b35ee7aa4c859976d8a7d01bbc8f5d",
-  "sizeBytes": 1476079,
-  "retrievedAt": "2026-09-08T16:52:35Z",
-  "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-09-08 via scripts/drift-refresh.sh (previous pin e88b0cec…).",
+  "sha256": "ef3efe9becc8f06355c4035758c56f3cacdd6f926b2831fb99116172a3078f63",
+  "sizeBytes": 1961190,
+  "retrievedAt": "2026-10-03T10:36:44Z",
+  "provenance": "Retrieved directly from https://openrouter.ai/openapi.yaml on 2026-10-03 via scripts/drift-refresh.sh (previous pin d49dda78…).",
   "generator": "io.github.nabobery.kotlin-sdkgen:0.4.0",
   "overlays": [
     { "id": "openrouter-allof-resolution-audit", "file": "overlays/allof-resolution-audit.yaml", "sha256": "ba61d7b66bf3cb2df5826dc4d62b6a62751538424b1c670fa76b5aa501b15b7d" },
