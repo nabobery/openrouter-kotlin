@@ -1,7 +1,7 @@
 version: v1alpha1
 source:
   uri: openapi.yaml
-  sha256: d49dda786def31a8aa03b1fbc3de244459b35ee7aa4c859976d8a7d01bbc8f5d
+  sha256: ef3efe9becc8f06355c4035758c56f3cacdd6f926b2831fb99116172a3078f63
   acquisition:
     mode: local
     offline: true
